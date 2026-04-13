@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — SocialEngine</title>
+  <meta name="description" content="SocialEngine Privacy Policy — how we collect, use, and protect your data as you use our AI-powered social media management platform.">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-grotesk@400,500,600,700&f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0A1628;
+      --card:      #111D30;
+      --border:    #1E2D45;
+      --text:      #E2E8F0;
+      --muted:     #94A3B8;
+      --accent:    #34D399;
+      --accent-dim:#1A6B4A;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Satoshi', system-ui, sans-serif;
+      font-size: 1rem;
+      line-height: 1.75;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(10, 22, 40, 0.90);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .logo svg { flex-shrink: 0; }
+
+    .logo-text {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .logo-text span { color: var(--accent); }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    nav a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    nav a:hover { color: var(--text); }
+
+    nav .cta {
+      background: var(--accent);
+      color: #0A1628;
+      padding: 0.45rem 1.1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: opacity 0.15s;
+    }
+
+    nav .cta:hover { opacity: 0.88; color: #0A1628; }
+
+    /* ── Layout ──────────────────────────────────── */
+    .page-wrap {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem 6rem;
+    }
+
+    /* ── Hero Block ──────────────────────────────── */
+    .doc-hero {
+      margin-bottom: 3rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .doc-tag {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .doc-hero h1 {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .doc-meta {
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    .doc-meta strong { color: var(--text); }
+
+    /* ── Table of Contents ───────────────────────── */
+    .toc {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .toc-title {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .toc ol {
+      list-style: none;
+      counter-reset: toc;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.35rem 1.5rem;
+    }
+
+    .toc li {
+      counter-increment: toc;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .toc li::before {
+      content: counter(toc, decimal-leading-zero);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .toc a {
+      font-size: 0.875rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .toc a:hover { color: var(--accent); }
+
+    /* ── Sections ────────────────────────────────── */
+    .section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 88px;
+    }
+
+    .section h2 {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-size: 1.375rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .section h2 .sec-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 0.7rem;
+      font-weight: 700;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    .section h3 {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 1.75rem 0 0.6rem;
+    }
+
+    .section p {
+      color: var(--muted);
+      margin-bottom: 0.875rem;
+      line-height: 1.8;
+    }
+
+    .section p:last-child { margin-bottom: 0; }
+
+    .section ul, .section ol {
+      padding-left: 1.5rem;
+      margin-bottom: 0.875rem;
+      color: var(--muted);
+    }
+
+    .section li { margin-bottom: 0.4rem; line-height: 1.75; }
+
+    .section a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid var(--accent-dim);
+      transition: border-color 0.15s;
+    }
+
+    .section a:hover { border-color: var(--accent); }
+
+    strong, b { color: var(--text); font-weight: 600; }
+
+    /* ── Data Table ──────────────────────────────── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.875rem;
+    }
+
+    .data-table th {
+      background: var(--card);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .data-table tr:hover td { background: rgba(17, 29, 48, 0.6); }
+
+    /* ── Highlight Cards ─────────────────────────── */
+    .callout {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+      color: var(--muted);
+      font-size: 0.9375rem;
+      line-height: 1.75;
+    }
+
+    .callout strong { color: var(--text); }
+
+    /* Rights grid */
+    .rights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    .right-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .right-card .right-icon {
+      color: var(--accent);
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .right-card h4 {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .right-card p {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* ── Divider ─────────────────────────────────── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    /* ── Footer ──────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .footer-links a {
+      font-size: 0.875rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    @media (max-width: 640px) {
+      nav .cta { display: none; }
+      .toc ol { grid-template-columns: 1fr; }
+      .rights-grid { grid-template-columns: 1fr; }
+      .data-table { font-size: 0.8125rem; }
+      .data-table th, .data-table td { padding: 0.6rem 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────── -->
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo" aria-label="SocialEngine Home">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#34D399" fill-opacity="0.15"/>
+        <circle cx="10" cy="16" r="3" fill="#34D399"/>
+        <circle cx="22" cy="9" r="3" fill="#34D399"/>
+        <circle cx="22" cy="23" r="3" fill="#34D399"/>
+        <line x1="13" y1="14.5" x2="19" y2="10.5" stroke="#34D399" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="13" y1="17.5" x2="19" y2="21.5" stroke="#34D399" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-text">Social<span>Engine</span></span>
+    </a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="terms.html">Terms of Service</a>
+      <a href="index.html" class="cta">Get Started</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ── Main Content ────────────────────────────────── -->
+<main class="page-wrap">
+
+  <div class="doc-hero">
+    <div class="doc-tag">Legal</div>
+    <h1>Privacy Policy</h1>
+    <p class="doc-meta">
+      <strong>Effective Date:</strong> April 9, 2026 &nbsp;·&nbsp;
+      <strong>Last Updated:</strong> April 9, 2026 &nbsp;·&nbsp;
+      Questions? <a href="mailto:hello@socialengine.agency" style="color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-dim);">hello@socialengine.agency</a>
+    </p>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc" aria-label="Table of Contents">
+    <div class="toc-title">Table of Contents</div>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#who-we-are">Who We Are</a></li>
+      <li><a href="#data-we-collect">Data We Collect</a></li>
+      <li><a href="#how-we-collect">How We Collect Data</a></li>
+      <li><a href="#how-we-use">How We Use Data</a></li>
+      <li><a href="#sharing">Data Sharing</a></li>
+      <li><a href="#retention">Data Retention</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#cookies">Cookies &amp; Tracking</a></li>
+      <li><a href="#gdpr">GDPR — EU/EEA Rights</a></li>
+      <li><a href="#ccpa">CCPA — California Rights</a></li>
+      <li><a href="#shopify-data">Shopify Data</a></li>
+      <li><a href="#children">Children's Privacy</a></li>
+      <li><a href="#international">International Transfers</a></li>
+      <li><a href="#changes">Policy Changes</a></li>
+      <li><a href="#contact">Contact &amp; Requests</a></li>
+    </ol>
+  </div>
+
+  <div class="callout">
+    <strong>Your privacy matters.</strong> This Privacy Policy explains what personal data and store data SocialEngine collects, why we collect it, how we use and protect it, and what rights you have. We are committed to transparency and compliance with GDPR, CCPA, and applicable privacy laws.
+  </div>
+
+  <!-- 1. Overview -->
+  <section class="section" id="overview">
+    <h2><span class="sec-num">01</span> Overview</h2>
+    <p>SocialEngine Agency ("SocialEngine," "we," "us," or "our") operates the social media management platform at <strong>socialengine.agency</strong> (the "Service"). This Privacy Policy applies to all users of the Service, including merchants who access SocialEngine via the Shopify App Store and direct subscribers.</p>
+    <p>By creating an account, installing our application, or otherwise using the Service, you acknowledge that you have read and understood this Privacy Policy. If you do not agree with our practices, please do not use the Service.</p>
+    <p>This Privacy Policy is incorporated into and forms part of our <a href="terms.html">Terms of Service</a>.</p>
+  </section>
+
+  <!-- 2. Who We Are -->
+  <section class="section" id="who-we-are">
+    <h2><span class="sec-num">02</span> Who We Are</h2>
+    <p>For the purposes of applicable data protection law:</p>
+    <div class="callout">
+      <strong>Data Controller / Business:</strong><br>
+      SocialEngine Agency<br>
+      Website: <a href="https://socialengine.agency">socialengine.agency</a><br>
+      Email: <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a>
+    </div>
+    <p>As a "data controller" (under GDPR) or "business" (under CCPA), we determine the purposes and means of processing personal data we collect from you. Where we engage third-party processors, we enter into data processing agreements to ensure your data is handled lawfully and securely.</p>
+  </section>
+
+  <!-- 3. Data We Collect -->
+  <section class="section" id="data-we-collect">
+    <h2><span class="sec-num">03</span> Data We Collect</h2>
+    <p>We collect the following categories of data in connection with providing the Service:</p>
+
+    <h3>Account &amp; Identity Data</h3>
+    <ul>
+      <li><strong>Full name</strong> — provided at registration;</li>
+      <li><strong>Email address</strong> — used for account access, billing communications, and product updates;</li>
+      <li><strong>Shopify store URL</strong> — used to identify and connect your store;</li>
+      <li><strong>Account credentials</strong> — hashed passwords (we never store plaintext passwords).</li>
+    </ul>
+
+    <h3>Shopify Store Data</h3>
+    <ul>
+      <li><strong>Product catalog</strong> — product titles, descriptions, images, pricing, variants, and SKUs;</li>
+      <li><strong>Inventory data</strong> — stock levels, inventory locations, and fulfillment details;</li>
+      <li><strong>Store metadata</strong> — store name, currency, locale, and timezone;</li>
+      <li><strong>Order data</strong> — limited order data as required to deliver inventory-aware content (processed in aggregate; individual customer PII from orders is not stored long-term).</li>
+    </ul>
+
+    <h3>Social Media Account Data</h3>
+    <ul>
+      <li><strong>OAuth access tokens and refresh tokens</strong> — credentials that authorize SocialEngine to publish and retrieve analytics on your behalf;</li>
+      <li><strong>Platform profile data</strong> — account names, follower counts, and business profile information as returned by platform APIs;</li>
+      <li><strong>Content performance data</strong> — engagement metrics (likes, comments, shares, reach, impressions) for content published via SocialEngine.</li>
+    </ul>
+
+    <h3>Billing &amp; Payment Data</h3>
+    <ul>
+      <li>Payment transactions are processed by <strong>Stripe</strong> or through <strong>Shopify Billing</strong>. We do not store full credit card numbers or financial account numbers. We receive and store billing confirmation records, subscription status, and plan information.</li>
+    </ul>
+
+    <h3>Usage &amp; Technical Data</h3>
+    <ul>
+      <li><strong>Log data</strong> — IP address, browser type, operating system, pages visited, timestamps, and referring URLs;</li>
+      <li><strong>Device data</strong> — device type, screen resolution, and browser version;</li>
+      <li><strong>Feature usage data</strong> — which features you use, content scheduling actions, and AI generation requests (without storing the full generated output long-term unless you save it);</li>
+      <li><strong>Error and performance data</strong> — crash reports and performance metrics used to diagnose and improve the Service.</li>
+    </ul>
+
+    <h3>Communications Data</h3>
+    <ul>
+      <li>Emails, support tickets, and chat messages you send to us;</li>
+      <li>Survey responses and feedback you voluntarily provide.</li>
+    </ul>
+
+    <h3>What We Do Not Collect</h3>
+    <ul>
+      <li>We do not collect sensitive personal information such as government ID numbers, financial account numbers, health data, or biometric data;</li>
+      <li>We do not collect personal data about your Shopify store's end customers beyond what is minimally necessary for inventory-aware features, and we do not use such data for any purpose other than providing the Service to you.</li>
+    </ul>
+  </section>
+
+  <!-- 4. How We Collect -->
+  <section class="section" id="how-we-collect">
+    <h2><span class="sec-num">04</span> How We Collect Data</h2>
+    <table class="data-table" aria-label="Data collection methods">
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Direct input</strong></td>
+          <td>Data you provide when creating an account, filling out forms, or contacting support</td>
+        </tr>
+        <tr>
+          <td><strong>Shopify API</strong></td>
+          <td>Store data accessed via OAuth-authorized Shopify API calls after you install and authorize the app</td>
+        </tr>
+        <tr>
+          <td><strong>Social media APIs</strong></td>
+          <td>Data from connected social platforms via OAuth, after you grant publishing and analytics permissions</td>
+        </tr>
+        <tr>
+          <td><strong>Automatic collection</strong></td>
+          <td>Technical and usage data collected automatically as you interact with the Service (see Cookies section)</td>
+        </tr>
+        <tr>
+          <td><strong>Third-party processors</strong></td>
+          <td>Billing confirmations from Stripe; analytics from infrastructure providers</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 5. How We Use Data -->
+  <section class="section" id="how-we-use">
+    <h2><span class="sec-num">05</span> How We Use Your Data</h2>
+    <p>We use the data we collect for the following purposes:</p>
+
+    <h3>Service Delivery</h3>
+    <ul>
+      <li>Providing, operating, and maintaining the Service;</li>
+      <li>Generating AI-powered social media content tailored to your store's products, inventory, and brand voice;</li>
+      <li>Scheduling and publishing posts to your connected social media accounts;</li>
+      <li>Analyzing content performance and delivering analytics dashboards;</li>
+      <li>Conducting inventory analysis to surface relevant products for promotion.</li>
+    </ul>
+
+    <h3>Account &amp; Billing Management</h3>
+    <ul>
+      <li>Creating and managing your account;</li>
+      <li>Processing subscription payments and managing billing cycles;</li>
+      <li>Sending transactional emails including receipts, renewal notices, and billing alerts;</li>
+      <li>Administering the 14-day free trial and managing trial-to-paid conversions.</li>
+    </ul>
+
+    <h3>Communication</h3>
+    <ul>
+      <li>Responding to your customer support requests and inquiries;</li>
+      <li>Sending product updates, feature announcements, and service notifications;</li>
+      <li>With your consent, sending marketing emails about SocialEngine features or promotions (you may opt out at any time).</li>
+    </ul>
+
+    <h3>Improvement &amp; Development</h3>
+    <ul>
+      <li>Analyzing aggregate usage patterns to improve Service features and user experience;</li>
+      <li>Debugging errors and improving platform performance;</li>
+      <li>Training and improving AI models using <strong>anonymized and aggregated</strong> data — we will not use your identifiable business data to train models that benefit other customers without your explicit consent.</li>
+    </ul>
+
+    <h3>Legal &amp; Safety</h3>
+    <ul>
+      <li>Complying with applicable laws, regulations, and legal obligations;</li>
+      <li>Enforcing our Terms of Service;</li>
+      <li>Detecting, preventing, and responding to fraud, abuse, or security incidents;</li>
+      <li>Protecting the rights, property, and safety of SocialEngine, our users, and the public.</li>
+    </ul>
+
+    <h3>Legal Basis for Processing (GDPR)</h3>
+    <p>For users in the EU/EEA, we rely on the following legal bases:</p>
+    <table class="data-table" aria-label="GDPR legal bases">
+      <thead>
+        <tr>
+          <th>Processing Purpose</th>
+          <th>Legal Basis</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Providing the Service, account management, billing</td>
+          <td>Performance of a contract (Art. 6(1)(b) GDPR)</td>
+        </tr>
+        <tr>
+          <td>Fraud prevention, security, legal compliance</td>
+          <td>Legitimate interests (Art. 6(1)(f) GDPR)</td>
+        </tr>
+        <tr>
+          <td>Marketing emails, optional analytics</td>
+          <td>Consent (Art. 6(1)(a) GDPR)</td>
+        </tr>
+        <tr>
+          <td>Compliance with legal obligations</td>
+          <td>Legal obligation (Art. 6(1)(c) GDPR)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 6. Sharing -->
+  <section class="section" id="sharing">
+    <h2><span class="sec-num">06</span> Data Sharing &amp; Disclosure</h2>
+    <p>We do not sell your personal data to third parties. We do not rent or trade your data. We share data only as described below:</p>
+
+    <h3>Service Providers (Data Processors)</h3>
+    <p>We engage trusted third-party companies to help us deliver the Service. These providers access your data only to perform specific tasks on our behalf and are contractually bound to protect it:</p>
+    <ul>
+      <li><strong>Stripe</strong> — payment processing and subscription management;</li>
+      <li><strong>Shopify Inc.</strong> — app platform, billing infrastructure;</li>
+      <li><strong>AI/ML infrastructure providers</strong> — compute infrastructure for content generation (data is processed under strict confidentiality agreements);</li>
+      <li><strong>Cloud hosting providers</strong> — data storage and application hosting;</li>
+      <li><strong>Customer support tools</strong> — help desk software for managing support tickets;</li>
+      <li><strong>Analytics providers</strong> — product analytics to help us understand feature usage (aggregated and anonymized).</li>
+    </ul>
+
+    <h3>Business Transfers</h3>
+    <p>If SocialEngine undergoes a merger, acquisition, reorganization, or sale of assets, your data may be transferred as part of that transaction. We will notify you via email or in-app notice prior to your data being transferred and becoming subject to a different privacy policy.</p>
+
+    <h3>Legal Requirements</h3>
+    <p>We may disclose your data if we believe in good faith that such disclosure is necessary to: (a) comply with a legal obligation, court order, or government request; (b) enforce our Terms of Service; (c) protect our rights, privacy, safety, or property; or (d) respond to an emergency involving risk to the life or safety of any person.</p>
+
+    <h3>With Your Consent</h3>
+    <p>We may share your data with additional third parties when you give us explicit consent to do so.</p>
+
+    <h3>Aggregated or Anonymized Data</h3>
+    <p>We may share aggregated, non-personally identifiable information about users and usage patterns with partners, investors, or publicly. This data cannot reasonably be used to identify you.</p>
+  </section>
+
+  <!-- 7. Retention -->
+  <section class="section" id="retention">
+    <h2><span class="sec-num">07</span> Data Retention</h2>
+    <p>We retain your data for as long as necessary to provide the Service and fulfil the purposes described in this Privacy Policy, unless a longer retention period is required or permitted by law.</p>
+    <ul>
+      <li><strong>Account data:</strong> Retained for the duration of your active subscription, plus up to 90 days following account closure to allow for reactivation. After 90 days, personal account data is deleted or anonymized.</li>
+      <li><strong>Shopify store data:</strong> Retained while your subscription is active and for up to 30 days after uninstallation, then deleted. If required by Shopify Partner Program policies, deletion occurs immediately upon receiving a mandatory data erasure webhook from Shopify.</li>
+      <li><strong>Social media tokens:</strong> Deleted upon disconnection of the platform, or within 30 days of account closure.</li>
+      <li><strong>Billing records:</strong> Retained for up to 7 years for tax and accounting compliance purposes.</li>
+      <li><strong>Log and technical data:</strong> Typically retained for 90 days for security and debugging purposes, then purged.</li>
+      <li><strong>Support communications:</strong> Retained for up to 3 years from the date of the communication.</li>
+    </ul>
+    <p>You may request earlier deletion of your data as described in the Rights sections below, subject to legal retention requirements.</p>
+  </section>
+
+  <!-- 8. Security -->
+  <section class="section" id="security">
+    <h2><span class="sec-num">08</span> Security</h2>
+    <p>We implement industry-standard technical and organizational security measures to protect your data against unauthorized access, alteration, disclosure, or destruction. These measures include:</p>
+    <ul>
+      <li>Encryption of data in transit using TLS 1.2 or higher;</li>
+      <li>Encryption of sensitive data at rest (including access tokens and payment information);</li>
+      <li>Role-based access controls limiting employee access to personal data on a need-to-know basis;</li>
+      <li>Regular security assessments and vulnerability management;</li>
+      <li>Secure OAuth 2.0 flows for all third-party integrations;</li>
+      <li>Multi-factor authentication options for user accounts.</li>
+    </ul>
+    <p>However, no method of transmission over the internet or method of electronic storage is 100% secure. While we strive to protect your data, we cannot guarantee absolute security. In the event of a data breach affecting your rights and freedoms, we will notify you and relevant authorities as required by applicable law (within 72 hours under GDPR where feasible).</p>
+    <p>You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. Please use a strong, unique password and enable multi-factor authentication where available.</p>
+  </section>
+
+  <!-- 9. Cookies -->
+  <section class="section" id="cookies">
+    <h2><span class="sec-num">09</span> Cookies &amp; Tracking Technologies</h2>
+    <p>We use cookies and similar tracking technologies (such as local storage and session tokens) to operate and improve the Service. Cookies are small data files placed on your device.</p>
+
+    <h3>Types of Cookies We Use</h3>
+    <table class="data-table" aria-label="Cookie types">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Purpose</th>
+          <th>Required?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Essential</strong></td>
+          <td>Authentication session management, CSRF protection, security tokens</td>
+          <td>Yes — necessary for the Service to function</td>
+        </tr>
+        <tr>
+          <td><strong>Functional</strong></td>
+          <td>Remembering your preferences, language, and dashboard layout</td>
+          <td>No — may be declined</td>
+        </tr>
+        <tr>
+          <td><strong>Analytics</strong></td>
+          <td>Aggregate product usage analysis to improve features (anonymized)</td>
+          <td>No — may be declined</td>
+        </tr>
+        <tr>
+          <td><strong>Marketing</strong></td>
+          <td>Tracking interactions with our marketing pages (not placed in the app)</td>
+          <td>No — may be declined</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Managing Cookies</h3>
+    <p>You can control and delete cookies through your browser settings. Please note that disabling essential cookies will prevent you from using the Service. For analytics and marketing cookies on our marketing website, a cookie consent banner is presented upon first visit. You may change your consent at any time via the cookie preferences link in the site footer.</p>
+    <p>For more information on managing cookies, visit <a href="https://www.allaboutcookies.org" target="_blank" rel="noopener noreferrer">allaboutcookies.org</a>.</p>
+
+    <h3>Do Not Track</h3>
+    <p>Some browsers transmit "Do Not Track" (DNT) signals. Our Service does not currently respond to DNT signals from browsers, but we honor equivalent opt-outs made through our cookie preference center and the opt-out mechanisms described in this Policy.</p>
+  </section>
+
+  <!-- 10. GDPR -->
+  <section class="section" id="gdpr">
+    <h2><span class="sec-num">10</span> GDPR — Rights of EU/EEA Users</h2>
+    <p>If you are located in the European Union or European Economic Area, you have specific rights under the General Data Protection Regulation (GDPR) regarding your personal data. We are committed to upholding these rights.</p>
+
+    <div class="rights-grid" aria-label="GDPR rights">
+      <div class="right-card">
+        <div class="right-icon">&#9432;</div>
+        <h4>Right of Access</h4>
+        <p>Request a copy of all personal data we hold about you (Art. 15 GDPR).</p>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">&#9997;</div>
+        <h4>Right to Rectification</h4>
+        <p>Request correction of inaccurate or incomplete personal data (Art. 16 GDPR).</p>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">&#128465;</div>
+        <h4>Right to Erasure</h4>
+        <p>Request deletion of your personal data ("right to be forgotten") where no lawful basis for retention exists (Art. 17 GDPR).</p>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">&#9201;</div>
+        <h4>Right to Restrict</h4>
+        <p>Request that we restrict processing of your data in certain circumstances (Art. 18 GDPR).</p>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">&#128230;</div>
+        <h4>Right to Portability</h4>
+        <p>Receive your data in a structured, machine-readable format and transfer it to another controller (Art. 20 GDPR).</p>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">&#9940;</div>
+        <h4>Right to Object</h4>
+        <p>Object to processing based on legitimate interests or for direct marketing (Art. 21 GDPR).</p>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">&#128306;</div>
+        <h4>Automated Decisions</h4>
+        <p>Not to be subject to solely automated decisions with legal or significant effects (Art. 22 GDPR).</p>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">&#128712;</div>
+        <h4>Right to Complain</h4>
+        <p>Lodge a complaint with your local Data Protection Authority (supervisory authority).</p>
+      </div>
+    </div>
+
+    <h3>How to Exercise Your Rights</h3>
+    <p>To exercise any of these rights, submit a request to <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a> with the subject line "GDPR Data Request." We will respond within 30 days. We may request identity verification before processing your request. Where requests are complex or numerous, we may extend the response period by a further 60 days with notice.</p>
+
+    <h3>Withdrawing Consent</h3>
+    <p>Where processing is based on consent, you have the right to withdraw consent at any time without affecting the lawfulness of processing before withdrawal. To withdraw consent for marketing communications, use the unsubscribe link in any marketing email or contact us directly.</p>
+
+    <h3>Data Protection Officer</h3>
+    <p>We have not appointed a Data Protection Officer (DPO) as we do not meet the thresholds requiring mandatory DPO appointment. Privacy inquiries are handled by our team at <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a>.</p>
+  </section>
+
+  <!-- 11. CCPA -->
+  <section class="section" id="ccpa">
+    <h2><span class="sec-num">11</span> CCPA — California Consumer Privacy Rights</h2>
+    <p>If you are a California resident, you have rights under the California Consumer Privacy Act (CCPA), as amended by the California Privacy Rights Act (CPRA). This section supplements the rest of this Privacy Policy.</p>
+
+    <h3>Categories of Personal Information Collected</h3>
+    <p>In the preceding 12 months, we have collected the following categories of personal information as defined under CCPA:</p>
+    <ul>
+      <li><strong>Identifiers</strong> — name, email address, IP address, account ID;</li>
+      <li><strong>Commercial information</strong> — subscription plan, billing history, product/store data;</li>
+      <li><strong>Internet or network activity</strong> — browsing activity within the Service, log data;</li>
+      <li><strong>Geolocation data</strong> — general location derived from IP address (city/country level only);</li>
+      <li><strong>Professional or employment information</strong> — store name and business type.</li>
+    </ul>
+
+    <h3>Your California Privacy Rights</h3>
+    <ul>
+      <li><strong>Right to Know:</strong> Request disclosure of the categories and specific pieces of personal information we have collected about you, the sources, our business purposes, and any third parties with whom we shared it;</li>
+      <li><strong>Right to Delete:</strong> Request deletion of personal information we have collected, subject to certain exceptions (e.g., legal compliance, contractual obligations);</li>
+      <li><strong>Right to Correct:</strong> Request correction of inaccurate personal information;</li>
+      <li><strong>Right to Opt Out of Sale or Sharing:</strong> We do not sell or share personal information for cross-context behavioral advertising. No opt-out is required, but you may submit one at any time;</li>
+      <li><strong>Right to Limit Use of Sensitive Personal Information:</strong> We do not collect sensitive personal information as defined by CPRA beyond what is necessary for the Service;</li>
+      <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising your privacy rights.</li>
+    </ul>
+
+    <h3>How to Exercise California Rights</h3>
+    <p>Submit a verifiable consumer request to <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a> with the subject line "California Privacy Request." We will respond within 45 days. You may designate an authorized agent to make requests on your behalf with appropriate proof of authorization.</p>
+
+    <h3>"Do Not Sell or Share My Personal Information"</h3>
+    <p>We do not sell or share personal information as defined under CCPA/CPRA. If our practices change, we will update this Privacy Policy and provide appropriate opt-out mechanisms.</p>
+  </section>
+
+  <!-- 12. Shopify Data -->
+  <section class="section" id="shopify-data">
+    <h2><span class="sec-num">12</span> Shopify Store Data &amp; Merchant Data Practices</h2>
+    <p>As a Shopify app, we are required to comply with Shopify's API Terms and Partner Program Agreement. The following describes our specific practices related to Shopify data:</p>
+    <ul>
+      <li><strong>Data minimization:</strong> We request only the Shopify API scopes necessary to deliver the Service. A complete list of requested scopes is displayed during app installation;</li>
+      <li><strong>No sale of store data:</strong> We do not sell, license, or share your Shopify store data with third parties for their independent business purposes;</li>
+      <li><strong>Shopify customer data:</strong> We may access limited customer data only to the extent strictly required for inventory-aware features. We do not store, analyze, or market to your Shopify customers independently;</li>
+      <li><strong>Mandatory deletion:</strong> Upon receiving Shopify's mandatory GDPR webhooks (<code>customers/data_request</code>, <code>customers/redact</code>, <code>shop/redact</code>), we process those requests within the timeframes required by Shopify's policies;</li>
+      <li><strong>Data access revocation:</strong> You may revoke our access to your Shopify store at any time by uninstalling the app from your Shopify admin. Upon uninstallation, we will cease API calls and begin data deletion as described in the Retention section.</li>
+    </ul>
+  </section>
+
+  <!-- 13. Children -->
+  <section class="section" id="children">
+    <h2><span class="sec-num">13</span> Children's Privacy</h2>
+    <p>The Service is intended for business use by adults and is not directed to children under the age of 16 (or 13 in the United States, or such higher age as applicable under local law). We do not knowingly collect personal information from children.</p>
+    <p>If you believe we have inadvertently collected data from a child under the applicable minimum age, please contact us immediately at <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a> and we will take steps to delete that information promptly.</p>
+  </section>
+
+  <!-- 14. International Transfers -->
+  <section class="section" id="international">
+    <h2><span class="sec-num">14</span> International Data Transfers</h2>
+    <p>SocialEngine operates from the United States. If you are accessing the Service from outside the United States, your data may be transferred to, stored in, and processed in the United States or other countries that may not have data protection laws equivalent to those in your country.</p>
+    <p>For transfers of personal data from the European Economic Area, United Kingdom, or Switzerland to the United States or other third countries, we rely on appropriate safeguards, including:</p>
+    <ul>
+      <li><strong>Standard Contractual Clauses (SCCs)</strong> — approved by the European Commission for transfers to third countries;</li>
+      <li><strong>Adequacy decisions</strong> — where the destination country has been deemed to provide adequate protection;</li>
+      <li><strong>Consent</strong> — in specific circumstances where required by applicable law.</li>
+    </ul>
+    <p>You may request a copy of our transfer safeguards by contacting us at <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a>.</p>
+  </section>
+
+  <!-- 15. Changes -->
+  <section class="section" id="changes">
+    <h2><span class="sec-num">15</span> Changes to This Privacy Policy</h2>
+    <p>We may update this Privacy Policy periodically to reflect changes in our practices, technology, or applicable law. When we make material changes, we will:</p>
+    <ul>
+      <li>Update the "Last Updated" date at the top of this page;</li>
+      <li>Send a notification to your registered email address;</li>
+      <li>Display a prominent in-app notice for a reasonable period.</li>
+    </ul>
+    <p>We encourage you to review this Privacy Policy regularly. For significant changes that require fresh consent (e.g., a new purpose for processing your data), we will seek your explicit consent before the change takes effect. Your continued use of the Service after changes become effective constitutes your acceptance of the updated Policy.</p>
+    <p>The most current version of this Privacy Policy is always available at <strong>socialengine.agency/privacy</strong>.</p>
+  </section>
+
+  <!-- 16. Contact -->
+  <section class="section" id="contact">
+    <h2><span class="sec-num">16</span> Contact &amp; Privacy Requests</h2>
+    <p>For any privacy-related questions, requests to exercise your rights, or concerns about our data practices, please contact us:</p>
+    <div class="callout">
+      <strong>SocialEngine Agency — Privacy Team</strong><br>
+      Email: <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a><br>
+      Website: <a href="https://socialengine.agency">socialengine.agency</a><br><br>
+      <strong>Subject lines for faster processing:</strong><br>
+      · "GDPR Data Request" — for EU/EEA rights requests<br>
+      · "California Privacy Request" — for CCPA/CPRA requests<br>
+      · "Data Deletion Request" — for general deletion requests<br>
+      · "Privacy Inquiry" — for general questions
+    </div>
+    <p>We aim to acknowledge all privacy requests within 5 business days and respond fully within the timeframes required by applicable law (30 days for GDPR; 45 days for CCPA).</p>
+    <p>If you are unsatisfied with our response to a privacy request, you have the right to lodge a complaint with your applicable data protection supervisory authority:</p>
+    <ul>
+      <li><strong>EU/EEA residents:</strong> Contact your national Data Protection Authority. A directory is available at <a href="https://edpb.europa.eu/about-edpb/about-edpb/members_en" target="_blank" rel="noopener noreferrer">edpb.europa.eu</a>;</li>
+      <li><strong>UK residents:</strong> Contact the Information Commissioner's Office (ICO) at <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">ico.org.uk</a>;</li>
+      <li><strong>California residents:</strong> Contact the California Privacy Protection Agency (CPPA) at <a href="https://cppa.ca.gov" target="_blank" rel="noopener noreferrer">cppa.ca.gov</a>.</li>
+    </ul>
+  </section>
+
+  <hr>
+  <p style="color:var(--muted);font-size:0.875rem;text-align:center;">
+    This Privacy Policy was last reviewed and updated on <strong style="color:var(--text);">April 9, 2026</strong>. For prior versions, contact <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a>.
+  </p>
+
+</main>
+
+<!-- ── Footer ──────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="terms.html">Terms of Service</a>
+      <a href="privacy.html" aria-current="page">Privacy Policy</a>
+      <a href="mailto:hello@socialengine.agency">Contact</a>
+    </div>
+    <p class="footer-copy">&copy; 2026 SocialEngine Agency. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,659 @@
+/* ============================================
+   SocialEngine — App JavaScript
+   ============================================ */
+
+const API_BASE = 'https://app-production-55ba.up.railway.app';
+const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
+
+(function () {
+  'use strict';
+
+  // --- Dark Mode Toggle ---
+  const themeToggle = document.querySelector('[data-theme-toggle]');
+  const root = document.documentElement;
+  let currentTheme = 'dark';
+  root.setAttribute('data-theme', currentTheme);
+  updateThemeIcon();
+
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', currentTheme);
+      themeToggle.setAttribute('aria-label', `Switch to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`);
+      updateThemeIcon();
+    });
+  }
+
+  function updateThemeIcon() {
+    if (!themeToggle) return;
+    if (currentTheme === 'dark') {
+      themeToggle.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+    } else {
+      themeToggle.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    }
+  }
+
+  // --- Header scroll detection ---
+  const header = document.querySelector('.header');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 20) header.classList.add('header--scrolled');
+    else header.classList.remove('header--scrolled');
+  }, { passive: true });
+
+  // --- Scroll Reveal ---
+  const revealElements = document.querySelectorAll('.reveal');
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('reveal--visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  revealElements.forEach((el) => revealObserver.observe(el));
+
+  // --- Count-Up Animation ---
+  const countElements = document.querySelectorAll('[data-count-to]');
+  const countObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        animateCount(entry.target);
+        countObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  countElements.forEach((el) => countObserver.observe(el));
+
+  function animateCount(el) {
+    const target = parseInt(el.dataset.countTo, 10);
+    const suffix = el.dataset.suffix || '';
+    const duration = 1200;
+    const startTime = performance.now();
+    function step(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(target * eased).toLocaleString() + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // --- Pricing Toggle ---
+  const pricingToggle = document.querySelector('[data-pricing-toggle]');
+  const monthlyLabel = document.querySelector('[data-billing="monthly"]');
+  const annualLabel = document.querySelector('[data-billing="annual"]');
+  const priceAmounts = document.querySelectorAll('[data-price-monthly]');
+  let isAnnual = false;
+
+  if (pricingToggle) {
+    pricingToggle.addEventListener('click', () => {
+      isAnnual = !isAnnual;
+      pricingToggle.setAttribute('aria-checked', isAnnual.toString());
+      monthlyLabel.classList.toggle('pricing-toggle__label--active', !isAnnual);
+      annualLabel.classList.toggle('pricing-toggle__label--active', isAnnual);
+      priceAmounts.forEach((el) => {
+        el.textContent = '$' + (isAnnual ? el.dataset.priceAnnual : el.dataset.priceMonthly);
+      });
+    });
+  }
+
+  // --- FAQ Accordion ---
+  document.querySelectorAll('.faq-item').forEach((item) => {
+    item.querySelector('.faq-item__trigger').addEventListener('click', () => {
+      const isOpen = item.dataset.open === 'true';
+      document.querySelectorAll('.faq-item').forEach((other) => {
+        if (other !== item) {
+          other.dataset.open = 'false';
+          other.querySelector('.faq-item__trigger').setAttribute('aria-expanded', 'false');
+        }
+      });
+      item.dataset.open = isOpen ? 'false' : 'true';
+      item.querySelector('.faq-item__trigger').setAttribute('aria-expanded', (!isOpen).toString());
+    });
+  });
+
+  // --- Mobile Navigation ---
+  const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+  const mobileNav = document.getElementById('mobile-nav');
+  const mobileNavClose = mobileNav ? mobileNav.querySelector('.mobile-nav__close') : null;
+
+  function openMobileNav() {
+    if (!mobileNav) return;
+    mobileNav.classList.add('mobile-nav--open');
+    mobileNavToggle.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMobileNav() {
+    if (!mobileNav) return;
+    mobileNav.classList.remove('mobile-nav--open');
+    mobileNavToggle.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  if (mobileNavToggle) mobileNavToggle.addEventListener('click', openMobileNav);
+  if (mobileNavClose) mobileNavClose.addEventListener('click', closeMobileNav);
+  if (mobileNav) mobileNav.querySelectorAll('a').forEach((l) => l.addEventListener('click', closeMobileNav));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && mobileNav?.classList.contains('mobile-nav--open')) closeMobileNav();
+  });
+
+  // ====================================================
+  //  AI AUDIT FORM — Calls backend, shows results on-screen
+  // ====================================================
+  const auditForm = document.getElementById('audit-form');
+  const auditSubmit = document.getElementById('audit-submit');
+  const auditSuccess = document.getElementById('audit-success');
+  const auditError = document.getElementById('audit-error');
+  const auditRetry = document.getElementById('audit-retry');
+  const auditResults = document.getElementById('audit-results');
+
+  function validateURL(str) {
+    try {
+      const url = new URL(str);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      try {
+        const url = new URL('https://' + str);
+        return url.hostname.includes('.');
+      } catch { return false; }
+    }
+  }
+
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function normalizeURL(str) {
+    try { new URL(str); return str; }
+    catch { return 'https://' + str; }
+  }
+
+  function clearFieldError(id) {
+    const input = document.getElementById(id);
+    const err = document.getElementById(id + '-error');
+    if (input) input.classList.remove('ai-audit__input--error');
+    if (err) err.textContent = '';
+  }
+
+  function setFieldError(id, msg) {
+    const input = document.getElementById(id);
+    const err = document.getElementById(id + '-error');
+    if (input) input.classList.add('ai-audit__input--error');
+    if (err) err.textContent = msg;
+  }
+
+  // Animated processing steps
+  const processingSteps = [
+    'Connecting to your store...',
+    'Reading product catalog...',
+    'Analyzing brand positioning...',
+    'Scoring content potential...',
+    'Checking platform readiness...',
+    'Generating sample posts...',
+    'Building your audit report...',
+  ];
+
+  function showProcessingAnimation() {
+    const submitText = auditSubmit.querySelector('.ai-audit__submit-text');
+    const submitIcon = auditSubmit.querySelector('.ai-audit__submit-icon');
+    if (submitIcon) submitIcon.style.display = 'none';
+    auditSubmit.classList.add('ai-audit__submit--loading');
+    auditSubmit.disabled = true;
+
+    let step = 0;
+    const interval = setInterval(() => {
+      if (step < processingSteps.length) {
+        if (submitText) submitText.textContent = processingSteps[step];
+        step++;
+      } else {
+        if (submitText) submitText.textContent = 'Almost there...';
+      }
+    }, 2000);
+
+    return () => {
+      clearInterval(interval);
+      auditSubmit.classList.remove('ai-audit__submit--loading');
+      auditSubmit.disabled = false;
+      if (submitText) submitText.textContent = 'Run My Free Audit';
+      if (submitIcon) submitIcon.style.display = '';
+    };
+  }
+
+  function renderAuditResults(data) {
+    const audit = data.audit;
+    const score = audit.overall_score || 0;
+    const scoreColor = score >= 65 ? '#10B981' : score >= 40 ? '#F59E0B' : '#EF4444';
+    const circumference = 2 * Math.PI * 54;
+    const offset = circumference - (score / 100) * circumference;
+    const portalEmail = data.portal_access?.email || '';
+    const portalPassword = data.portal_access?.password || 'Welcome2026!';
+    const postCount = (audit.sample_posts || []).length;
+    const strength = (audit.strengths || [])[0] || '';
+    const weakness = (audit.weaknesses || [])[0] || '';
+    const scoreLabel = score >= 65 ? 'Strong foundation' : score >= 40 ? 'Room to grow' : 'Needs work';
+
+    // TEASER VIEW — show score + 1 insight + push to portal
+    const html = `
+      <div class="audit-report" style="max-width:560px;margin:0 auto;">
+
+        <!-- Score ring -->
+        <div class="audit-report__header" style="margin-bottom:24px;">
+          <div class="audit-report__score-ring">
+            <svg viewBox="0 0 120 120" class="audit-ring-svg">
+              <circle cx="60" cy="60" r="54" stroke="rgba(255,255,255,0.08)" stroke-width="8" fill="none"/>
+              <circle cx="60" cy="60" r="54" stroke="${scoreColor}" stroke-width="8" fill="none"
+                stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+                stroke-linecap="round" transform="rotate(-90 60 60)"
+                class="audit-ring-progress"/>
+            </svg>
+            <div class="audit-ring-text">
+              <span class="audit-report__score-num">${score}</span>
+              <span class="audit-report__score-label">/ 100</span>
+            </div>
+          </div>
+          <div>
+            <h3 class="audit-report__title">Your Social Media Audit</h3>
+            <p class="audit-report__subtitle">${data.shopify_detected ? `We found <strong>${data.product_count} products</strong> in your catalog.` : 'We analysed your web presence and social potential.'}</p>
+            <div style="display:inline-block;margin-top:8px;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;background:${scoreColor}22;color:${scoreColor};border:1px solid ${scoreColor}44;">${scoreLabel}</div>
+          </div>
+        </div>
+
+        <!-- One key insight -->
+        ${strength || weakness ? `
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+          ${strength ? `<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:${weakness ? '12px' : '0'};">
+            <div style="color:#10B981;font-size:14px;margin-top:1px;flex-shrink:0;">&#10003;</div>
+            <p style="font-size:0.85rem;color:#ccc;margin:0;line-height:1.5;"><strong style="color:#fff;">Strength:</strong> ${strength}</p>
+          </div>` : ''}
+          ${weakness ? `<div style="display:flex;gap:10px;align-items:flex-start;">
+            <div style="color:#F59E0B;font-size:14px;margin-top:1px;flex-shrink:0;">&#9888;</div>
+            <p style="font-size:0.85rem;color:#ccc;margin:0;line-height:1.5;"><strong style="color:#fff;">Biggest gap:</strong> ${weakness}</p>
+          </div>` : ''}
+        </div>` : ''}
+
+        <!-- What's waiting in portal -->
+        <div style="background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(99,102,241,0.06));border:1px solid rgba(168,85,247,0.2);border-radius:14px;padding:20px 24px;margin-bottom:20px;">
+          <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#a855f7;margin:0 0 14px;">YOUR FREE PORTAL IS READY</p>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:28px;height:28px;background:rgba(16,185,129,0.12);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#128203;</div>
+              <span style="font-size:0.85rem;color:#ccc;"><strong style="color:#fff;">${postCount} AI-generated posts</strong> drafted for your brand — ready to review &amp; approve</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:28px;height:28px;background:rgba(168,85,247,0.12);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#128200;</div>
+              <span style="font-size:0.85rem;color:#ccc;">Full score breakdown across <strong style="color:#fff;">5 categories</strong> with specific action items</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:28px;height:28px;background:rgba(59,130,246,0.12);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#129302;</div>
+              <span style="font-size:0.85rem;color:#ccc;">Your AI marketing coach <strong style="color:#fff;">knows your products</strong> — ask it anything</span>
+            </div>
+          </div>
+
+          <a href="/portal.html" onclick="localStorage.setItem('se_prefill_email','${portalEmail}')" class="btn btn--primary" style="width:100%;text-align:center;display:block;padding:14px;border-radius:10px;font-size:0.95rem;font-weight:700;text-decoration:none;">
+            Open Your Free Portal &#8594;
+          </a>
+          ${portalEmail ? `<p style="font-size:0.72rem;color:#666;text-align:center;margin:10px 0 0;">Login: <strong style="color:#aaa;">${portalEmail}</strong> &nbsp;&bull;&nbsp; Password: <strong style="color:#aaa;">${portalPassword}</strong></p>` : ''}
+        </div>
+
+        <!-- Revenue opportunity teaser -->
+        ${audit.revenue_opportunity ? `
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;margin-bottom:16px;">
+          <div style="font-size:22px;">&#128176;</div>
+          <div>
+            <div style="font-size:0.75rem;font-weight:600;color:#10B981;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">Revenue Opportunity</div>
+            <p style="font-size:0.82rem;color:#ccc;margin:0;line-height:1.5;">${audit.revenue_opportunity}</p>
+          </div>
+        </div>` : ''}
+
+        <!-- Social Profile Stats (if returned) -->
+        ${(data.social_profiles && (data.social_profiles.instagram || data.social_profiles.tiktok)) ? `
+        <div style="margin-bottom:16px;">
+          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#a855f7;margin-bottom:12px;">YOUR SOCIAL PRESENCE</div>
+          <div style="display:grid;grid-template-columns:${data.social_profiles.instagram && data.social_profiles.tiktok ? '1fr 1fr' : '1fr'};gap:12px;">
+            ${data.social_profiles.instagram ? `
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);display:flex;align-items:center;justify-content:center;font-size:14px;">&#128248;</div>
+                <div>
+                  <div style="font-size:0.8rem;font-weight:600;color:#fff;">Instagram</div>
+                  <div style="font-size:0.7rem;color:#888;">@${data.social_profiles.instagram.username || ''}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:16px;margin-bottom:${data.social_profiles.instagram.biography ? '10px' : '0'};">
+                <div>
+                  <div style="font-size:1.1rem;font-weight:700;color:#fff;font-family:var(--font-display,sans-serif);">${data.social_profiles.instagram.followers_count != null ? Number(data.social_profiles.instagram.followers_count).toLocaleString() : '&#8212;'}</div>
+                  <div style="font-size:0.68rem;color:#888;font-weight:500;">Followers</div>
+                </div>
+                <div>
+                  <div style="font-size:1.1rem;font-weight:700;color:#fff;font-family:var(--font-display,sans-serif);">${data.social_profiles.instagram.media_count != null ? Number(data.social_profiles.instagram.media_count).toLocaleString() : '&#8212;'}</div>
+                  <div style="font-size:0.68rem;color:#888;font-weight:500;">Posts</div>
+                </div>
+              </div>
+              ${data.social_profiles.instagram.biography ? `<p style="font-size:0.75rem;color:#999;margin:0;line-height:1.5;">${data.social_profiles.instagram.biography.substring(0,100)}${data.social_profiles.instagram.biography.length > 100 ? '&hellip;' : ''}</p>` : ''}
+            </div>` : ''}
+            ${data.social_profiles.tiktok ? `
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:#000;border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;">&#127925;</div>
+                <div>
+                  <div style="font-size:0.8rem;font-weight:600;color:#fff;">TikTok</div>
+                  <div style="font-size:0.7rem;color:#888;">@${data.social_profiles.tiktok.username || ''}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:16px;margin-bottom:${data.social_profiles.tiktok.bio_description ? '10px' : '0'};">
+                <div>
+                  <div style="font-size:1.1rem;font-weight:700;color:#fff;font-family:var(--font-display,sans-serif);">${data.social_profiles.tiktok.follower_count != null ? Number(data.social_profiles.tiktok.follower_count).toLocaleString() : '&#8212;'}</div>
+                  <div style="font-size:0.68rem;color:#888;font-weight:500;">Followers</div>
+                </div>
+                <div>
+                  <div style="font-size:1.1rem;font-weight:700;color:#fff;font-family:var(--font-display,sans-serif);">${data.social_profiles.tiktok.video_count != null ? Number(data.social_profiles.tiktok.video_count).toLocaleString() : '&#8212;'}</div>
+                  <div style="font-size:0.68rem;color:#888;font-weight:500;">Videos</div>
+                </div>
+              </div>
+              ${data.social_profiles.tiktok.bio_description ? `<p style="font-size:0.75rem;color:#999;margin:0;line-height:1.5;">${data.social_profiles.tiktok.bio_description.substring(0,100)}${data.social_profiles.tiktok.bio_description.length > 100 ? '&hellip;' : ''}</p>` : ''}
+            </div>` : ''}
+          </div>
+        </div>` : ''}
+
+      </div>
+    `;
+
+    return html;
+  }
+
+  // LEGACY: full audit render kept below for internal/admin reference
+  function renderAuditResultsFull_UNUSED(data) {
+    const audit = data.audit;
+    const score = audit.overall_score || 0;
+    const scoreColor = score >= 65 ? '#10B981' : score >= 40 ? '#F59E0B' : '#EF4444';
+    const circumference = 2 * Math.PI * 54;
+    const offset = circumference - (score / 100) * circumference;
+
+    // Build scores HTML
+    const scores = audit.scores || {};
+    const scoreCards = Object.entries(scores).map(([key, val]) => {
+      const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const barPct = (val / 10) * 100;
+      const barColor = val >= 7 ? '#10B981' : val >= 4 ? '#F59E0B' : '#EF4444';
+      return `<div class="audit-score-card">
+        <div class="audit-score-card__header">
+          <span class="audit-score-card__label">${label}</span>
+          <span class="audit-score-card__value" style="color:${barColor}">${val}/10</span>
+        </div>
+        <div class="audit-score-card__bar"><div class="audit-score-card__fill" style="width:${barPct}%;background:${barColor}"></div></div>
+      </div>`;
+    }).join('');
+
+    // Build phone-frame sample posts (Instagram + TikTok style)
+    const platformIcons = {
+      'Instagram': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>`,
+      'TikTok': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>`,
+      'Facebook': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>`,
+      'LinkedIn': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>`,
+      'X / Twitter': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>`
+    };
+    const platformNameMap = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', linkedin: 'LinkedIn', twitter: 'X / Twitter', 'x / twitter': 'X / Twitter' };
+    const postsHtml = (audit.sample_posts || []).map((p, i) => {
+      const platName = platformNameMap[p.platform?.toLowerCase()] || p.platform || 'Instagram';
+      const icon = platformIcons[platName] || platformIcons['Instagram'];
+      const isReel = (platName === 'TikTok' || platName === 'Instagram');
+      return `<div class="audit-phone ${isReel ? 'audit-phone--reel' : ''}">
+        <div class="audit-phone__notch"></div>
+        <div class="audit-phone__header">
+          ${icon}
+          <span class="audit-phone__plat">${platName}</span>
+          <span class="audit-phone__badge">Preview</span>
+        </div>
+        <div class="audit-phone__img">
+          <div class="audit-phone__img-placeholder">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            <span>AI-Generated Visual</span>
+          </div>
+        </div>
+        <div class="audit-phone__caption">
+          <p>${p.caption || p.hook || ''}</p>
+        </div>
+        <div class="audit-phone__actions">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </div>
+      </div>`;
+    }).join('');
+
+    // AI Coach teaser
+    const coachTeaser = `
+      <div class="audit-teaser">
+        <div class="audit-teaser__label">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          AI Marketing Coach — Preview
+        </div>
+        <div class="audit-teaser__chat">
+          <div class="audit-teaser__bubble audit-teaser__bubble--ai">
+            <strong>SocialEngine AI</strong>
+            <p>Based on your audit, your biggest growth lever is posting consistency. You're leaving engagement on the table by not posting daily. Want me to break down a content strategy for your top 3 products?</p>
+          </div>
+          <div class="audit-teaser__bubble audit-teaser__bubble--user">
+            <p>Yes, show me what to post this week</p>
+          </div>
+          <div class="audit-teaser__bubble audit-teaser__bubble--ai">
+            <strong>SocialEngine AI</strong>
+            <p>Here's your 7-day plan: Monday — behind-the-scenes of your bestseller. Tuesday — customer spotlight with UGC. Wednesday — product feature carousel...</p>
+          </div>
+          <div class="audit-teaser__blur"></div>
+        </div>
+        <div class="audit-teaser__cta">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <div>
+            <strong>Unlock Your Personal AI Coach</strong>
+            <p>Get unlimited 1-on-1 strategy sessions, content ideas, and marketing guidance tailored to your brand.</p>
+          </div>
+          <a href="#pricing" class="btn btn--primary btn--sm">Included in Plan</a>
+        </div>
+      </div>`;
+
+    // Competitor Intel teaser
+    const competitorTeaser = `
+      <div class="audit-teaser">
+        <div class="audit-teaser__label">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Competitor Intelligence — Preview
+        </div>
+        <div class="audit-teaser__intel">
+          <div class="audit-teaser__intel-row">
+            <span class="audit-teaser__intel-label">Top Competitor</span>
+            <span class="audit-teaser__intel-val audit-teaser__intel-val--blur">████████ Store</span>
+          </div>
+          <div class="audit-teaser__intel-row">
+            <span class="audit-teaser__intel-label">Their Posting Frequency</span>
+            <span class="audit-teaser__intel-val audit-teaser__intel-val--blur">██ posts/week</span>
+          </div>
+          <div class="audit-teaser__intel-row">
+            <span class="audit-teaser__intel-label">Their Avg. Engagement</span>
+            <span class="audit-teaser__intel-val audit-teaser__intel-val--blur">██.█%</span>
+          </div>
+          <div class="audit-teaser__intel-row">
+            <span class="audit-teaser__intel-label">Content Gap You Can Exploit</span>
+            <span class="audit-teaser__intel-val audit-teaser__intel-val--blur">████████████</span>
+          </div>
+          <div class="audit-teaser__intel-row">
+            <span class="audit-teaser__intel-label">SWOT Analysis</span>
+            <span class="audit-teaser__intel-val audit-teaser__intel-val--blur">Full report available</span>
+          </div>
+        </div>
+        <div class="audit-teaser__cta">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <div>
+            <strong>Unlock Competitor Intelligence</strong>
+            <p>Full SWOT analysis, pricing comparisons, content gap analysis, and weekly competitor monitoring.</p>
+          </div>
+          <a href="#pricing" class="btn btn--primary btn--sm">Included in Plan</a>
+        </div>
+      </div>`;
+
+    const html = `
+      <div class="audit-report">
+        <div class="audit-report__header">
+          <div class="audit-report__score-ring">
+            <svg viewBox="0 0 120 120" class="audit-ring-svg">
+              <circle cx="60" cy="60" r="54" stroke="rgba(255,255,255,0.08)" stroke-width="8" fill="none"/>
+              <circle cx="60" cy="60" r="54" stroke="${scoreColor}" stroke-width="8" fill="none"
+                stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+                stroke-linecap="round" transform="rotate(-90 60 60)"
+                class="audit-ring-progress"/>
+            </svg>
+            <div class="audit-ring-text">
+              <span class="audit-report__score-num">${score}</span>
+              <span class="audit-report__score-label">/ 100</span>
+            </div>
+          </div>
+          <div>
+            <h3 class="audit-report__title">Your Social Media Audit</h3>
+            <p class="audit-report__subtitle">${data.shopify_detected ? `We found <strong>${data.product_count} products</strong> in your catalog.` : 'We analyzed your web presence and social media potential.'}</p>
+          </div>
+        </div>
+
+        <div class="audit-report__scores">${scoreCards}</div>
+
+        <div class="audit-report__two-col">
+          ${audit.strengths ? `<div class="audit-report__section audit-report__section--good">
+            <h4 class="audit-report__section-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Strengths</h4>
+            <ul class="audit-report__list">${audit.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
+          </div>` : ''}
+          ${audit.weaknesses ? `<div class="audit-report__section audit-report__section--bad">
+            <h4 class="audit-report__section-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Needs Work</h4>
+            <ul class="audit-report__list">${audit.weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
+          </div>` : ''}
+        </div>
+
+        ${audit.quick_wins ? `<div class="audit-report__section audit-report__section--wins">
+          <h4 class="audit-report__section-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Quick Wins</h4>
+          <ul class="audit-report__list audit-report__list--numbered">${audit.quick_wins.map((q, i) => `<li><span class="audit-win-num">${i + 1}</span>${q}</li>`).join('')}</ul>
+        </div>` : ''}
+
+        ${postsHtml ? `<div class="audit-report__section">
+          <h4 class="audit-report__section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            Posts We'd Create For You
+          </h4>
+          <div class="audit-phones-row">${postsHtml}</div>
+        </div>` : ''}
+
+        ${audit.revenue_opportunity ? `<div class="audit-report__revenue">
+          <div class="audit-report__revenue-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div>
+            <h4 class="audit-report__section-title" style="color:var(--color-accent);margin-bottom:4px;">Revenue Opportunity</h4>
+            <p>${audit.revenue_opportunity}</p>
+          </div>
+        </div>` : ''}
+
+        ${coachTeaser}
+        ${competitorTeaser}
+
+        <div class="audit-report__final-cta">
+          <h3>Ready to turn this into results?</h3>
+          <p>Everything above — the AI content, the coaching, the competitor intel — runs on autopilot for $297/mo.</p>
+          <div class="audit-report__final-btns">
+            <a href="https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03" class="btn btn--primary btn--lg" target="_blank" rel="noopener">Start Now — $297/mo</a>
+            <a href="https://buy.stripe.com/28E28r4yD2DK0002WrcQU04" class="btn btn--lg audit-report__annual-btn" target="_blank" rel="noopener">Save $600/yr — Annual Plan</a>
+          </div>
+          <p class="audit-report__final-note">Cancel anytime. No contracts. No lock-in.</p>
+        </div>
+      </div>
+    `;
+
+    return html;
+  }
+
+  if (auditForm) {
+    const urlInput = document.getElementById('audit-url');
+    const emailInput = document.getElementById('audit-email');
+    if (urlInput) urlInput.addEventListener('input', () => clearFieldError('audit-url'));
+    if (emailInput) emailInput.addEventListener('input', () => clearFieldError('audit-email'));
+
+    auditForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const url = urlInput.value.trim();
+      const email = emailInput.value.trim();
+      const name = document.getElementById('audit-name')?.value.trim() || '';
+
+      let valid = true;
+      clearFieldError('audit-url');
+      clearFieldError('audit-email');
+
+      if (!url) { setFieldError('audit-url', 'Please enter your website URL.'); valid = false; }
+      else if (!validateURL(url)) { setFieldError('audit-url', 'Enter a valid URL (e.g. yourstore.com).'); valid = false; }
+      if (!email) { setFieldError('audit-email', 'Please enter your email.'); valid = false; }
+      else if (!validateEmail(email)) { setFieldError('audit-email', 'Enter a valid email address.'); valid = false; }
+      if (!valid) return;
+
+      // Show processing animation
+      const stopAnimation = showProcessingAnimation();
+
+      try {
+        const response = await fetch(`${API_BASE}/api/audit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ website: normalizeURL(url), email, name, instagram_handle: document.getElementById('audit-instagram')?.value || '', tiktok_handle: document.getElementById('audit-tiktok')?.value || '', facebook_handle: document.getElementById('audit-facebook')?.value || '' }),
+        });
+
+        if (!response.ok) throw new Error('Audit request failed');
+        const data = await response.json();
+
+        stopAnimation();
+
+        if (data.success && data.audit) {
+          // Show results on screen
+          auditForm.hidden = true;
+          if (auditSuccess) auditSuccess.hidden = true;
+          if (auditError) auditError.hidden = true;
+
+          // Create results container if it doesn't exist
+          let resultsEl = document.getElementById('audit-results');
+          if (!resultsEl) {
+            resultsEl = document.createElement('div');
+            resultsEl.id = 'audit-results';
+            auditForm.parentNode.insertBefore(resultsEl, auditForm.nextSibling);
+          }
+          resultsEl.innerHTML = renderAuditResults(data);
+          resultsEl.hidden = false;
+
+          // Smooth scroll to results
+          resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          throw new Error('Invalid response');
+        }
+      } catch (err) {
+        console.error('Audit error:', err);
+        stopAnimation();
+        if (auditError) {
+          auditError.hidden = false;
+          auditForm.hidden = true;
+        }
+      }
+    });
+  }
+
+  if (auditRetry) {
+    auditRetry.addEventListener('click', () => {
+      if (auditForm) auditForm.hidden = false;
+      if (auditError) auditError.hidden = true;
+      if (auditSuccess) auditSuccess.hidden = true;
+      const resultsEl = document.getElementById('audit-results');
+      if (resultsEl) resultsEl.hidden = true;
+    });
+  }
+
+  // --- Initialize Lucide Icons ---
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  } else {
+    window.addEventListener('load', () => {
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+  }
+
+})();

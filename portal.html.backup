@@ -1,0 +1,2720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client Portal — SocialEngine</title>
+  <meta name="description" content="Sign in to your SocialEngine client portal. Manage your social media content, analytics, and brand voice all in one place.">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-grotesk@400,500,600,700&f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <link rel="stylesheet" href="./base.css">
+  <link rel="stylesheet" href="./style.css">
+  <style>
+    /* Portal-specific styles */
+    .portal-hero { padding: var(--space-16) 0 var(--space-20); min-height: calc(100vh - 4rem); display: flex; align-items: center; }
+    .portal-hero__layout { display: grid; grid-template-columns: 420px 1fr; gap: var(--space-16); align-items: start; }
+
+    /* Login Card */
+    .login-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-10); box-shadow: var(--shadow-lg); position: sticky; top: 6rem; }
+    .login-card__title { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 600; color: var(--color-text); margin-bottom: var(--space-1); }
+    .login-card__subtitle { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-8); }
+    .login-field { margin-bottom: var(--space-5); }
+    .login-field__label { display: block; font-size: var(--text-sm); font-weight: 500; color: var(--color-text); margin-bottom: var(--space-2); }
+    .login-field__input-wrap { position: relative; }
+    .login-field__input { width: 100%; padding: 0.75rem 1rem; font-size: var(--text-sm); background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text); outline: none; transition: border-color var(--transition-interactive), box-shadow var(--transition-interactive); }
+    .login-field__input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    .login-field__input::placeholder { color: var(--color-text-faint); }
+    .login-field__toggle-pw { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--color-text-faint); padding: 0.25rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; }
+    .login-field__toggle-pw:hover { color: var(--color-text-muted); }
+    .login-extras { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-6); }
+    .login-remember { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+    .login-remember input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--color-accent); cursor: pointer; }
+    .login-remember span { font-size: var(--text-sm); color: var(--color-text-muted); }
+    .login-forgot { font-size: var(--text-sm); color: var(--color-primary); text-decoration: none; font-weight: 500; }
+    .login-btn { width: 100%; padding: 0.875rem 1.5rem; background: var(--color-accent); color: #fff; font-family: var(--font-body); font-weight: 600; font-size: var(--text-sm); border: none; border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: var(--space-2); transition: background var(--transition-interactive); }
+    .login-btn:hover { background: var(--color-accent-hover); }
+    .login-btn.loading { pointer-events: none; opacity: 0.7; }
+    .login-btn__spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    .login-btn.loading .login-btn__spinner { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .login-error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: var(--space-5); font-size: var(--text-sm); color: #EF4444; display: none; }
+    .login-error.visible { display: block; }
+    .login-footer { margin-top: var(--space-6); text-align: center; font-size: var(--text-sm); color: var(--color-text-muted); }
+    .login-footer a { color: var(--color-primary); text-decoration: none; font-weight: 500; }
+
+    /* Feature Showcase */
+    .features-showcase__title { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 600; color: var(--color-text); margin-bottom: var(--space-2); }
+    .features-showcase__subtitle { font-size: var(--text-base); color: var(--color-text-muted); margin-bottom: var(--space-10); line-height: 1.6; }
+    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-5); }
+    .feature-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); opacity: 0; transform: translateY(12px); transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out); }
+    .feature-card.revealed { opacity: 1; transform: translateY(0); }
+    .feature-card__icon { color: var(--color-primary); margin-bottom: var(--space-3); }
+    .feature-card__icon i { width: 24px; height: 24px; }
+    .feature-card__name { font-family: var(--font-display); font-size: var(--text-sm); font-weight: 600; color: var(--color-text); margin-bottom: var(--space-2); }
+    .feature-card__desc { font-size: 0.8125rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
+
+    /* Dashboard */
+    .dashboard { display: none; min-height: 100vh; }
+    .dashboard.active { display: grid; grid-template-columns: 240px 1fr; }
+    .dash-sidebar { background: #0A1628; padding: var(--space-6); display: flex; flex-direction: column; min-height: 100vh; position: sticky; top: 0; }
+    .dash-sidebar__logo { display: flex; align-items: center; gap: var(--space-3); color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 1.125rem; text-decoration: none; margin-bottom: var(--space-8); }
+    .dash-sidebar__nav { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .dash-nav-item { display: flex; align-items: center; gap: var(--space-3); padding: 0.625rem 0.75rem; border-radius: var(--radius-md); color: rgba(255,255,255,0.6); font-size: 0.875rem; font-weight: 500; background: none; border: none; cursor: pointer; width: 100%; text-align: left; transition: all 0.15s; }
+    .dash-nav-item:hover { color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.06); }
+    .dash-nav-item.active { color: #fff; background: rgba(59,130,246,0.15); }
+    .dash-nav-item i { width: 18px; height: 18px; }
+    .dash-sidebar__user { padding-top: var(--space-6); border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: var(--space-3); }
+    .dash-sidebar__avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #3B82F6, #60A5FA); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+    .dash-sidebar__user-name { font-size: 0.8125rem; font-weight: 600; color: #fff; }
+    .dash-sidebar__user-email { font-size: 0.6875rem; color: rgba(255,255,255,0.5); }
+    .dash-main { background: var(--color-bg); overflow-y: auto; min-height: 100vh; }
+    .dash-topbar { display: flex; align-items: center; justify-content: space-between; padding: var(--space-5) var(--space-8); border-bottom: 1px solid var(--color-border); }
+    .dash-topbar__greeting { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600; color: var(--color-text); }
+    .dash-topbar__actions { display: flex; align-items: center; gap: var(--space-4); }
+    .dash-logout-btn { padding: 0.5rem 0.75rem; font-size: 0.75rem; font-weight: 500; color: var(--color-text-muted); background: transparent; border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; }
+    .dash-content { padding: var(--space-8); }
+    .content-filter { padding: 6px 14px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: transparent; color: var(--color-text-muted); font-size: 0.8125rem; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+    .content-filter:hover { border-color: var(--color-accent); color: var(--color-text); }
+    .content-filter.active { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-5); margin-bottom: var(--space-8); }
+    .kpi-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); }
+    .kpi-card__label { font-size: 0.75rem; color: var(--color-text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: var(--space-2); }
+    .kpi-card__value { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; color: var(--color-text); }
+    .kpi-card__trend { font-size: 0.75rem; font-weight: 600; margin-top: var(--space-1); }
+    .kpi-card__trend.up { color: #10B981; }
+    .kpi-card__trend.neutral { color: var(--color-text-muted); }
+    .dash-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+    .dash-card__header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--color-border); }
+    .dash-card__title { font-family: var(--font-display); font-size: 0.9375rem; font-weight: 600; color: var(--color-text); margin: 0; }
+
+    /* Post items with approve/reject */
+    .post-item { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--color-divider); }
+    .post-item:last-child { border-bottom: none; }
+    .post-item__platform { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; font-size: 0.75rem; }
+    .post-item__platform.instagram { background: linear-gradient(135deg, #833AB4, #E1306C, #F77737); }
+    .post-item__platform.tiktok { background: #000; border: 1px solid rgba(255,255,255,0.15); }
+    .post-item__platform.facebook { background: #1877F2; }
+    .post-item__platform.linkedin { background: #0A66C2; }
+    .post-item__platform.pinterest { background: #E60023; }
+    .post-item__content { flex: 1; min-width: 0; }
+    .post-item__text { font-size: 0.8125rem; color: var(--color-text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+    .post-item__meta { font-size: 0.6875rem; color: var(--color-text-faint); }
+    .post-item__status { display: inline-flex; align-items: center; padding: 0.2rem 0.5rem; border-radius: var(--radius-full); font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; }
+    .post-item__status.Approved, .post-item__status.approved { background: rgba(16,185,129,0.1); color: #10B981; }
+    .post-item__status.Pending, .post-item__status.pending { background: rgba(245,158,11,0.1); color: #F59E0B; }
+    .post-item__status.Rejected, .post-item__status.rejected { background: rgba(239,68,68,0.1); color: #EF4444; }
+    .post-item__status.Draft, .post-item__status.draft { background: var(--color-surface-2); color: var(--color-text-faint); }
+    .post-item__status.Ready\ for\ Review { background: rgba(245,158,11,0.1); color: #F59E0B; }
+    .post-item__actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+    .post-item__btn { padding: 0.25rem 0.625rem; font-size: 0.6875rem; font-weight: 600; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; }
+    .post-item__btn--approve { color: #10B981; background: rgba(16,185,129,0.1); }
+    .post-item__btn--approve:hover { background: rgba(16,185,129,0.2); }
+    .post-item__btn--reject { color: #EF4444; background: rgba(239,68,68,0.1); }
+    .post-item__btn--reject:hover { background: rgba(239,68,68,0.2); }
+
+    /* Rejection modal */
+    .reject-modal { position: fixed; inset: 0; z-index: 10001; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
+    .reject-modal.active { display: flex; }
+    .reject-modal__card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-8); max-width: 440px; width: 90%; }
+    .reject-modal__title { font-family: var(--font-display); font-size: var(--text-base); font-weight: 600; color: var(--color-text); margin: 0 0 var(--space-4); }
+    .reject-modal__textarea { width: 100%; min-height: 100px; padding: 0.75rem; font-size: var(--text-sm); background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text); resize: vertical; outline: none; font-family: var(--font-body); }
+    .reject-modal__textarea:focus { border-color: var(--color-primary); }
+    .reject-modal__actions { display: flex; gap: var(--space-3); justify-content: flex-end; margin-top: var(--space-5); }
+    .reject-modal__btn { padding: 0.5rem 1rem; font-size: var(--text-sm); font-weight: 600; border: none; border-radius: var(--radius-md); cursor: pointer; }
+    .reject-modal__btn--cancel { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
+    .reject-modal__btn--submit { background: #EF4444; color: #fff; }
+
+    /* Upgrade gate */
+    .upgrade-gate { position: relative; }
+    .upgrade-gate__overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(10,22,40,0.92), rgba(15,25,50,0.95)); backdrop-filter: blur(6px); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; text-align: center; padding: var(--space-8); }
+    .upgrade-gate__title { font-family: var(--font-display); font-size: var(--text-base); font-weight: 600; color: #fff; margin: 0 0 var(--space-2); }
+    .upgrade-gate__desc { font-size: var(--text-sm); color: rgba(255,255,255,0.7); margin: 0 0 var(--space-4); }
+    .upgrade-gate__btn { padding: 0.625rem 1.25rem; background: var(--color-accent); color: #fff; font-weight: 600; font-size: var(--text-sm); border: none; border-radius: var(--radius-md); cursor: pointer; text-decoration: none; }
+
+    /* Rich upgrade prompt (inline) */
+    .upgrade-prompt { background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(139,92,246,0.06)); border: 1px solid rgba(59,130,246,0.18); border-radius: 12px; padding: 28px 24px; margin-bottom: var(--space-6); }
+    .upgrade-prompt__badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(59,130,246,0.12); border-radius: 20px; font-size: 0.6875rem; font-weight: 600; color: #3B82F6; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .upgrade-prompt__title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; color: var(--color-text); margin: 0 0 6px; }
+    .upgrade-prompt__subtitle { font-size: 0.8125rem; color: var(--color-text-muted); margin: 0 0 16px; line-height: 1.5; }
+    .upgrade-prompt__benefits { list-style: none; padding: 0; margin: 0 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .upgrade-prompt__benefit { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8125rem; color: var(--color-text); line-height: 1.4; }
+    .upgrade-prompt__benefit-icon { color: #10B981; flex-shrink: 0; margin-top: 1px; }
+    .upgrade-prompt__cta-row { display: flex; align-items: center; gap: 16px; }
+    .upgrade-prompt__cta { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: var(--color-accent); color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem; transition: background 0.15s, transform 0.15s; }
+    .upgrade-prompt__cta:hover { background: var(--color-accent-hover); transform: translateY(-1px); }
+    .upgrade-prompt__price { font-size: 0.8125rem; color: var(--color-text-muted); }
+    .upgrade-prompt__price strong { color: var(--color-text); font-size: 1rem; }
+
+    /* Full-page upgrade gate (for locked pages) */
+    .upgrade-fullpage { text-align: center; padding: 48px 32px; max-width: 520px; margin: 0 auto; }
+    .upgrade-fullpage__icon { width: 56px; height: 56px; background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12)); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #3B82F6; }
+    .upgrade-fullpage__title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--color-text); margin: 0 0 8px; }
+    .upgrade-fullpage__desc { font-size: 0.875rem; color: var(--color-text-muted); line-height: 1.6; margin: 0 0 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
+    .upgrade-fullpage__benefits { list-style: none; padding: 0; margin: 0 0 28px; display: inline-flex; flex-direction: column; gap: 10px; text-align: left; }
+    .upgrade-fullpage__benefit { display: flex; align-items: center; gap: 10px; font-size: 0.875rem; color: var(--color-text); }
+    .upgrade-fullpage__benefit svg { color: #10B981; flex-shrink: 0; }
+    .upgrade-fullpage__cta { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: var(--color-accent); color: #fff; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 0.9375rem; transition: background 0.15s, transform 0.15s; }
+    .upgrade-fullpage__cta:hover { background: var(--color-accent-hover); transform: translateY(-1px); }
+    .upgrade-fullpage__note { font-size: 0.75rem; color: var(--color-text-faint); margin-top: 12px; }
+
+    /* Onboarding flow */
+    .onboarding-overlay { position: fixed; inset: 0; z-index: 200; background: var(--color-bg); overflow-y: auto; display: none; }
+    .onboarding-overlay.active { display: block; }
+    .onboarding-container { max-width: 600px; margin: 0 auto; padding: var(--space-16) var(--space-6); }
+    .onboarding-header { text-align: center; margin-bottom: var(--space-12); }
+    .onboarding-header h2 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; color: var(--color-text); margin: 0 0 var(--space-3); }
+    .onboarding-header p { font-size: var(--text-base); color: var(--color-text-muted); line-height: 1.6; }
+    .onboarding-step { display: none; }
+    .onboarding-step.active { display: block; }
+    .onboarding-step__label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-primary); margin-bottom: var(--space-3); }
+    .onboarding-step__question { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600; color: var(--color-text); margin: 0 0 var(--space-2); }
+    .onboarding-step__hint { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0 0 var(--space-6); line-height: 1.5; }
+    .onboarding-step__textarea { width: 100%; min-height: 120px; padding: 1rem; font-size: var(--text-sm); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); color: var(--color-text); resize: vertical; outline: none; font-family: var(--font-body); line-height: 1.6; }
+    .onboarding-step__textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .onboarding-options { display: grid; gap: var(--space-3); }
+    .onboarding-option { padding: var(--space-4); background: var(--color-surface); border: 2px solid var(--color-border); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.15s; text-align: left; }
+    .onboarding-option:hover { border-color: var(--color-primary); }
+    .onboarding-option.selected { border-color: var(--color-primary); background: rgba(59,130,246,0.05); }
+    .onboarding-option__label { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); margin-bottom: 2px; }
+    .onboarding-option__desc { font-size: 0.8125rem; color: var(--color-text-muted); }
+    .onboarding-nav { display: flex; justify-content: space-between; margin-top: var(--space-8); }
+    .onboarding-nav__btn { padding: 0.75rem 1.5rem; font-size: var(--text-sm); font-weight: 600; border: none; border-radius: var(--radius-md); cursor: pointer; }
+    .onboarding-nav__btn--back { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
+    .onboarding-nav__btn--next { background: var(--color-primary); color: #fff; }
+    .onboarding-nav__btn--submit { background: var(--color-accent); color: #fff; }
+    .onboarding-progress { display: flex; gap: 4px; justify-content: center; margin-bottom: var(--space-8); }
+    .onboarding-progress__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-border); transition: background 0.2s; }
+    .onboarding-progress__dot.active { background: var(--color-primary); }
+    .onboarding-progress__dot.done { background: var(--color-accent); }
+
+    /* No content state */
+    .empty-state { padding: var(--space-12); text-align: center; }
+    .empty-state__icon { color: var(--color-text-faint); margin-bottom: var(--space-4); }
+    .empty-state__title { font-family: var(--font-display); font-size: var(--text-base); font-weight: 600; color: var(--color-text); margin: 0 0 var(--space-2); }
+    .empty-state__desc { font-size: var(--text-sm); color: var(--color-text-muted); }
+
+    /* Loading */
+    .dash-loading { display: flex; align-items: center; justify-content: center; padding: var(--space-16); }
+    .dash-loading__spinner { width: 32px; height: 32px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+    /* Mobile responsive */
+    .dash-mobile-toggle { display: none; position: fixed; bottom: var(--space-6); right: var(--space-6); z-index: 88; width: 52px; height: 52px; border-radius: var(--radius-xl); background: #0A1628; color: #fff; border: 2px solid rgba(255,255,255,0.15); box-shadow: 0 4px 20px rgba(10,22,40,0.4); align-items: center; justify-content: center; cursor: pointer; }
+    .dash-mobile-toggle i { width: 20px; height: 20px; }
+    .dash-sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 89; }
+    .dash-sidebar-overlay.active { display: block; }
+
+    .portal-login-view { transition: opacity 0.3s var(--ease-out); }
+    .portal-login-view.hidden { opacity: 0; pointer-events: none; position: absolute; width: 0; height: 0; overflow: hidden; }
+
+    @media (max-width: 1024px) {
+      .portal-hero__layout { grid-template-columns: 1fr; }
+      .features-showcase { order: 1; }
+      .login-card { position: static; max-width: 420px; margin: 0 auto; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .dashboard.active { grid-template-columns: 1fr; }
+      .dash-sidebar { position: fixed; left: -260px; top: 0; bottom: 0; z-index: 90; width: 240px; transition: left 0.3s; }
+      .dash-sidebar.open { left: 0; }
+      .dash-mobile-toggle { display: flex; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 640px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ━━━ Post Preview Lightbox ━━━ */
+    .lightbox-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(4px); cursor: pointer; }
+    .lightbox-overlay.active { display: flex; }
+    .lightbox-content { max-width: 520px; width: 100%; background: var(--color-surface); border-radius: var(--radius-xl); overflow: hidden; cursor: default; box-shadow: 0 24px 48px rgba(0,0,0,0.4); border: 1px solid var(--color-border); }
+    .lightbox-img { width: 100%; max-height: 520px; object-fit: contain; display: block; background: #000; }
+    .lightbox-caption { padding: 20px; font-size: var(--text-sm); color: var(--color-text); line-height: 1.6; max-height: 200px; overflow-y: auto; }
+    .lightbox-meta { padding: 0 20px 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .lightbox-tag { padding: 3px 10px; border-radius: var(--radius-full); font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; background: rgba(59,130,246,0.1); color: var(--color-primary); }
+    .lightbox-close { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.6); border: none; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10001; transition: background 0.15s; }
+    .lightbox-close:hover { background: rgba(0,0,0,0.8); }
+
+    /* ━━━ AI Coach Chat ━━━ */
+    .chat-container { display: flex; flex-direction: column; height: calc(100vh - 9rem); min-height: 500px; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); scroll-behavior: smooth; }
+    .chat-msg { max-width: 80%; padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); font-size: var(--text-sm); line-height: 1.6; word-break: break-word; }
+    .chat-msg--user { margin-left: auto; background: var(--color-primary); color: #fff; border-bottom-right-radius: 4px; }
+    .chat-msg--ai { margin-right: auto; background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text); border-bottom-left-radius: 4px; }
+    .chat-msg--ai strong { color: var(--color-text); font-weight: 600; }
+    .chat-msg--typing { opacity: 0.6; font-style: italic; }
+    .chat-input-area { border-top: 1px solid var(--color-border); padding: var(--space-4) var(--space-6); background: var(--color-surface); }
+    .chat-suggestions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+    .chat-chip { padding: 0.375rem 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 500; color: var(--color-text-muted); background: var(--color-surface-2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .chat-chip:hover { border-color: var(--color-primary); color: var(--color-primary); background: rgba(59,130,246,0.06); }
+    .chat-input-bar { display: flex; gap: var(--space-3); align-items: flex-end; }
+    .chat-input { flex: 1; padding: 0.75rem 1rem; font-size: var(--text-sm); background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-lg); color: var(--color-text); outline: none; resize: none; min-height: 44px; max-height: 120px; font-family: var(--font-body); line-height: 1.5; transition: border-color 0.15s, box-shadow 0.15s; }
+    .chat-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+    .chat-input::placeholder { color: var(--color-text-faint); }
+    .chat-send-btn { width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--color-primary); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, opacity 0.15s; }
+    .chat-send-btn:hover { background: #2563EB; }
+    .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .chat-send-btn i { width: 18px; height: 18px; }
+    .chat-page-header { padding: var(--space-6) var(--space-8) 0; display: flex; align-items: center; gap: var(--space-3); }
+    .chat-page-header__icon { width: 40px; height: 40px; border-radius: var(--radius-md); background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2)); border: 1px solid rgba(59,130,246,0.2); display: flex; align-items: center; justify-content: center; color: var(--color-primary); }
+    .chat-page-header__title { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600; color: var(--color-text); margin: 0; }
+    .chat-page-header__sub { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0; }
+
+    /* ━━━ Competitor Intel ━━━ */
+    .ci-page { padding: var(--space-8); max-width: 960px; }
+    .ci-header { margin-bottom: var(--space-8); }
+    .ci-header__title { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; color: var(--color-text); margin: 0 0 var(--space-2); }
+    .ci-header__sub { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0; }
+    .ci-input-row { display: flex; gap: var(--space-3); margin-bottom: var(--space-8); }
+    .ci-url-input { flex: 1; padding: 0.75rem 1rem; font-size: var(--text-sm); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text); outline: none; font-family: var(--font-body); transition: border-color 0.15s, box-shadow 0.15s; }
+    .ci-url-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+    .ci-url-input::placeholder { color: var(--color-text-faint); }
+    .ci-analyze-btn { padding: 0.75rem 1.5rem; background: var(--color-primary); color: #fff; font-weight: 600; font-size: var(--text-sm); border: none; border-radius: var(--radius-md); cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: var(--space-2); transition: background 0.15s; }
+    .ci-analyze-btn:hover { background: #2563EB; }
+    .ci-analyze-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .ci-loading { display: none; align-items: center; gap: var(--space-4); padding: var(--space-10); color: var(--color-text-muted); font-size: var(--text-sm); }
+    .ci-loading.visible { display: flex; }
+    .ci-spinner { width: 24px; height: 24px; border: 2px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+    .ci-error { display: none; padding: var(--space-5) var(--space-6); background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: var(--radius-lg); color: #EF4444; font-size: var(--text-sm); margin-bottom: var(--space-6); }
+    .ci-error.visible { display: block; }
+    .ci-results { display: none; }
+    .ci-results.visible { display: block; }
+    .ci-score-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); margin-bottom: var(--space-6); }
+    .ci-score-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); text-align: center; }
+    .ci-score-card__label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin-bottom: var(--space-3); }
+    .ci-score-card__value { font-family: var(--font-display); font-size: 3rem; font-weight: 700; line-height: 1; margin-bottom: var(--space-2); }
+    .ci-score-card__value--high { color: #10B981; }
+    .ci-score-card__value--mid { color: #F59E0B; }
+    .ci-score-card__value--low { color: #EF4444; }
+    .ci-score-card__sub { font-size: var(--text-sm); color: var(--color-text-muted); }
+    .ci-section { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: var(--space-5); }
+    .ci-section__header { padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--color-border); display: flex; align-items: center; gap: var(--space-3); }
+    .ci-section__title { font-family: var(--font-display); font-size: 0.9375rem; font-weight: 600; color: var(--color-text); margin: 0; }
+    .ci-section__body { padding: var(--space-5) var(--space-6); }
+    .ci-summary { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.7; margin: 0; }
+    .ci-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .ci-table th { text-align: left; padding: var(--space-2) var(--space-4); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); }
+    .ci-table td { padding: var(--space-3) var(--space-4); color: var(--color-text); border-bottom: 1px solid var(--color-border); }
+    .ci-table tr:last-child td { border-bottom: none; }
+    .ci-table td:first-child { color: var(--color-text-muted); font-weight: 500; }
+    .ci-swot { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); padding: var(--space-5) var(--space-6); }
+    .ci-swot-card { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); }
+    .ci-swot-card__label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-2); }
+    .ci-swot-card--s .ci-swot-card__label { color: #10B981; }
+    .ci-swot-card--w .ci-swot-card__label { color: #EF4444; }
+    .ci-swot-card--o .ci-swot-card__label { color: #3B82F6; }
+    .ci-swot-card--t .ci-swot-card__label { color: #F59E0B; }
+    .ci-swot-card ul { margin: 0; padding-left: 1.1rem; }
+    .ci-swot-card li { font-size: 0.8125rem; color: var(--color-text-muted); margin-bottom: var(--space-1); line-height: 1.5; }
+    .ci-ideas-list { padding: var(--space-5) var(--space-6); counter-reset: ideas; list-style: none; margin: 0; }
+    .ci-ideas-list li { counter-increment: ideas; display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.5; }
+    .ci-ideas-list li:last-child { border-bottom: none; }
+    .ci-ideas-list li::before { content: counter(ideas); min-width: 24px; height: 24px; border-radius: 50%; background: rgba(59,130,246,0.1); color: var(--color-primary); font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    /* Onboarding social handle fields */
+    .onb-field { display: flex; flex-direction: column; gap: 6px; }
+    .onb-label { font-size: 0.8125rem; font-weight: 500; color: var(--color-text); }
+    .onb-input { width: 100%; padding: 0.625rem 0.875rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-sm); color: var(--color-text); outline: none; box-sizing: border-box; font-family: var(--font-body); }
+    .onb-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .onb-input::placeholder { color: var(--color-text-muted); }
+
+    /* Shopify Connect UI */
+    .shopify-connect-steps { counter-reset: shopify-step; list-style: none; padding: 0; margin: 0 0 var(--space-6); }
+    .shopify-connect-steps li { counter-increment: shopify-step; display: flex; gap: 12px; align-items: flex-start; padding: var(--space-3) 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .shopify-connect-steps li:last-child { border-bottom: none; }
+    .shopify-connect-steps li::before { content: counter(shopify-step); min-width: 24px; height: 24px; border-radius: 50%; background: rgba(20,184,166,0.15); color: var(--color-accent); font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .shopify-connect-steps li span { font-size: 0.8125rem; color: var(--color-text-muted); line-height: 1.5; }
+    .shopify-connect-steps li strong { color: var(--color-text); }
+    .connect-form-group { margin-bottom: var(--space-4); }
+    .connect-form-label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+    .connect-form-input { width: 100%; padding: 0.75rem 1rem; background: var(--color-surface-2, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text); font-size: var(--text-sm); outline: none; font-family: var(--font-body); box-sizing: border-box; transition: border-color 0.15s; }
+    .connect-form-input:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(20,184,166,0.12); }
+    .connect-form-input::placeholder { color: var(--color-text-muted); }
+    .connect-btn { display: inline-flex; align-items: center; gap: 8px; padding: 0.75rem 1.5rem; background: var(--color-accent); color: #fff; font-weight: 600; font-size: var(--text-sm); border: none; border-radius: var(--radius-md); cursor: pointer; transition: background 0.15s, opacity 0.15s; font-family: var(--font-body); }
+    .connect-btn:hover { background: var(--color-accent-hover, #0d9488); }
+    .connect-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .connect-btn--secondary { background: transparent; border: 1px solid var(--color-border); color: var(--color-text-muted); }
+    .connect-btn--secondary:hover { border-color: var(--color-accent); color: var(--color-accent); background: transparent; }
+    .connect-status { display: flex; align-items: center; gap: 10px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); font-size: var(--text-sm); font-weight: 500; margin-bottom: var(--space-4); }
+    .connect-status--success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: #10B981; }
+    .connect-status--error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #EF4444; }
+    .connect-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .connect-status-dot--green { background: #10B981; box-shadow: 0 0 6px #10B981; }
+    .connect-status-dot--gray { background: #6B7280; }
+    .instagram-connect-btn { display: inline-flex; align-items: center; gap: 10px; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #833AB4, #E1306C, #F77737); color: #fff; font-weight: 600; font-size: var(--text-sm); border: none; border-radius: var(--radius-md); cursor: pointer; text-decoration: none; font-family: var(--font-body); transition: opacity 0.15s; }
+    .instagram-connect-btn:hover { opacity: 0.9; }
+
+    /* Analytics upgrade styles */
+    .analytics-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
+    @media (max-width: 1024px) { .analytics-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .analytics-kpi-grid { grid-template-columns: 1fr; } }
+    .analytics-kpi-card { background: var(--color-surface); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: var(--space-5); }
+    .analytics-kpi-card__label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+    .analytics-kpi-card__value { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--color-text); line-height: 1; margin-bottom: 4px; }
+    .analytics-kpi-card__sub { font-size: 0.75rem; color: var(--color-text-muted); }
+    .analytics-kpi-card__value--green { color: #10B981; }
+    .analytics-kpi-card__value--yellow { color: #F59E0B; }
+    .analytics-kpi-card__value--red { color: #EF4444; }
+    .analytics-charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); margin-bottom: var(--space-5); }
+    @media (max-width: 800px) { .analytics-charts-row { grid-template-columns: 1fr; } }
+    .analytics-card { background: var(--color-surface); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); overflow: hidden; }
+    .analytics-card__header { padding: var(--space-4) var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .analytics-card__title { font-family: var(--font-display); font-size: 0.9rem; font-weight: 600; color: var(--color-text); margin: 0; }
+    .analytics-card__body { padding: var(--space-5); }
+    .bar-row { margin-bottom: var(--space-3); }
+    .bar-row__meta { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.8rem; }
+    .bar-row__track { height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+    .bar-row__fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+    /* Donut chart CSS-only */
+    .donut-wrap { display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+    .donut-legend { display: flex; flex-direction: column; gap: var(--space-2); flex: 1; }
+    .donut-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--color-text-muted); }
+    .donut-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    /* Timeline bar chart */
+    .timeline-bars { display: flex; align-items: flex-end; gap: 6px; height: 100px; }
+    .timeline-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .timeline-bar { width: 100%; background: var(--color-accent); border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.6s ease; opacity: 0.8; }
+    .timeline-bar:hover { opacity: 1; }
+    .timeline-label { font-size: 0.6rem; color: var(--color-text-muted); text-align: center; white-space: nowrap; }
+    /* Social profile cards */
+    .social-profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+    @media (max-width: 640px) { .social-profile-grid { grid-template-columns: 1fr; } }
+    .social-profile-card { background: var(--color-surface); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: var(--space-5); }
+    .social-profile-card__platform { display: flex; align-items: center; gap: 10px; margin-bottom: var(--space-4); }
+    .social-profile-card__icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    .social-profile-card__name { font-weight: 600; font-size: var(--text-sm); color: var(--color-text); }
+    .social-profile-card__handle { font-size: 0.75rem; color: var(--color-text-muted); }
+    .social-stat-row { display: flex; gap: var(--space-5); }
+    .social-stat { }
+    .social-stat__num { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--color-text); }
+    .social-stat__label { font-size: 0.7rem; color: var(--color-text-muted); font-weight: 500; }
+    /* Brand voice summary */
+    .bv-tag { display: inline-flex; padding: 3px 10px; background: rgba(20,184,166,0.12); border: 1px solid rgba(20,184,166,0.2); border-radius: var(--radius-full); font-size: 0.75rem; color: var(--color-accent); font-weight: 500; margin: 3px; }
+    .archetype-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1)); border: 1px solid rgba(59,130,246,0.2); border-radius: var(--radius-md); font-weight: 600; color: var(--color-text); font-size: var(--text-sm); margin-bottom: var(--space-4); }
+    /* Shopify intel cards */
+    .shopify-intel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
+    @media (max-width: 800px) { .shopify-intel-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    /* ━━━ Content Studio ━━━ */
+    .studio-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .studio-header__left h2 { font-family: var(--font-display); font-size: 1.375rem; font-weight: 700; color: var(--color-text); margin: 0 0 4px; }
+    .studio-header__left p { font-size: 0.8125rem; color: var(--color-text-muted); margin: 0; }
+    .studio-header__right { display: flex; gap: 8px; align-items: center; }
+    .studio-view-toggle { display: flex; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; }
+    .studio-view-btn { padding: 7px 14px; background: none; border: none; color: var(--color-text-muted); font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s; }
+    .studio-view-btn.active { background: var(--color-accent); color: #0A1628; }
+    .studio-view-btn svg { width: 14px; height: 14px; }
+    .studio-filters { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .studio-filter { padding: 6px 16px; border-radius: 100px; border: 1px solid var(--color-border); background: transparent; color: var(--color-text-muted); font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+    .studio-filter:hover { border-color: rgba(255,255,255,0.2); color: var(--color-text); }
+    .studio-filter.active { background: var(--color-accent); border-color: var(--color-accent); color: #0A1628; }
+    .studio-filter__count { font-size: 0.7rem; opacity: 0.7; }
+
+    /* Grid View */
+    .studio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    @media (max-width: 640px) { .studio-grid { grid-template-columns: 1fr; } }
+
+    /* Studio Card */
+    .studio-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; position: relative; }
+    .studio-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.12); }
+    .studio-card__media { position: relative; width: 100%; aspect-ratio: 1/1; background: #0a0a14; overflow: hidden; }
+    .studio-card__media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease; }
+    .studio-card:hover .studio-card__media img { transform: scale(1.03); }
+    .studio-card__media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .studio-card__video-badge { position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 5px; padding: 4px 10px; background: rgba(0,0,0,0.65); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.6rem; font-weight: 600; color: rgba(255,255,255,0.9); text-transform: uppercase; letter-spacing: 0.5px; }
+    .studio-card__video-badge svg { width: 12px; height: 12px; }
+    .studio-card__play-btn { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s; }
+    .studio-card:hover .studio-card__play-btn { opacity: 1; }
+    .studio-card__play-icon { width: 52px; height: 52px; border-radius: 50%; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); border: 2px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
+    .studio-card:hover .studio-card__play-icon { transform: scale(1.08); }
+    .studio-card__play-icon svg { width: 22px; height: 22px; fill: #fff; margin-left: 2px; }
+    .studio-card__empty-media { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #0d0d1a, #1a1025); color: var(--color-text-muted); }
+    .studio-card__empty-media svg { width: 36px; height: 36px; opacity: 0.4; margin-bottom: 8px; }
+    .studio-card__empty-media span { font-size: 0.75rem; opacity: 0.5; }
+    .studio-card__info { padding: 14px 16px; }
+    .studio-card__top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .studio-card__platform-icon { display: flex; align-items: center; color: rgba(255,255,255,0.45); }
+    .studio-card__format { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 8px; border-radius: 4px; }
+    .studio-card__date { font-size: 0.7rem; color: var(--color-text-muted); margin-left: auto; }
+    .studio-card__caption { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px; }
+    .studio-card__footer { display: flex; align-items: center; justify-content: space-between; }
+    .studio-card__status { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 100px; font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .studio-card__status--pending { background: rgba(245,158,11,0.08); color: #FBBF24; }
+    .studio-card__status--approved { background: var(--color-accent-soft); color: var(--color-accent); }
+    .studio-card__status--rejected { background: rgba(239,68,68,0.08); color: #F87171; }
+    .studio-card__status--scheduled { background: rgba(96,165,250,0.08); color: var(--color-primary); }
+    .studio-card__status--published { background: var(--color-accent-soft); color: var(--color-accent); }
+    .studio-card__status--regenerating { background: rgba(245,158,11,0.06); color: #FCD34D; }
+    .studio-card__status--draft { background: var(--color-surface-2); color: var(--color-text-faint); }
+    .studio-card__action-hint { font-size: 0.7rem; color: var(--color-text-faint); opacity: 0; transition: opacity 0.15s; }
+    .studio-card:hover .studio-card__action-hint { opacity: 1; }
+
+    /* Studio Modal */
+    .studio-modal { position: fixed; inset: 0; z-index: 10000; display: none; }
+    .studio-modal.active { display: flex; }
+    .studio-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); }
+    .studio-modal__panel { position: relative; z-index: 1; width: 100%; max-width: 960px; margin: auto; height: min(92vh, 700px); display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 32px 64px rgba(0,0,0,0.5); overflow: hidden; }
+    .studio-modal__close { position: absolute; top: 16px; right: 16px; z-index: 10; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+    .studio-modal__close:hover { background: rgba(0,0,0,0.7); }
+    .studio-modal__body { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; overflow: hidden; }
+    @media (max-width: 768px) { .studio-modal__panel { max-width: 100%; margin: 8px; border-radius: 12px; height: calc(100vh - 16px); } .studio-modal__body { grid-template-columns: 1fr; } }
+    .studio-modal__preview { background: #000; display: flex; align-items: center; justify-content: center; position: relative; border-radius: 16px 0 0 16px; overflow: hidden; }
+    @media (max-width: 768px) { .studio-modal__preview { border-radius: 16px 16px 0 0; min-height: 240px; max-height: 45vh; } }
+    .studio-modal__preview img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+    .studio-modal__preview video { max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: 0; }
+    .studio-modal__preview-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--color-text-muted); gap: 8px; }
+    .studio-modal__preview-empty svg { width: 48px; height: 48px; opacity: 0.3; }
+    .studio-modal__details { padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; min-height: 0; }
+    .studio-modal__meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-right: 40px; }
+    .studio-modal__meta-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 6px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .studio-modal__caption-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin-bottom: 6px; }
+    .studio-modal__caption-area { width: 100%; min-height: 72px; max-height: 140px; padding: 12px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--color-border); border-radius: 10px; color: var(--color-text); font-size: 0.8rem; line-height: 1.55; resize: vertical; outline: none; font-family: var(--font-body); transition: border-color 0.15s; box-sizing: border-box; }
+    .studio-modal__caption-area:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-soft); }
+    .studio-modal__caption-hint { font-size: 0.7rem; color: var(--color-text-faint); margin-top: 4px; }
+    .studio-modal__brief { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 14px; max-height: 120px; overflow-y: auto; }
+    .studio-modal__brief-title { font-size: 0.7rem; font-weight: 600; color: var(--color-text-faint); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .studio-modal__brief-text { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.5; white-space: pre-line; }
+    .studio-modal__actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--color-border); margin-top: auto; flex-shrink: 0; }
+    .studio-modal__btn { padding: 8px 16px; font-size: 0.78rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s; font-family: var(--font-body); }
+    .studio-modal__btn--approve { background: var(--color-accent); color: #0A1628; }
+    .studio-modal__btn--approve:hover { background: var(--color-accent-hover); }
+    .studio-modal__btn--reject { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
+    .studio-modal__btn--reject:hover { background: rgba(239,68,68,0.08); color: #F87171; border-color: rgba(239,68,68,0.2); }
+    .studio-modal__btn--regen { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
+    .studio-modal__btn--regen:hover { background: var(--color-accent-soft); color: var(--color-accent); border-color: var(--color-accent); }
+    .studio-modal__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .studio-modal__nav { display: flex; align-items: center; justify-content: space-between; padding-top: 8px; flex-shrink: 0; }
+    .studio-modal__nav-btn { padding: 8px 16px; background: transparent; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-muted); font-size: 0.8rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
+    .studio-modal__nav-btn:hover { background: var(--color-surface-2); color: var(--color-text); }
+    .studio-modal__nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .studio-modal__nav-btn svg { width: 14px; height: 14px; }
+    .studio-modal__counter { font-size: 0.75rem; color: var(--color-text-faint); }
+
+    /* List View (alternative) */
+    .studio-list { display: flex; flex-direction: column; gap: 2px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; }
+    .studio-list-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .studio-list-item:last-child { border-bottom: none; }
+    .studio-list-item:hover { background: rgba(255,255,255,0.03); }
+    .studio-list-item__thumb { width: 56px; height: 56px; border-radius: 8px; overflow: hidden; background: #0a0a14; flex-shrink: 0; }
+    .studio-list-item__thumb img, .studio-list-item__thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .studio-list-item__info { flex: 1; min-width: 0; }
+    .studio-list-item__title { font-size: 0.8125rem; font-weight: 500; color: var(--color-text); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 2px; }
+    .studio-list-item__meta { font-size: 0.7rem; color: var(--color-text-faint); display: flex; align-items: center; gap: 8px; }
+  </style>
+</head>
+<body>
+  <a href="#main" class="sr-only" style="position:absolute;top:0;left:0;padding:1rem;background:var(--color-primary);color:#fff;z-index:200;">Skip to content</a>
+
+  <header class="header" role="banner">
+    <div class="container header__inner">
+      <a href="index.html" class="header__logo" aria-label="SocialEngine home">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="8" stroke="currentColor" stroke-width="2.5"/><circle cx="11" cy="16" r="3" fill="currentColor"/><circle cx="21" cy="10" r="2.5" fill="currentColor" opacity="0.6"/><circle cx="21" cy="22" r="2.5" fill="currentColor" opacity="0.6"/><line x1="13.5" y1="14.5" x2="19" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="13.5" y1="17.5" x2="19" y2="21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        SocialEngine
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <ul class="header__nav-links" role="list">
+          <li><a href="index.html#how-it-works">How It Works</a></li>
+          <li><a href="index.html#pricing">Pricing</a></li>
+          <li><a href="index.html#faq">FAQ</a></li>
+          <li><a href="index.html#ai-audit" class="nav-audit-link">Free Audit</a></li>
+          <li><a href="portal.html" style="color: var(--color-primary);">Client Portal</a></li>
+        </ul>
+        <div class="header__actions">
+          <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+          <a href="index.html#pricing" class="btn btn--primary btn--sm">View Plans</a>
+          <button class="mobile-nav-toggle" aria-label="Open menu" aria-expanded="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <div class="mobile-nav" id="mobile-nav" role="dialog" aria-label="Navigation menu">
+    <button class="mobile-nav__close" aria-label="Close menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <ul class="mobile-nav__links" role="list">
+      <li><a href="index.html#how-it-works">How It Works</a></li>
+      <li><a href="index.html#pricing">Pricing</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="index.html#ai-audit">Free Audit</a></li>
+      <li><a href="portal.html">Client Portal</a></li>
+    </ul>
+  </div>
+
+  <main id="main">
+    <!-- LOGIN VIEW -->
+    <div class="portal-login-view" id="portal-login-view">
+      <section class="portal-hero" aria-labelledby="portal-title">
+        <div class="container">
+          <div class="portal-hero__layout">
+            <div class="login-card">
+              <h1 class="login-card__title" id="portal-title">Welcome Back</h1>
+              <p class="login-card__subtitle">Sign in to your SocialEngine dashboard</p>
+              <div class="login-error" id="login-error" role="alert">Invalid credentials. Contact us at hello@socialengine.agency for help.</div>
+              <form id="login-form" autocomplete="on">
+                <div class="login-field">
+                  <label class="login-field__label" for="login-email">Email</label>
+                  <div class="login-field__input-wrap"><input type="email" id="login-email" class="login-field__input" placeholder="you@company.com" autocomplete="email" required></div>
+                </div>
+                <div class="login-field">
+                  <label class="login-field__label" for="login-password">Password</label>
+                  <div class="login-field__input-wrap">
+                    <input type="password" id="login-password" class="login-field__input" placeholder="••••••••" autocomplete="current-password" required>
+                    <button type="button" class="login-field__toggle-pw" id="toggle-pw" aria-label="Show password"><i data-lucide="eye" style="width:16px;height:16px;"></i></button>
+                  </div>
+                </div>
+                <div class="login-extras">
+                  <label class="login-remember"><input type="checkbox" checked><span>Remember me</span></label>
+                  <a href="#" class="login-forgot" onclick="event.preventDefault(); document.getElementById('forgot-msg').style.display='block'; return false;">Forgot password?</a>
+                  <div id="forgot-msg" style="display:none;margin-top:12px;padding:14px 16px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;font-size:0.8125rem;color:var(--color-text);line-height:1.5;">Email <a href="mailto:hello@socialengine.agency" style="color:var(--color-primary);font-weight:600;">hello@socialengine.agency</a> and we'll reset your password within 24 hours.</div>
+                </div>
+                <button type="submit" class="login-btn" id="login-btn"><span class="login-btn__spinner"></span><span class="login-btn__text">Sign In</span></button>
+              </form>
+              <p class="login-footer">New client? <a href="index.html#ai-audit">Try a free audit &rarr;</a></p>
+            </div>
+            <div class="features-showcase">
+              <h2 class="features-showcase__title">Your Command Center</h2>
+              <p class="features-showcase__subtitle">Everything you need to manage your social media presence, in one place.</p>
+              <div class="features-grid">
+                <div class="feature-card"><div class="feature-card__icon"><i data-lucide="calendar"></i></div><div class="feature-card__name">Content Calendar</div><p class="feature-card__desc">Preview, approve, and schedule posts across all platforms.</p></div>
+                <div class="feature-card"><div class="feature-card__icon"><i data-lucide="bar-chart-3"></i></div><div class="feature-card__name">Analytics Dashboard</div><p class="feature-card__desc">Real-time metrics: engagement, reach, follower growth, and ROI.</p></div>
+                <div class="feature-card"><div class="feature-card__icon"><i data-lucide="message-square"></i></div><div class="feature-card__name">Brand Voice</div><p class="feature-card__desc">Fine-tune your AI content with brand guidelines and tone preferences.</p></div>
+                <div class="feature-card"><div class="feature-card__icon"><i data-lucide="check-circle"></i></div><div class="feature-card__name">Post Approvals</div><p class="feature-card__desc">Review every post before it goes live. One-click approve or reject with feedback.</p></div>
+                <div class="feature-card"><div class="feature-card__icon"><i data-lucide="shield-check"></i></div><div class="feature-card__name">Platform Compliance</div><p class="feature-card__desc">Every post is checked against platform-specific rules before it reaches you.</p></div>
+                <div class="feature-card"><div class="feature-card__icon"><i data-lucide="brain"></i></div><div class="feature-card__name">Brand Intelligence</div><p class="feature-card__desc">Your AI learns your voice from every approval and rejection. It gets smarter over time.</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div class="dashboard" id="dashboard-view">
+      <aside class="dash-sidebar" id="dash-sidebar">
+        <a href="index.html" class="dash-sidebar__logo">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="8" stroke="currentColor" stroke-width="2.5"/><circle cx="11" cy="16" r="3" fill="currentColor"/><circle cx="21" cy="10" r="2.5" fill="currentColor" opacity="0.6"/><circle cx="21" cy="22" r="2.5" fill="currentColor" opacity="0.6"/><line x1="13.5" y1="14.5" x2="19" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="13.5" y1="17.5" x2="19" y2="21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          SocialEngine
+        </a>
+        <nav class="dash-sidebar__nav" aria-label="Dashboard navigation">
+          <button class="dash-nav-item active" data-nav="dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</button>
+          <button class="dash-nav-item" data-nav="content"><i data-lucide="clapperboard"></i> Content Studio</button>
+          <button class="dash-nav-item" data-nav="analytics"><i data-lucide="bar-chart-3"></i> Analytics</button>
+          <button class="dash-nav-item" data-nav="brand-voice"><i data-lucide="message-square"></i> Brand Voice</button>
+          <button class="dash-nav-item" data-nav="ai-coach"><i data-lucide="sparkles"></i> AI Coach</button>
+          <button class="dash-nav-item" data-nav="competitor-intel"><i data-lucide="search"></i> Competitor Intel</button>
+          <button class="dash-nav-item" data-nav="settings"><i data-lucide="settings"></i> Settings</button>
+        </nav>
+        <div class="dash-sidebar__user">
+          <div class="dash-sidebar__avatar" id="dash-avatar">SE</div>
+          <div class="dash-sidebar__user-info">
+            <span class="dash-sidebar__user-name" id="dash-user-name">Loading...</span>
+            <span class="dash-sidebar__user-email" id="dash-user-email"></span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="dash-sidebar-overlay" id="dash-overlay"></div>
+      <button class="dash-mobile-toggle" id="dash-mobile-toggle" aria-label="Toggle sidebar"><i data-lucide="menu"></i></button>
+
+      <div class="dash-main">
+        <div class="dash-topbar">
+          <div class="dash-topbar__greeting" id="dash-greeting">Loading...</div>
+          <div class="dash-topbar__actions">
+            <button class="dash-logout-btn" id="dash-logout">Sign Out</button>
+          </div>
+        </div>
+
+        <!-- Dashboard content area — dynamically populated -->
+        <div class="dash-content" id="dash-content">
+          <div class="dash-loading"><div class="dash-loading__spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ONBOARDING OVERLAY -->
+    <div class="onboarding-overlay" id="onboarding-overlay">
+      <div class="onboarding-container">
+        <!-- Shopify Connect Step (shown before questions) -->
+        <div id="onboarding-shopify-step" style="display:none;">
+          <div class="onboarding-header">
+            <h2>Connect Your Store First</h2>
+            <p>Before we build your brand voice, let's connect your Shopify store for the deepest possible AI analysis of your products, inventory, and customers.</p>
+          </div>
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);margin-bottom:var(--space-6);">
+            <ul class="shopify-connect-steps" style="margin-bottom:var(--space-5);">
+              <li><span>Go to <strong>Shopify admin</strong> → <strong>Settings</strong> → <strong>Apps and sales channels</strong> → <strong>Develop apps</strong></span></li>
+              <li><span>Click <strong>"Create an app"</strong> → Name it <strong>SocialEngine</strong></span></li>
+              <li><span>Configure scopes: <strong>read_products</strong>, <strong>read_orders</strong>, <strong>read_inventory</strong>, <strong>read_customers</strong></span></li>
+              <li><span>Click <strong>"Install app"</strong> → Copy your <strong>Admin API access token</strong></span></li>
+              <li><span>Paste it below</span></li>
+            </ul>
+            <div id="onb-shopify-form">
+              <div class="connect-form-group">
+                <label class="connect-form-label">Shopify Store Domain</label>
+                <input type="text" class="connect-form-input" id="onb-shopify-domain" placeholder="mystore.myshopify.com">
+              </div>
+              <div class="connect-form-group">
+                <label class="connect-form-label">Admin API Access Token</label>
+                <input type="password" class="connect-form-input" id="onb-shopify-token" placeholder="shpat_xxxxx">
+              </div>
+              <div id="onb-shopify-msg" style="display:none;margin-bottom:var(--space-4);"></div>
+              <button class="connect-btn" id="onb-shopify-connect-btn">
+                <i data-lucide="link" style="width:16px;height:16px;"></i>
+                Connect Store
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <button id="onb-shopify-skip" style="background:none;border:none;color:var(--color-text-muted);font-size:var(--text-sm);cursor:pointer;text-decoration:underline;">Skip — I'll connect later</button>
+            <button id="onb-shopify-continue" class="onboarding-nav__btn onboarding-nav__btn--next" style="display:none;">Continue to Questions</button>
+          </div>
+        </div>
+
+        <!-- Questions -->
+        <div id="onboarding-questions-section" style="display:none;">
+          <div class="onboarding-header">
+            <h2>Let's Build Your Brand Voice</h2>
+            <p>Answer 9 questions so our AI sounds like you, not a robot. This takes about 3 minutes.</p>
+            <button onclick="document.getElementById('onboarding-overlay').classList.remove('active')" style="margin-top:var(--space-4);background:none;border:none;color:var(--color-text-muted);font-size:var(--text-sm);cursor:pointer;text-decoration:underline;">Skip for now — I'll do this later</button>
+          </div>
+          <div class="onboarding-progress" id="onboarding-progress"></div>
+          <div id="onboarding-steps"></div>
+          <div id="onboarding-social-handles" style="display:none;margin-top:24px;">
+            <div class="onb-field" style="margin-top:16px;">
+              <label class="onb-label">Instagram Handle</label>
+              <input class="onb-input" id="onb-instagram" placeholder="@yourbrand">
+            </div>
+            <div class="onb-field" style="margin-top:12px;">
+              <label class="onb-label">TikTok Handle</label>
+              <input class="onb-input" id="onb-tiktok" placeholder="@yourbrand">
+            </div>
+            <div class="onb-field" style="margin-top:12px;">
+              <label class="onb-label">Facebook Page URL</label>
+              <input class="onb-input" id="onb-facebook" placeholder="facebook.com/yourbrand">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REJECTION MODAL -->
+    <div class="reject-modal" id="reject-modal">
+      <div class="reject-modal__card">
+        <h3 class="reject-modal__title">✗ What's wrong with this post?</h3>
+        <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin:0 0 var(--space-4);">Be specific — your feedback trains the AI for every future post. The post will be automatically regenerated.</p>
+        <textarea class="reject-modal__textarea" id="reject-reason" placeholder="e.g. 'Too formal — we're more playful' or 'Wrong product, focus on our new arrivals' or 'Image style feels off, needs warmer tones'"></textarea>
+        <div class="reject-modal__actions">
+          <button class="reject-modal__btn reject-modal__btn--cancel" id="reject-cancel">Cancel</button>
+          <button class="reject-modal__btn reject-modal__btn--submit" id="reject-submit">Reject &amp; Regenerate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Regenerate Modal -->
+    <div class="reject-modal" id="regen-modal">
+      <div class="reject-modal__card">
+        <h3 class="reject-modal__title">🔄 Regenerate This Post</h3>
+        <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin:0 0 8px;">Tell the AI exactly what direction to take. Leave blank for a completely fresh take.</p>
+        <div id="regen-counter" style="font-size:0.75rem;font-weight:600;margin-bottom:12px;">3 free regenerations remaining</div>
+        <textarea class="reject-modal__textarea" id="regen-direction" placeholder="e.g. 'Make the caption shorter and punchier' or 'Use a brighter image, more energetic vibe' or 'Focus on the limited edition angle'"></textarea>
+        <div class="reject-modal__actions">
+          <button class="reject-modal__btn reject-modal__btn--cancel" id="regen-cancel">Cancel</button>
+          <button class="reject-modal__btn" id="regen-submit" style="background:#7c3aed;color:#fff;">Regenerate</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Content Studio Modal -->
+  <div class="studio-modal" id="studio-modal">
+    <div class="studio-modal__backdrop" onclick="closeStudioModal()"></div>
+    <div class="studio-modal__panel">
+      <button class="studio-modal__close" onclick="closeStudioModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="studio-modal__body" id="studio-modal-body"></div>
+    </div>
+  </div>
+
+  <footer class="footer portal-footer" id="portal-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer__bottom">
+        <span>&copy; 2026 SocialEngine. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    'use strict';
+
+    const API = 'https://app-production-55ba.up.railway.app';
+
+    // ━━━ Theme Toggle ━━━
+    const themeToggle = document.querySelector('[data-theme-toggle]');
+    const root = document.documentElement;
+    let currentTheme = 'dark';
+    root.setAttribute('data-theme', currentTheme);
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', currentTheme);
+      });
+    }
+
+    // ━━━ Header + Mobile Nav ━━━
+    const header = document.querySelector('.header');
+    window.addEventListener('scroll', () => { header.classList.toggle('header--scrolled', window.scrollY > 20); }, { passive: true });
+    const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+    const mobileNav = document.getElementById('mobile-nav');
+    if (mobileNavToggle) mobileNavToggle.addEventListener('click', () => { mobileNav.classList.add('mobile-nav--open'); document.body.style.overflow = 'hidden'; });
+    if (mobileNav) {
+      mobileNav.querySelector('.mobile-nav__close')?.addEventListener('click', () => { mobileNav.classList.remove('mobile-nav--open'); document.body.style.overflow = ''; });
+      mobileNav.querySelectorAll('a').forEach(l => l.addEventListener('click', () => { mobileNav.classList.remove('mobile-nav--open'); document.body.style.overflow = ''; }));
+    }
+
+    // ━━━ Password Toggle ━━━
+    const togglePw = document.getElementById('toggle-pw');
+    const pwInput = document.getElementById('login-password');
+    if (togglePw) togglePw.addEventListener('click', () => { pwInput.type = pwInput.type === 'password' ? 'text' : 'password'; });
+
+    // ━━━ Auth State ━━━
+    let clientEmail = '';
+    let clientHash = '';
+    let clientData = null;
+    const STRIPE_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
+    function isPaid() { return clientData?.client?.is_paid !== false; }
+
+    // ━━━ Content Studio Modal ━━━
+    let studioPostsList = [];
+    let studioCurrentIndex = 0;
+    let studioViewMode = 'grid'; // 'grid' or 'list'
+
+    window.openStudioModal = function(postIndex) {
+      studioCurrentIndex = postIndex;
+      const modal = document.getElementById('studio-modal');
+      renderStudioModalContent();
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeStudioModal = function() {
+      const modal = document.getElementById('studio-modal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      // Pause any playing video
+      modal.querySelectorAll('video').forEach(v => v.pause());
+    };
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeStudioModal();
+      if (!document.getElementById('studio-modal')?.classList.contains('active')) return;
+      if (e.key === 'ArrowLeft' && studioCurrentIndex > 0) {
+        studioCurrentIndex--;
+        renderStudioModalContent();
+      }
+      if (e.key === 'ArrowRight' && studioCurrentIndex < studioPostsList.length - 1) {
+        studioCurrentIndex++;
+        renderStudioModalContent();
+      }
+    });
+
+    function renderStudioModalContent() {
+      const post = studioPostsList[studioCurrentIndex];
+      if (!post) return;
+      const body = document.getElementById('studio-modal-body');
+      const platform = (post.platform || 'instagram').toLowerCase();
+      const status = post.status || 'Draft';
+      const isPending = ['Ready for Review', 'Draft', 'Pending', 'Regenerating'].includes(status);
+      const isRegenerating = status === 'Regenerating';
+      const fullText = post.full_post_text || post.caption || '';
+      const hookLine = post.hook_line || '';
+      const isReel = (post.content_type || '').includes('reel') || (post.post_label || '').includes('reel');
+      const imageUrl = (post.image?.length > 0 ? post.image[0].url : null) || post.image_url || '';
+      const hasImage = imageUrl && imageUrl.startsWith('http');
+      const videoUrl = post.video_url || '';
+      const hasVideo = videoUrl && videoUrl.startsWith('http');
+      const hasVideoBrief = hookLine.includes('🎬');
+      const regenCount = parseInt(post.regen_count || 0);
+      const regenLeft = Math.max(0, 3 - regenCount);
+      const date = post.scheduled_date ? new Date(post.scheduled_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      const formatKey = isReel ? 'reel' : (post.content_type || '').includes('carousel') ? 'carousel' : 'static';
+      const formatBadge = FORMAT_BADGE[formatKey] || FORMAT_BADGE.static;
+      const icon = PLATFORM_ICONS[platform] || '📱';
+      const ctypeRaw = (post.content_type || '').replace(/^(reel|static|carousel|story)_/, '');
+      const ctypeLabel = ctypeRaw.replace(/_/g, ' ');
+      const statusClass = status.toLowerCase().replace(/\s+/g, '-').replace('ready-for-review','pending');
+
+      // Preview (left side)
+      let previewHTML = '';
+      if (hasVideo) {
+        previewHTML = `<video src="${videoUrl}" controls playsinline style="width:100%;height:100%;object-fit:contain;" autoplay muted></video>`;
+      } else if (hasImage) {
+        previewHTML = `<img src="${imageUrl}" alt="${(post.theme || 'Content preview').replace(/"/g, '&quot;')}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+      } else {
+        previewHTML = `<div class="studio-modal__preview-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span>${isReel ? 'Video generating...' : 'Image generating...'}</span></div>`;
+      }
+
+      body.innerHTML = `
+        <div class="studio-modal__preview">${previewHTML}</div>
+        <div class="studio-modal__details">
+          <div class="studio-modal__meta-row">
+            <span style="color:rgba(255,255,255,0.45);display:flex;align-items:center;">${icon}</span>
+            <span class="studio-modal__meta-badge" style="background:${formatBadge.color};color:${formatBadge.textColor};">${formatBadge.label}</span>
+            ${ctypeLabel ? `<span class="studio-modal__meta-badge" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);text-transform:capitalize;">${ctypeLabel}</span>` : ''}
+            <span class="studio-card__status studio-card__status--${statusClass}" style="margin-left:auto;">
+              ${isRegenerating ? 'Regenerating...' : status === 'Ready for Review' ? 'Pending' : status}
+            </span>
+          </div>
+          ${date ? `<div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:-6px;">Scheduled ${date}</div>` : ''}
+
+          <div>
+            <div class="studio-modal__caption-label">Caption</div>
+            <textarea class="studio-modal__caption-area post-caption-edit" data-post-id="${post.id}" ${isRegenerating ? 'disabled' : ''}>${fullText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+            <div class="studio-modal__caption-hint">Edit caption above — changes save automatically</div>
+          </div>
+
+          ${hasVideoBrief ? `
+          <div class="studio-modal__brief">
+            <div class="studio-modal__brief-title">Video Brief</div>
+            <div class="studio-modal__brief-text">${hookLine.replace(/</g,'&lt;')}</div>
+          </div>` : ''}
+
+          ${isPending && !isRegenerating ? `
+          <div class="studio-modal__actions" data-post-id="${post.id}">
+            <button class="studio-modal__btn studio-modal__btn--approve" onclick="studioApprove('${post.id}', this)">Approve</button>
+            <button class="studio-modal__btn studio-modal__btn--reject" onclick="openRejectModal('${post.id}')">Reject</button>
+            <button class="studio-modal__btn studio-modal__btn--regen" onclick="openRegenModal('${post.id}', ${regenLeft})">Regenerate <span style="font-size:0.68rem;opacity:0.5;">${regenLeft} left</span></button>
+          </div>` : isRegenerating ? `
+          <div style="padding:8px 0;font-size:0.8rem;color:rgba(255,255,255,0.4);">AI is regenerating this post. Refresh in 30 seconds.</div>` : `
+          <div style="padding:8px 0;font-size:0.8rem;color:rgba(255,255,255,0.4);">${status === 'Scheduled' ? 'Scheduled for publishing' : status === 'Published' ? 'Published' : status === 'Approved' ? 'Approved — ready to schedule' : status}</div>`}
+
+          <div class="studio-modal__nav">
+            <button class="studio-modal__nav-btn" onclick="studioNav(-1)" ${studioCurrentIndex === 0 ? 'disabled' : ''}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg> Prev
+            </button>
+            <span class="studio-modal__counter">${studioCurrentIndex + 1} of ${studioPostsList.length}</span>
+            <button class="studio-modal__nav-btn" onclick="studioNav(1)" ${studioCurrentIndex === studioPostsList.length - 1 ? 'disabled' : ''}>
+              Next <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    window.studioNav = function(dir) {
+      const newIdx = studioCurrentIndex + dir;
+      if (newIdx >= 0 && newIdx < studioPostsList.length) {
+        // Pause any playing video
+        document.getElementById('studio-modal-body')?.querySelectorAll('video').forEach(v => v.pause());
+        studioCurrentIndex = newIdx;
+        renderStudioModalContent();
+      }
+    };
+
+    window.studioApprove = async function(postId, btn) {
+      const captionEl = document.querySelector(`.studio-modal__caption-area[data-post-id="${postId}"]`);
+      const editedCaption = captionEl ? captionEl.value.trim() : '';
+      btn.textContent = 'Approving...';
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API}/api/approve-post`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postId, clientEmail, clientHash, editedCaption }),
+        });
+        const data = await res.json();
+        const newStatus = data.status || 'Approved';
+        // Update post in list
+        const post = studioPostsList.find(p => p.id === postId);
+        if (post) post.status = newStatus;
+        showToast(newStatus === 'Scheduled' ? '🗓️ Post scheduled!' : '✓ Post approved!');
+        renderStudioModalContent();
+        // Re-render the grid behind the modal
+        if (clientData) renderContentPage(clientData);
+      } catch {
+        btn.textContent = '✓ Approve';
+        btn.disabled = false;
+      }
+    };
+
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // ━━━ Login ━━━
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const loginBtn = document.getElementById('login-btn');
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        loginError.classList.remove('visible');
+        loginBtn.classList.add('loading');
+
+        const email = document.getElementById('login-email').value.trim();
+        const pw = document.getElementById('login-password').value;
+
+        try {
+          const hash = await sha256(pw);
+          const res = await fetch(`${API}/api/client-data`, {
+            headers: { 'x-client-email': email, 'x-client-hash': hash },
+          });
+
+          if (!res.ok) throw new Error('Auth failed');
+          const data = await res.json();
+
+          clientEmail = email;
+          clientHash = hash;
+          clientData = data;
+
+          // Show dashboard
+          document.getElementById('portal-login-view').classList.add('hidden');
+          document.getElementById('dashboard-view').classList.add('active');
+          document.getElementById('portal-footer').style.display = 'none';
+
+          // Check if onboarding needed
+          if (!data.client.has_onboarded || !data.profile) {
+            showOnboarding();
+          }
+
+          activeNav = 'dashboard';
+          renderDashboard(data);
+          startTierPolling();
+          setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+          window.scrollTo(0, 0);
+        } catch (err) {
+          console.error('Login error:', err);
+          loginBtn.classList.remove('loading');
+          loginError.classList.add('visible');
+        }
+      });
+    }
+
+    // ━━━ Logout ━━━
+    document.getElementById('dash-logout')?.addEventListener('click', () => {
+      stopTierPolling();
+      clientEmail = ''; clientHash = ''; clientData = null;
+      document.getElementById('portal-login-view').classList.remove('hidden');
+      document.getElementById('dashboard-view').classList.remove('active');
+      document.getElementById('portal-footer').style.display = '';
+      loginBtn.classList.remove('loading');
+      loginError.classList.remove('visible');
+      document.getElementById('login-email').value = '';
+      document.getElementById('login-password').value = '';
+      window.scrollTo(0, 0);
+    });
+
+    const CHECK_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    const ARROW_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+
+    function upgradeGateHTML(feature, desc) {
+      return `<div class="upgrade-gate__overlay">
+        <div style="max-width:360px;">
+          <div style="font-size:1.5rem;margin-bottom:12px;">🔒</div>
+          <div class="upgrade-gate__title">${feature}</div>
+          <div class="upgrade-gate__desc">${desc}</div>
+          <a href="${STRIPE_LINK}" target="_blank" class="upgrade-gate__btn" style="display:inline-flex;align-items:center;gap:8px;">Unlock Now — $297/mo ${ARROW_SVG}</a>
+          <div style="font-size:0.6875rem;color:rgba(255,255,255,0.45);margin-top:10px;">Cancel anytime. No contracts.</div>
+        </div>
+      </div>`;
+    }
+
+    function upgradePromptHTML() {
+      return `<div class="upgrade-prompt">
+        <div class="upgrade-prompt__badge">✦ FREE PLAN</div>
+        <div class="upgrade-prompt__title">Unlock the full SocialEngine</div>
+        <div class="upgrade-prompt__subtitle">You're seeing a preview. Upgrade to Pro for the complete AI-powered social media engine that runs your brand on autopilot.</div>
+        <ul class="upgrade-prompt__benefits">
+          <li class="upgrade-prompt__benefit"><span class="upgrade-prompt__benefit-icon">${CHECK_SVG}</span>Unlimited AI-generated posts + DALL-E images</li>
+          <li class="upgrade-prompt__benefit"><span class="upgrade-prompt__benefit-icon">${CHECK_SVG}</span>Competitor SWOT analysis on any store</li>
+          <li class="upgrade-prompt__benefit"><span class="upgrade-prompt__benefit-icon">${CHECK_SVG}</span>1-on-1 AI marketing coach (unlimited)</li>
+          <li class="upgrade-prompt__benefit"><span class="upgrade-prompt__benefit-icon">${CHECK_SVG}</span>Engagement analytics + revenue tracking</li>
+          <li class="upgrade-prompt__benefit"><span class="upgrade-prompt__benefit-icon">${CHECK_SVG}</span>Full brand voice calibration</li>
+          <li class="upgrade-prompt__benefit"><span class="upgrade-prompt__benefit-icon">${CHECK_SVG}</span>Auto-publish to IG, TikTok, FB, Pinterest</li>
+        </ul>
+        <div class="upgrade-prompt__cta-row">
+          <a href="${STRIPE_LINK}" target="_blank" class="upgrade-prompt__cta">Upgrade to Pro ${ARROW_SVG}</a>
+          <div class="upgrade-prompt__price"><strong>$297</strong>/mo &middot; Cancel anytime</div>
+        </div>
+      </div>`;
+    }
+
+    function upgradeFullpageHTML(icon, title, desc, benefits) {
+      return `<div class="upgrade-fullpage">
+        <div class="upgrade-fullpage__icon"><i data-lucide="${icon}" style="width:28px;height:28px;"></i></div>
+        <div class="upgrade-fullpage__title">${title}</div>
+        <div class="upgrade-fullpage__desc">${desc}</div>
+        <ul class="upgrade-fullpage__benefits">
+          ${benefits.map(b => `<li class="upgrade-fullpage__benefit">${CHECK_SVG} ${b}</li>`).join('')}
+        </ul>
+        <a href="${STRIPE_LINK}" target="_blank" class="upgrade-fullpage__cta">Upgrade to Pro — $297/mo ${ARROW_SVG}</a>
+        <div class="upgrade-fullpage__note">Cancel anytime. No contracts. Results within 7 days.</div>
+      </div>`;
+    }
+
+    // ━━━ Render Dashboard with REAL data ━━━
+    function renderDashboard(data) {
+      const c = data.client;
+      const firstName = (c.contact_name || 'there').split(' ')[0];
+      const initials = (c.contact_name || 'SE').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+      const hour = new Date().getHours();
+      const tod = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+
+      document.getElementById('dash-greeting').textContent = `Good ${tod}, ${firstName}`;
+      document.getElementById('dash-user-name').textContent = c.business_name || c.contact_name;
+      document.getElementById('dash-user-email').textContent = c.contact_email;
+      document.getElementById('dash-avatar').textContent = initials;
+
+      // Count posts by status
+      const posts = data.content || [];
+      const pending = posts.filter(p => p.status === 'Pending' || p.status === 'Draft' || p.status === 'Ready for Review');
+      const approved = posts.filter(p => p.status === 'Approved' || p.status === 'Scheduled');
+      const totalPosts = posts.length;
+
+      // Archetype badge
+      const archetype = data.profile?.archetype || '';
+
+      const content = document.getElementById('dash-content');
+      content.innerHTML = `
+        ${archetype ? `<div style="margin-bottom:var(--space-6);padding:var(--space-4) var(--space-5);background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:var(--radius-lg);display:flex;align-items:center;gap:var(--space-4);">
+          <div style="font-size:1.5rem;">🎭</div>
+          <div>
+            <div style="font-size:var(--text-sm);font-weight:600;color:var(--color-text);">Brand Archetype: ${archetype}</div>
+            <div style="font-size:0.8125rem;color:var(--color-text-muted);">${data.profile?.voice_summary || 'Your AI is calibrated to your brand voice.'}</div>
+          </div>
+        </div>` : ''}
+
+        ${!isPaid() ? upgradePromptHTML() : ''}
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-card__label">Total Posts</div>
+            <div class="kpi-card__value">${totalPosts}</div>
+            <div class="kpi-card__trend neutral">In your calendar</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card__label">Pending Approval</div>
+            <div class="kpi-card__value">${pending.length}</div>
+            <div class="kpi-card__trend ${pending.length > 0 ? 'up' : 'neutral'}">${pending.length > 0 ? 'Action needed' : 'All clear'}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card__label">Approved</div>
+            <div class="kpi-card__value">${approved.length}</div>
+            <div class="kpi-card__trend up">Ready to publish</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card__label">Platforms</div>
+            <div class="kpi-card__value">${(c.platforms || []).length || '—'}</div>
+            <div class="kpi-card__trend neutral">${(c.platforms || []).join(', ') || 'Not set'}</div>
+          </div>
+        </div>
+
+        <div class="dash-card" style="margin-bottom:var(--space-6);">
+          <div class="dash-card__header">
+            <h3 class="dash-card__title">Content Queue</h3>
+            <button onclick="document.querySelector('[data-nav=content]').click();" style="font-size:0.75rem;color:var(--color-primary);background:none;border:none;cursor:pointer;font-weight:600;">Open Studio →</button>
+          </div>
+          <div style="padding:16px;">
+            ${posts.length === 0 ? `
+              <div class="empty-state">
+                <div class="empty-state__icon"><i data-lucide="inbox" style="width:40px;height:40px;"></i></div>
+                <div class="empty-state__title">No posts yet</div>
+                <div class="empty-state__desc">Your AI is preparing your first batch of content. Check back soon.</div>
+              </div>
+            ` : `<div class="studio-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">${(() => { studioPostsList = posts; return posts.slice(0, 8).map((p, i) => renderStudioCard(p, i)).join(''); })()}</div>${posts.length > 8 ? `<div style="text-align:center;padding-top:12px;"><button onclick="document.querySelector('[data-nav=content]').click();" style="font-size:0.8rem;color:var(--color-primary);background:none;border:none;cursor:pointer;font-weight:500;">View all ${posts.length} posts →</button></div>` : ''}`}
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);">
+          <div class="dash-card upgrade-gate">
+            <div class="dash-card__header"><h3 class="dash-card__title">Analytics</h3></div>
+            <div style="padding:var(--space-8);text-align:center;color:var(--color-text-muted);font-size:var(--text-sm);">
+              <i data-lucide="bar-chart-3" style="width:32px;height:32px;margin-bottom:var(--space-3);opacity:0.4;"></i>
+              <p>Analytics data populates after your first week of published content.</p>
+            </div>
+            ${!isPaid() ? upgradeGateHTML('Analytics Dashboard', 'Track engagement rates, follower growth, best-performing content, and revenue attribution — all in real time.') : ''}
+          </div>
+          <div class="dash-card">
+            <div class="dash-card__header"><h3 class="dash-card__title">Brand Voice</h3></div>
+            <div style="padding:var(--space-5) var(--space-6);">
+              ${data.brand_voice ? `
+                <div style="font-size:var(--text-sm);color:var(--color-text);margin-bottom:var(--space-3);"><strong>Tone:</strong> ${data.brand_voice.tone_adjectives || 'Not set'}</div>
+                <div style="font-size:var(--text-sm);color:var(--color-text-muted);">Version: ${data.brand_voice.version || 'v1'}</div>
+              ` : `
+                <div style="font-size:var(--text-sm);color:var(--color-text-muted);">Complete onboarding to activate your brand voice.</div>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+    }
+
+    // Platform icon map
+    const PLATFORM_ICONS = {
+      instagram: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>',
+      tiktok: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1 0-5.78c.27 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 10.86 4.34c1.17-1.16 1.82-2.75 1.82-4.4V8.6a8.16 8.16 0 0 0 4.76 1.52v-3.4a4.85 4.85 0 0 1-1-.03z"/></svg>',
+      facebook: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>',
+      pinterest: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z"/></svg>',
+      twitter: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+      linkedin: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>'
+    };
+    const FORMAT_BADGE = {
+      reel: { label: 'Reel', color: 'var(--color-surface-2)', textColor: 'var(--color-text-muted)' },
+      carousel: { label: 'Carousel', color: 'var(--color-surface-2)', textColor: 'var(--color-text-muted)' },
+      static: { label: 'Static', color: 'var(--color-surface-2)', textColor: 'var(--color-text-muted)' },
+      story: { label: 'Story', color: 'var(--color-surface-2)', textColor: 'var(--color-text-muted)' },
+    };
+
+    function renderStudioCard(post, index) {
+      const platform = (post.platform || 'instagram').toLowerCase();
+      const status = post.status || 'Draft';
+      const isReel = (post.content_type || '').includes('reel') || (post.post_label || '').includes('reel');
+      const imageUrl = (post.image?.length > 0 ? post.image[0].url : null) || post.image_url || '';
+      const hasImage = imageUrl && imageUrl.startsWith('http');
+      const videoUrl = post.video_url || '';
+      const hasVideo = videoUrl && videoUrl.startsWith('http');
+      const fullText = post.full_post_text || post.caption || '';
+      const date = post.scheduled_date ? new Date(post.scheduled_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      const formatKey = isReel ? 'reel' : (post.content_type || '').includes('carousel') ? 'carousel' : 'static';
+      const formatBadge = FORMAT_BADGE[formatKey] || FORMAT_BADGE.static;
+      const icon = PLATFORM_ICONS[platform] || '📱';
+      const statusClass = status.toLowerCase().replace(/\s+/g, '-').replace('ready-for-review','pending');
+      const isActionable = ['Ready for Review', 'Draft', 'Pending'].includes(status);
+
+      // Media
+      let mediaHTML = '';
+      if (hasVideo) {
+        mediaHTML = `
+          <video src="${videoUrl}" muted loop playsinline preload="metadata" onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0;"></video>
+          <div class="studio-card__video-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+            VIDEO
+          </div>
+          <div class="studio-card__play-btn"><div class="studio-card__play-icon"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></div></div>`;
+      } else if (hasImage) {
+        mediaHTML = `
+          <img src="${imageUrl}" alt="${(post.theme || 'Content').replace(/"/g, '&quot;')}" loading="lazy" onerror="this.style.display='none';this.parentElement.querySelector('.studio-card__empty-media').style.display='flex';">
+          <div class="studio-card__empty-media" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span>Loading...</span></div>
+          ${isReel ? `<div class="studio-card__video-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg> REEL</div>` : ''}
+          <div class="studio-card__play-btn"><div class="studio-card__play-icon"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></div></div>`;
+      } else {
+        mediaHTML = `<div class="studio-card__empty-media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span>${isReel ? 'Video generating...' : 'Generating...'}</span></div>`;
+      }
+
+      return `
+        <div class="studio-card" onclick="openStudioModal(${index})">
+          <div class="studio-card__media">${mediaHTML}</div>
+          <div class="studio-card__info">
+            <div class="studio-card__top-row">
+              <span class="studio-card__platform-icon" style="color:rgba(255,255,255,0.5);display:flex;align-items:center;">${icon}</span>
+              <span class="studio-card__format" style="background:${formatBadge.color};color:${formatBadge.textColor};">${formatBadge.label}</span>
+              <span class="studio-card__date">${date}</span>
+            </div>
+            <div class="studio-card__caption">${fullText.replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,120)}</div>
+            <div class="studio-card__footer">
+              <span class="studio-card__status studio-card__status--${statusClass}">${status === 'Regenerating' ? 'Regenerating...' : status === 'Ready for Review' ? 'Pending' : status}</span>
+              <span class="studio-card__action-hint">${isActionable ? 'Click to review →' : 'Click to view →'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStudioListItem(post, index) {
+      const platform = (post.platform || 'instagram').toLowerCase();
+      const status = post.status || 'Draft';
+      const isReel = (post.content_type || '').includes('reel') || (post.post_label || '').includes('reel');
+      const imageUrl = (post.image?.length > 0 ? post.image[0].url : null) || post.image_url || '';
+      const hasImage = imageUrl && imageUrl.startsWith('http');
+      const videoUrl = post.video_url || '';
+      const hasVideo = videoUrl && videoUrl.startsWith('http');
+      const fullText = post.full_post_text || post.caption || '';
+      const date = post.scheduled_date ? new Date(post.scheduled_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      const formatKey = isReel ? 'reel' : (post.content_type || '').includes('carousel') ? 'carousel' : 'static';
+      const formatBadge = FORMAT_BADGE[formatKey] || FORMAT_BADGE.static;
+      const icon = PLATFORM_ICONS[platform] || '📱';
+      const statusClass = status.toLowerCase().replace(/\s+/g, '-').replace('ready-for-review','pending');
+
+      const thumbSrc = hasVideo ? videoUrl : hasImage ? imageUrl : '';
+      const thumbHTML = thumbSrc
+        ? (hasVideo ? `<video src="${thumbSrc}" muted preload="metadata"></video>` : `<img src="${thumbSrc}" alt="" loading="lazy">`)
+        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0d0d1a;color:#555;font-size:1.2rem;">${isReel ? '🎬' : '🖼️'}</div>`;
+
+      return `
+        <div class="studio-list-item" onclick="openStudioModal(${index})">
+          <div class="studio-list-item__thumb">${thumbHTML}</div>
+          <div class="studio-list-item__info">
+            <div class="studio-list-item__title">${fullText.replace(/</g,'&lt;').substring(0,80) || 'Untitled post'}</div>
+            <div class="studio-list-item__meta">
+              <span>${icon}</span>
+              <span style="font-weight:600;color:${formatBadge.textColor};">${formatBadge.label}</span>
+              <span>${date}</span>
+              <span class="studio-card__status studio-card__status--${statusClass}" style="font-size:0.6rem;">${status === 'Ready for Review' ? 'Pending' : status}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Toggle video brief visibility
+    window.toggleBrief = function(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    };
+
+    // Auto-save caption on change (debounced)
+    const captionDebounce = {};
+    document.addEventListener('input', (e) => {
+      if (!e.target.classList.contains('post-caption-edit')) return;
+      const postId = e.target.dataset.postId;
+      if (captionDebounce[postId]) clearTimeout(captionDebounce[postId]);
+      captionDebounce[postId] = setTimeout(async () => {
+        try {
+          await fetch(`${API}/api/edit-caption`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ postId, clientEmail, clientHash, caption: e.target.value }),
+          });
+          // Subtle save indicator
+          e.target.style.borderColor = '#4caf50';
+          setTimeout(() => { e.target.style.borderColor = '#2a2a2a'; }, 1500);
+        } catch { /* silent */ }
+      }, 1200);
+    });
+
+    // ━━━ Approve ━━━
+    // approvePost is now studioApprove (defined above in studio modal section)
+
+    // ━━━ Reject Modal ━━━
+    let rejectingPostId = null;
+    window.openRejectModal = function(postId) {
+      rejectingPostId = postId;
+      document.getElementById('reject-reason').value = '';
+      document.getElementById('reject-modal').classList.add('active');
+    };
+
+    document.getElementById('reject-cancel')?.addEventListener('click', () => {
+      document.getElementById('reject-modal').classList.remove('active');
+    });
+
+    document.getElementById('reject-submit')?.addEventListener('click', async () => {
+      const reason = document.getElementById('reject-reason').value.trim();
+      if (!rejectingPostId) return;
+      const submitBtn = document.getElementById('reject-submit');
+      submitBtn.textContent = 'Submitting…';
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${API}/api/reject-post`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postId: rejectingPostId, clientEmail, clientHash, reason }),
+        });
+        const data = await res.json();
+        const item = document.querySelector(`[data-post-id="${rejectingPostId}"]`);
+        if (item) {
+          const statusEl = item.querySelector('.post-item__status');
+          if (data.regenerating) {
+            statusEl.className = 'post-item__status Regenerating';
+            statusEl.textContent = '⏳ Regenerating…';
+            item.querySelector('.post-item__actions')?.remove();
+            // Add spinner message
+            const actionsArea = item.querySelector('.post-item__actions') || item.lastElementChild;
+            const spinner = document.createElement('div');
+            spinner.style.cssText = 'padding:8px 16px 12px;font-size:0.78rem;color:#888;';
+            spinner.textContent = `⏳ AI regenerating with your feedback. ${data.regens_remaining} free regen${data.regens_remaining !== 1 ? 's' : ''} remaining. Refresh in 30s.`;
+            item.appendChild(spinner);
+          } else {
+            statusEl.className = 'post-item__status Rejected';
+            statusEl.textContent = 'Rejected';
+            item.querySelector('.post-item__actions')?.remove();
+          }
+        }
+        // Show toast
+        showToast(data.message || 'Feedback submitted.');
+      } catch (e) { console.error(e); }
+
+      document.getElementById('reject-modal').classList.remove('active');
+      submitBtn.textContent = 'Reject Post';
+      submitBtn.disabled = false;
+    });
+
+    // ━━━ Regenerate Modal ━━━
+    let regenPostId = null;
+    window.openRegenModal = function(postId, regenLeft) {
+      regenPostId = postId;
+      document.getElementById('regen-direction').value = '';
+      const modal = document.getElementById('regen-modal');
+      const counter = document.getElementById('regen-counter');
+      if (counter) counter.textContent = `${regenLeft} free regeneration${regenLeft !== 1 ? 's' : ''} remaining`;
+      if (counter) counter.style.color = regenLeft > 0 ? '#4caf50' : '#f44336';
+      modal.classList.add('active');
+    };
+
+    document.getElementById('regen-cancel')?.addEventListener('click', () => {
+      document.getElementById('regen-modal').classList.remove('active');
+    });
+
+    document.getElementById('regen-submit')?.addEventListener('click', async () => {
+      const direction = document.getElementById('regen-direction').value.trim();
+      if (!regenPostId) return;
+      const submitBtn = document.getElementById('regen-submit');
+      submitBtn.textContent = 'Submitting…';
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${API}/api/regenerate-post`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postId: regenPostId, clientEmail, clientHash, direction }),
+        });
+        const data = await res.json();
+        const item = document.querySelector(`[data-post-id="${regenPostId}"]`);
+        if (item) {
+          const statusEl = item.querySelector('.post-item__status');
+          statusEl.className = 'post-item__status Regenerating';
+          statusEl.textContent = '⏳ Regenerating…';
+          item.querySelector('.post-item__actions')?.remove();
+        }
+        showToast(data.message || 'Regenerating…');
+      } catch (e) { console.error(e); }
+
+      document.getElementById('regen-modal').classList.remove('active');
+      submitBtn.textContent = 'Regenerate';
+      submitBtn.disabled = false;
+    });
+
+    // ━━━ Toast helper ━━━
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 24px;border-radius:8px;font-size:0.85rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:opacity .3s;';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+    }
+
+    // ━━━ Onboarding Flow ━━━
+    const onboardingQuestions = [
+      { id: 'q1', label: 'Question 1 of 9', question: 'How did your business start?', hint: 'Tell us the origin story. What problem were you solving? What made you say "I need to build this"?', type: 'textarea' },
+      { id: 'q2', label: 'Question 2 of 9', question: 'Describe your dream customer.', hint: 'Not demographics — describe the person. What do they care about? What keeps them up at night? Where do they hang out online?', type: 'textarea' },
+      { id: 'q3', label: 'Question 3 of 9', question: 'What makes you different from competitors?', hint: 'Be specific. "Better quality" is not enough. What would a customer say if asked why they chose you over the alternative?', type: 'textarea' },
+      { id: 'q4', label: 'Question 4 of 9', question: 'Name 2-3 brands you admire (any industry).', hint: 'Not competitors — brands whose voice, vibe, or energy you wish yours had. What specifically do you like about them?', type: 'textarea' },
+      { id: 'q5', label: 'Question 5 of 9', question: 'What words should NEVER describe your brand?', hint: 'This is more revealing than what you want. "Cheap," "corporate," "boring" — what makes you cringe?', type: 'textarea' },
+      { id: 'q6', label: 'Question 6 of 9', question: 'What transformation does your customer experience?', hint: 'Before they find you, they feel ___. After, they feel ___. Paint the picture.', type: 'textarea' },
+      { id: 'q7', label: 'Question 7 of 9', question: 'What do you hate about social media?', hint: 'What makes you unfollow a brand? What feels fake, forced, or cringe to you? We will make sure your content never does this.', type: 'textarea' },
+      { id: 'q8', label: 'Question 8 of 9 — Brand Archetype', question: 'If your brand were a person at a party, which fits best?',
+        hint: 'Pick the one that feels most natural.',
+        type: 'options',
+        options: [
+          { value: 'The Outlaw', label: 'The Rebel', desc: 'Says what everyone is thinking but won\'t say. Provocative, unapologetic.' },
+          { value: 'The Sage', label: 'The Expert', desc: 'Everyone turns to them for advice. Authoritative, measured.' },
+          { value: 'The Jester', label: 'The Life of the Party', desc: 'Making everyone laugh. Irreverent, playful.' },
+          { value: 'The Lover', label: 'The Magnetic One', desc: 'Quietly draws everyone in. Sensual, intimate, passionate.' },
+          { value: 'The Caregiver', label: 'The Dependable Friend', desc: 'Always shows up. Warm, nurturing, selfless.' },
+          { value: 'The Hero', label: 'The Ambitious One', desc: 'Always working toward something big. Bold, motivating.' },
+        ],
+      },
+      { id: 'q9', label: 'Question 9 of 9 — Anti-Brand', question: 'Which of these would feel WRONG for your brand?',
+        hint: 'People know instantly what they are NOT. This is actually more revealing than Q8.',
+        type: 'options',
+        options: [
+          { value: 'Corporate/Stiff', label: 'Corporate & Stiff', desc: 'Formal, buttoned-up, no personality.' },
+          { value: 'Aggressive/Pushy', label: 'Aggressive & Pushy', desc: 'Hard sales, countdown timers, BUY NOW energy.' },
+          { value: 'Childish/Silly', label: 'Childish & Silly', desc: 'Too many emojis, try-hard humor, not serious.' },
+          { value: 'Cold/Clinical', label: 'Cold & Clinical', desc: 'Data-only, no warmth, feels like a textbook.' },
+          { value: 'Edgy/Provocative', label: 'Edgy & Provocative', desc: 'Controversial for attention, shock value.' },
+          { value: 'Basic/Generic', label: 'Basic & Generic', desc: '"Rise and grind" energy. Nothing original.' },
+        ],
+      },
+    ];
+
+    let currentStep = 0;
+    const onboardingAnswers = {};
+
+    function showOnboarding() {
+      const overlay = document.getElementById('onboarding-overlay');
+      overlay.classList.add('active');
+
+      // Check if Shopify already connected — skip that step if so
+      const shopifyAlreadyConnected = !!(clientData?.client?.shopify_domain);
+      if (shopifyAlreadyConnected) {
+        startOnboardingQuestions();
+      } else {
+        showOnboardingShopifyStep();
+      }
+    }
+
+    function showOnboardingShopifyStep() {
+      document.getElementById('onboarding-shopify-step').style.display = 'block';
+      document.getElementById('onboarding-questions-section').style.display = 'none';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      const connectBtn = document.getElementById('onb-shopify-connect-btn');
+      const skipBtn = document.getElementById('onb-shopify-skip');
+      const continueBtn = document.getElementById('onb-shopify-continue');
+      const msgEl = document.getElementById('onb-shopify-msg');
+
+      connectBtn?.addEventListener('click', async () => {
+        const domain = (document.getElementById('onb-shopify-domain')?.value || '').trim();
+        const token = (document.getElementById('onb-shopify-token')?.value || '').trim();
+        if (!domain || !token) {
+          showShopifyMsg(msgEl, 'error', 'Please enter both your store domain and token.');
+          return;
+        }
+        connectBtn.disabled = true;
+        connectBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Connecting...';
+        try {
+          const res = await fetch(`${API}/api/connect-shopify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+            body: JSON.stringify({ shopify_domain: domain, shopify_token: token })
+          });
+          const result = await res.json();
+          if (res.ok && result.success) {
+            showShopifyMsg(msgEl, 'success', `Connected: ${result.shop_name || domain} (${result.product_count != null ? result.product_count + ' products' : 'connected'})`);
+            if (clientData?.client) clientData.client.shopify_domain = domain;
+            connectBtn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Connected!';
+            if (continueBtn) continueBtn.style.display = 'inline-flex';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+          } else {
+            showShopifyMsg(msgEl, 'error', result.error || result.message || 'Connection failed.');
+            connectBtn.disabled = false;
+            connectBtn.innerHTML = '<i data-lucide="link" style="width:16px;height:16px;"></i> Connect Store';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+          }
+        } catch(e) {
+          showShopifyMsg(msgEl, 'error', 'Network error. Please try again.');
+          connectBtn.disabled = false;
+          connectBtn.innerHTML = '<i data-lucide="link" style="width:16px;height:16px;"></i> Connect Store';
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+      });
+
+      skipBtn?.addEventListener('click', startOnboardingQuestions);
+      continueBtn?.addEventListener('click', startOnboardingQuestions);
+    }
+
+    function startOnboardingQuestions() {
+      document.getElementById('onboarding-shopify-step').style.display = 'none';
+      document.getElementById('onboarding-questions-section').style.display = 'block';
+
+      // Build progress dots
+      const progress = document.getElementById('onboarding-progress');
+      progress.innerHTML = onboardingQuestions.map((_, i) => `<div class="onboarding-progress__dot ${i === 0 ? 'active' : ''}" data-step="${i}"></div>`).join('');
+
+      renderOnboardingStep(0);
+    }
+
+    function renderOnboardingStep(step) {
+      currentStep = step;
+      const q = onboardingQuestions[step];
+      const stepsEl = document.getElementById('onboarding-steps');
+      const isLast = step === onboardingQuestions.length - 1;
+
+      let inputHtml = '';
+      if (q.type === 'textarea') {
+        inputHtml = `<textarea class="onboarding-step__textarea" id="ob-input" placeholder="Type your answer...">${onboardingAnswers[q.id] || ''}</textarea>`;
+      } else if (q.type === 'options') {
+        inputHtml = `<div class="onboarding-options">${q.options.map(o => `
+          <button class="onboarding-option ${onboardingAnswers[q.id] === o.value ? 'selected' : ''}" data-value="${o.value}">
+            <div class="onboarding-option__label">${o.label}</div>
+            <div class="onboarding-option__desc">${o.desc}</div>
+          </button>
+        `).join('')}</div>`;
+      }
+
+      stepsEl.innerHTML = `
+        <div class="onboarding-step active">
+          <div class="onboarding-step__label">${q.label}</div>
+          <h3 class="onboarding-step__question">${q.question}</h3>
+          <p class="onboarding-step__hint">${q.hint}</p>
+          ${inputHtml}
+          <div class="onboarding-nav">
+            ${step > 0 ? '<button class="onboarding-nav__btn onboarding-nav__btn--back" id="ob-back">Back</button>' : '<div></div>'}
+            ${isLast
+              ? '<button class="onboarding-nav__btn onboarding-nav__btn--submit" id="ob-submit">Finish &amp; Activate</button>'
+              : '<button class="onboarding-nav__btn onboarding-nav__btn--next" id="ob-next">Continue</button>'}
+          </div>
+        </div>
+      `;
+
+      // Show social handles section on last step
+      const socialHandlesEl = document.getElementById('onboarding-social-handles');
+      if (socialHandlesEl) socialHandlesEl.style.display = isLast ? 'block' : 'none';
+
+      // Update progress dots
+      document.querySelectorAll('.onboarding-progress__dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === step);
+        dot.classList.toggle('done', i < step);
+      });
+
+      // Option selection
+      stepsEl.querySelectorAll('.onboarding-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+          stepsEl.querySelectorAll('.onboarding-option').forEach(o => o.classList.remove('selected'));
+          opt.classList.add('selected');
+          onboardingAnswers[q.id] = opt.dataset.value;
+        });
+      });
+
+      // Nav buttons
+      document.getElementById('ob-back')?.addEventListener('click', () => {
+        saveCurrentAnswer(q);
+        renderOnboardingStep(step - 1);
+      });
+
+      document.getElementById('ob-next')?.addEventListener('click', () => {
+        saveCurrentAnswer(q);
+        renderOnboardingStep(step + 1);
+      });
+
+      document.getElementById('ob-submit')?.addEventListener('click', submitOnboarding);
+    }
+
+    function saveCurrentAnswer(q) {
+      if (q.type === 'textarea') {
+        const input = document.getElementById('ob-input');
+        if (input) onboardingAnswers[q.id] = input.value;
+      }
+    }
+
+    async function submitOnboarding() {
+      const q = onboardingQuestions[currentStep];
+      saveCurrentAnswer(q);
+
+      const submitBtn = document.getElementById('ob-submit');
+      submitBtn.textContent = 'Building your profile...';
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${API}/api/onboarding`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientEmail, clientHash, answers: { ...onboardingAnswers, instagram_handle: document.getElementById('onb-instagram')?.value || '', tiktok_handle: document.getElementById('onb-tiktok')?.value || '', facebook_handle: document.getElementById('onb-facebook')?.value || '' } }),
+        });
+
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+
+        // Close onboarding and refresh dashboard
+        document.getElementById('onboarding-overlay').classList.remove('active');
+
+        if (data.profile) {
+          clientData.profile = data.profile;
+          renderDashboard(clientData);
+        }
+      } catch (err) {
+        console.error('Onboarding error:', err);
+        submitBtn.textContent = 'Try Again';
+        submitBtn.disabled = false;
+      }
+    }
+
+    // ━━━ Active Nav Tracking ━━━
+    let activeNav = 'dashboard';
+    function rerenderCurrentPage() {
+      if (activeNav === 'dashboard') renderDashboard(clientData);
+      else if (activeNav === 'content') renderContentPage(clientData);
+      else if (activeNav === 'analytics') renderAnalyticsPage(clientData);
+      else if (activeNav === 'brand-voice') renderBrandVoicePage(clientData);
+      else if (activeNav === 'ai-coach') renderAICoach();
+      else if (activeNav === 'competitor-intel') renderCompetitorIntel();
+      else if (activeNav === 'settings') renderSettingsPage(clientData);
+      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+    }
+
+    // ━━━ Tier Upgrade Polling (30s) ━━━
+    // Silently re-fetches client data; if tier flips Free→paid, re-renders current page instantly
+    let tierPollInterval = null;
+    function startTierPolling() {
+      if (tierPollInterval) return;
+      tierPollInterval = setInterval(async () => {
+        if (!clientEmail || !clientHash) return;
+        try {
+          const res = await fetch(`${API}/api/client-data`, {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+          });
+          if (!res.ok) return;
+          const freshData = await res.json();
+          const wasGated = !clientData?.client?.is_paid;
+          const nowPaid = freshData?.client?.is_paid;
+          clientData = freshData;
+          if (wasGated && nowPaid) {
+            // Tier just upgraded — re-render without logout
+            console.log('[SocialEngine] Tier upgrade detected — refreshing portal...');
+            rerenderCurrentPage();
+            // Show brief toast notification
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10B981;color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;font-size:0.875rem;z-index:9999;box-shadow:0 4px 20px rgba(16,185,129,0.4);';
+            toast.textContent = '🎉 Pro access unlocked — enjoy your full dashboard!';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+          }
+        } catch (e) { /* silent fail */ }
+      }, 30000);
+    }
+    function stopTierPolling() {
+      if (tierPollInterval) { clearInterval(tierPollInterval); tierPollInterval = null; }
+    }
+
+    // ━━━ Sidebar Nav ━━━
+    document.querySelectorAll('.dash-nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.dash-nav-item').forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        const sidebar = document.getElementById('dash-sidebar');
+        const overlay = document.getElementById('dash-overlay');
+        if (sidebar.classList.contains('open')) { sidebar.classList.remove('open'); overlay.classList.remove('active'); document.body.style.overflow = ''; }
+        const nav = item.dataset.nav;
+        activeNav = nav;
+        if (nav === 'dashboard') { renderDashboard(clientData); }
+        else if (nav === 'content') { renderContentPage(clientData); }
+        else if (nav === 'analytics') { renderAnalyticsPage(clientData); }
+        else if (nav === 'brand-voice') { renderBrandVoicePage(clientData); }
+        else if (nav === 'ai-coach') { renderAICoach(); }
+        else if (nav === 'competitor-intel') { renderCompetitorIntel(); }
+        else if (nav === 'settings') { renderSettingsPage(clientData); }
+      });
+    });
+
+    // ━━━ Mobile Sidebar ━━━
+    const dashMobileToggle = document.getElementById('dash-mobile-toggle');
+    const dashSidebar = document.getElementById('dash-sidebar');
+    const dashOverlay = document.getElementById('dash-overlay');
+    if (dashMobileToggle) dashMobileToggle.addEventListener('click', () => { dashSidebar.classList.toggle('open'); dashOverlay.classList.toggle('active'); });
+    if (dashOverlay) dashOverlay.addEventListener('click', () => { dashSidebar.classList.remove('open'); dashOverlay.classList.remove('active'); document.body.style.overflow = ''; });
+
+    // ━━━ Feature Cards ━━━
+    const featureCards = document.querySelectorAll('.feature-card');
+    const cardObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => { if (entry.isIntersecting) { setTimeout(() => entry.target.classList.add('revealed'), i * 80); cardObserver.unobserve(entry.target); } });
+    }, { threshold: 0.1 });
+    featureCards.forEach(card => cardObserver.observe(card));
+
+    // ━━━ Content Studio Page ━━━
+    function renderContentPage(data) {
+      const content = document.getElementById('dash-content');
+      const posts = data.content || [];
+      const pending = posts.filter(p => ['Pending','Draft','Ready for Review','Regenerating'].includes(p.status));
+      const approved = posts.filter(p => p.status === 'Approved' || p.status === 'Scheduled');
+      const rejected = posts.filter(p => p.status === 'Rejected');
+      const videos = posts.filter(p => (p.content_type || '').includes('reel') || (p.post_label || '').includes('reel') || p.video_url);
+
+      // Store posts for modal navigation
+      studioPostsList = posts;
+
+      const gridSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+      const listSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
+
+      content.innerHTML = `
+        <div class="studio-header">
+          <div class="studio-header__left">
+            <h2>Content Studio</h2>
+            <p>${posts.length} pieces &middot; ${pending.length} need review &middot; ${videos.length} videos</p>
+          </div>
+          <div class="studio-header__right">
+            <div class="studio-view-toggle">
+              <button class="studio-view-btn ${studioViewMode === 'grid' ? 'active' : ''}" onclick="switchStudioView('grid')">${gridSvg} Grid</button>
+              <button class="studio-view-btn ${studioViewMode === 'list' ? 'active' : ''}" onclick="switchStudioView('list')">${listSvg} List</button>
+            </div>
+          </div>
+        </div>
+        <div class="studio-filters" id="studio-filters">
+          <button class="studio-filter active" data-filter="all">All <span class="studio-filter__count">${posts.length}</span></button>
+          <button class="studio-filter" data-filter="pending">Pending <span class="studio-filter__count">${pending.length}</span></button>
+          <button class="studio-filter" data-filter="approved">Approved <span class="studio-filter__count">${approved.length}</span></button>
+          ${videos.length ? `<button class="studio-filter" data-filter="video">Video <span class="studio-filter__count">${videos.length}</span></button>` : ''}
+          ${rejected.length ? `<button class="studio-filter" data-filter="rejected">Rejected <span class="studio-filter__count">${rejected.length}</span></button>` : ''}
+        </div>
+        <div id="studio-content-area">
+          ${renderStudioContent(posts)}
+        </div>
+      `;
+
+      // Filter logic
+      content.querySelectorAll('.studio-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+          content.querySelectorAll('.studio-filter').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const f = btn.dataset.filter;
+          let filtered;
+          if (f === 'all') filtered = posts;
+          else if (f === 'pending') filtered = pending;
+          else if (f === 'approved') filtered = approved;
+          else if (f === 'video') filtered = videos;
+          else filtered = rejected;
+          studioPostsList = filtered;
+          document.getElementById('studio-content-area').innerHTML = renderStudioContent(filtered);
+        });
+      });
+    }
+
+    function renderStudioContent(posts) {
+      if (posts.length === 0) {
+        return `<div class="empty-state" style="padding:60px 20px;"><div class="empty-state__icon"><i data-lucide="inbox" style="width:40px;height:40px;"></i></div><div class="empty-state__title">No content yet</div><div class="empty-state__desc">Your AI is preparing your first batch of content. Check back soon.</div></div>`;
+      }
+      if (studioViewMode === 'list') {
+        return `<div class="studio-list">${posts.map((p, i) => renderStudioListItem(p, i)).join('')}</div>`;
+      }
+      return `<div class="studio-grid">${posts.map((p, i) => renderStudioCard(p, i)).join('')}</div>`;
+    }
+
+    window.switchStudioView = function(mode) {
+      studioViewMode = mode;
+      document.querySelectorAll('.studio-view-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`.studio-view-btn:${mode === 'grid' ? 'first' : 'last'}-child`)?.classList.add('active');
+      const activeFilter = document.querySelector('.studio-filter.active');
+      const f = activeFilter?.dataset.filter || 'all';
+      const posts = clientData?.content || [];
+      let filtered = posts;
+      if (f === 'pending') filtered = posts.filter(p => ['Pending','Draft','Ready for Review','Regenerating'].includes(p.status));
+      else if (f === 'approved') filtered = posts.filter(p => p.status === 'Approved' || p.status === 'Scheduled');
+      else if (f === 'video') filtered = posts.filter(p => (p.content_type || '').includes('reel') || (p.post_label || '').includes('reel') || p.video_url);
+      else if (f === 'rejected') filtered = posts.filter(p => p.status === 'Rejected');
+      studioPostsList = filtered;
+      document.getElementById('studio-content-area').innerHTML = renderStudioContent(filtered);
+    };
+
+    // ━━━ Analytics Page ━━━
+    function renderAnalyticsPage(data) {
+      const content = document.getElementById('dash-content');
+
+      // Free tier: show full upgrade page instead of analytics
+      if (!isPaid()) {
+        content.innerHTML = `
+          <div style="margin-bottom:var(--space-6);">
+            <h2 style="font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;color:var(--color-text);margin:0 0 var(--space-1);">Analytics</h2>
+            <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin:0;">Performance overview for ${data.client.business_name || 'your brand'}</p>
+          </div>
+          ${upgradeFullpageHTML(
+            'bar-chart-3',
+            'Analytics Dashboard',
+            'See exactly what\'s working. Track engagement rates, follower growth, best-performing content types, and revenue attribution across all your platforms.',
+            [
+              'Real-time engagement tracking per post',
+              'Follower growth trends by platform',
+              'Best time to post analysis',
+              'Revenue attribution from social',
+              'Content performance comparison',
+            ]
+          )}
+        `;
+        setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+        return;
+      }
+
+      // Show loading state, then fetch real analytics
+      content.innerHTML = `
+        <div style="margin-bottom:var(--space-6);display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <h2 style="font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;color:var(--color-text);margin:0 0 var(--space-1);">Analytics</h2>
+            <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin:0;">Performance overview for ${data.client.business_name || 'your brand'}</p>
+          </div>
+          <button id="analytics-refresh" style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:transparent;border:1px solid var(--color-border);border-radius:var(--radius-md);color:var(--color-text-muted);font-size:0.8rem;cursor:pointer;"><i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Refresh</button>
+        </div>
+        <div id="analytics-body"><div class="dash-loading"><div class="dash-loading__spinner"></div></div></div>
+      `;
+      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+
+      document.getElementById('analytics-refresh')?.addEventListener('click', () => loadAnalytics(data));
+      loadAnalytics(data);
+    }
+
+    async function loadAnalytics(data) {
+      const body = document.getElementById('analytics-body');
+      if (!body) return;
+      body.innerHTML = '<div class="dash-loading"><div class="dash-loading__spinner"></div></div>';
+
+      let analytics = null;
+      try {
+        const res = await fetch(`${API}/api/client-analytics`, {
+          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+        });
+        if (res.ok) analytics = await res.json();
+      } catch(e) { /* fall through to local data */ }
+
+      const posts = data.content || [];
+      const c = data.client || {};
+      const profile = data.profile || {};
+      const bv = data.brand_voice || {};
+
+      // Use analytics API data if available, fall back to local content data
+      const totalContent = analytics?.total_content ?? posts.length;
+      const postsPublished = analytics?.posts_published ?? posts.filter(p => p.status === 'Published' || p.status === 'Scheduled').length;
+      const contentThisWeek = analytics?.content_this_week ?? (() => {
+        const weekAgo = Date.now() - 7*24*60*60*1000;
+        return posts.filter(p => p.scheduled_date && new Date(p.scheduled_date).getTime() > weekAgo).length;
+      })();
+      const approvalRatePct = analytics?.approval_rate ?? (() => {
+        const decided = posts.filter(p => ['Approved','Scheduled','Published','Rejected'].includes(p.status));
+        if (!decided.length) return 0;
+        return Math.round(posts.filter(p => ['Approved','Scheduled','Published'].includes(p.status)).length / decided.length * 100);
+      })();
+
+      const platformCounts = analytics?.platform_counts ?? (() => {
+        const pc = {};
+        posts.forEach(p => { const pl = (p.platform || 'other').toLowerCase(); pc[pl] = (pc[pl]||0)+1; });
+        return pc;
+      })();
+
+      const statusCounts = analytics?.status_counts ?? (() => {
+        const sc = {};
+        posts.forEach(p => { const st = p.status || 'Draft'; sc[st] = (sc[st]||0)+1; });
+        return sc;
+      })();
+
+      // Timeline: posts per week for last 8 weeks
+      const weeklyTimeline = analytics?.weekly_timeline ?? (() => {
+        const weeks = [];
+        for (let i=7; i>=0; i--) {
+          const start = new Date(); start.setDate(start.getDate() - i*7 - 6); start.setHours(0,0,0,0);
+          const end = new Date(); end.setDate(end.getDate() - i*7); end.setHours(23,59,59,999);
+          const label = start.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+          const count = posts.filter(p => {
+            if (!p.scheduled_date) return false;
+            const d = new Date(p.scheduled_date + 'T12:00:00');
+            return d >= start && d <= end;
+          }).length;
+          weeks.push({ label, count });
+        }
+        return weeks;
+      })();
+      const maxWeekly = Math.max(...weeklyTimeline.map(w => w.count), 1);
+
+      const approvalColor = approvalRatePct >= 80 ? 'analytics-kpi-card__value--green' : approvalRatePct >= 50 ? 'analytics-kpi-card__value--yellow' : 'analytics-kpi-card__value--red';
+
+      const platformColors = { instagram: '#E1306C', tiktok: '#69C9D0', facebook: '#1877F2', pinterest: '#E60023', linkedin: '#0A66C2', twitter: '#1DA1F2', x: '#000' };
+      const statusColors = { 'Draft': '#6B7280', 'Ready for Review': '#F59E0B', 'Approved': '#3B82F6', 'Published': '#10B981', 'Scheduled': '#8B5CF6', 'Rejected': '#EF4444' };
+      const totalPlatform = Object.values(platformCounts).reduce((a,b)=>a+b,0) || 1;
+      const totalStatus = Object.values(statusCounts).reduce((a,b)=>a+b,0) || 1;
+
+      // Shopify & Social data from analytics
+      const shopifyData = analytics?.shopify;
+      const socialData = analytics?.social_profiles || {};
+      const igData = socialData.instagram;
+      const ttData = socialData.tiktok;
+      const hasShopify = c.shopify_domain || shopifyData;
+      const hasSocial = igData || ttData;
+
+      // Build donut SVG for status breakdown
+      function buildDonut(segments) {
+        const r = 40, cx = 50, cy = 50, circ = 2 * Math.PI * r;
+        let offset = 0;
+        const total = segments.reduce((a,s)=>a+s.count,0)||1;
+        const paths = segments.map(s => {
+          const pct = s.count/total;
+          const dash = circ * pct;
+          const gap = circ - dash;
+          const el = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="18" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" style="transform-origin:${cx}px ${cy}px;transform:rotate(-90deg);"/>`;
+          offset += circ * pct;
+          return el;
+        }).join('');
+        return `<svg viewBox="0 0 100 100" width="100" height="100"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="18"/>${paths}<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" fill="var(--color-text)" font-size="14" font-weight="700" font-family="sans-serif">${totalStatus}</text></svg>`;
+      }
+
+      const statusSegments = Object.entries(statusCounts).map(([st, cnt]) => ({ label: st, count: cnt, color: statusColors[st] || '#6B7280' }));
+
+      body.innerHTML = `
+        <!-- KPI Cards -->
+        <div class="analytics-kpi-grid">
+          <div class="analytics-kpi-card">
+            <div class="analytics-kpi-card__label">Total Content Created</div>
+            <div class="analytics-kpi-card__value">${totalContent}</div>
+            <div class="analytics-kpi-card__sub">Pieces across all platforms</div>
+          </div>
+          <div class="analytics-kpi-card">
+            <div class="analytics-kpi-card__label">Approval Rate</div>
+            <div class="analytics-kpi-card__value ${approvalColor}">${approvalRatePct}%</div>
+            <div class="analytics-kpi-card__sub">${approvalRatePct >= 80 ? 'Excellent — keep it up' : approvalRatePct >= 50 ? 'Good — room to grow' : 'Needs attention'}</div>
+          </div>
+          <div class="analytics-kpi-card">
+            <div class="analytics-kpi-card__label">Posts Published</div>
+            <div class="analytics-kpi-card__value">${postsPublished}</div>
+            <div class="analytics-kpi-card__sub">Sent to your audience</div>
+          </div>
+          <div class="analytics-kpi-card">
+            <div class="analytics-kpi-card__label">Content This Week</div>
+            <div class="analytics-kpi-card__value">${contentThisWeek}</div>
+            <div class="analytics-kpi-card__sub">Scheduled last 7 days</div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="analytics-charts-row">
+          <!-- Platform breakdown -->
+          <div class="analytics-card">
+            <div class="analytics-card__header"><h3 class="analytics-card__title">Content by Platform</h3></div>
+            <div class="analytics-card__body">
+              ${Object.keys(platformCounts).length === 0 ? '<p style="font-size:var(--text-sm);color:var(--color-text-muted);">No content yet</p>' :
+                Object.entries(platformCounts).sort((a,b)=>b[1]-a[1]).map(([pl, cnt]) => {
+                  const pct = Math.round(cnt/totalPlatform*100);
+                  const color = platformColors[pl] || 'var(--color-accent)';
+                  return `<div class="bar-row">
+                    <div class="bar-row__meta">
+                      <span style="color:var(--color-text);font-weight:500;text-transform:capitalize;">${pl}</span>
+                      <span style="color:var(--color-text-muted);">${cnt} (${pct}%)</span>
+                    </div>
+                    <div class="bar-row__track"><div class="bar-row__fill" style="width:${pct}%;background:${color};"></div></div>
+                  </div>`;
+                }).join('')
+              }
+            </div>
+          </div>
+
+          <!-- Status donut -->
+          <div class="analytics-card">
+            <div class="analytics-card__header"><h3 class="analytics-card__title">Content by Status</h3></div>
+            <div class="analytics-card__body">
+              <div class="donut-wrap">
+                ${buildDonut(statusSegments)}
+                <div class="donut-legend">
+                  ${statusSegments.map(s => `<div class="donut-legend-item"><div class="donut-legend-dot" style="background:${s.color};"></div><span>${s.label}</span><span style="margin-left:auto;font-weight:600;color:var(--color-text);">${s.count}</span></div>`).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Timeline -->
+        <div class="analytics-card" style="margin-bottom:var(--space-5);">
+          <div class="analytics-card__header"><h3 class="analytics-card__title">Content Timeline — Last 8 Weeks</h3></div>
+          <div class="analytics-card__body">
+            <div class="timeline-bars">
+              ${weeklyTimeline.map(w => {
+                const heightPct = maxWeekly > 0 ? Math.max(2, Math.round(w.count/maxWeekly*100)) : 2;
+                return `<div class="timeline-bar-wrap" title="${w.label}: ${w.count} posts">
+                  <div class="timeline-bar" style="height:${heightPct}px;"></div>
+                  <div class="timeline-label">${w.label}</div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Shopify Intelligence (only if connected) -->
+        ${hasShopify ? `
+        <div class="analytics-card" style="margin-bottom:var(--space-5);">
+          <div class="analytics-card__header" style="display:flex;align-items:center;gap:10px;">
+            <i data-lucide="shopping-bag" style="width:18px;height:18px;color:var(--color-accent);"></i>
+            <h3 class="analytics-card__title">Shopify Intelligence</h3>
+          </div>
+          <div class="analytics-card__body">
+            <div class="shopify-intel-grid">
+              <div class="analytics-kpi-card">
+                <div class="analytics-kpi-card__label">Products in Catalog</div>
+                <div class="analytics-kpi-card__value">${shopifyData?.product_count ?? '—'}</div>
+                <div class="analytics-kpi-card__sub">${c.shopify_domain || 'Your store'}</div>
+              </div>
+              <div class="analytics-kpi-card">
+                <div class="analytics-kpi-card__label">Low Stock Alerts</div>
+                <div class="analytics-kpi-card__value ${(shopifyData?.low_stock_count||0) > 0 ? 'analytics-kpi-card__value--yellow' : ''}">${shopifyData?.low_stock_count ?? '—'}</div>
+                <div class="analytics-kpi-card__sub">Items running low</div>
+              </div>
+              ${shopifyData?.revenue_30d != null ? `<div class="analytics-kpi-card">
+                <div class="analytics-kpi-card__label">30-Day Revenue</div>
+                <div class="analytics-kpi-card__value analytics-kpi-card__value--green">$${Number(shopifyData.revenue_30d).toLocaleString()}</div>
+                <div class="analytics-kpi-card__sub">Last 30 days</div>
+              </div>` : ''}
+              ${shopifyData?.recent_orders != null ? `<div class="analytics-kpi-card">
+                <div class="analytics-kpi-card__label">Recent Orders</div>
+                <div class="analytics-kpi-card__value">${shopifyData.recent_orders}</div>
+                <div class="analytics-kpi-card__sub">Last 30 days</div>
+              </div>` : ''}
+            </div>
+          </div>
+        </div>` : ''}
+
+        <!-- Social Profiles (only if data available) -->
+        ${hasSocial ? `
+        <div class="analytics-card" style="margin-bottom:var(--space-5);">
+          <div class="analytics-card__header" style="display:flex;align-items:center;gap:10px;">
+            <i data-lucide="users" style="width:18px;height:18px;color:var(--color-accent);"></i>
+            <h3 class="analytics-card__title">Social Profiles</h3>
+          </div>
+          <div class="analytics-card__body">
+            <div class="social-profile-grid">
+              ${igData ? `<div class="social-profile-card">
+                <div class="social-profile-card__platform">
+                  <div class="social-profile-card__icon" style="background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);">📸</div>
+                  <div>
+                    <div class="social-profile-card__name">Instagram</div>
+                    <div class="social-profile-card__handle">@${igData.username || c.instagram_handle || '—'}</div>
+                  </div>
+                </div>
+                <div class="social-stat-row">
+                  <div class="social-stat"><div class="social-stat__num">${igData.followers_count != null ? Number(igData.followers_count).toLocaleString() : '—'}</div><div class="social-stat__label">Followers</div></div>
+                  <div class="social-stat"><div class="social-stat__num">${igData.media_count != null ? Number(igData.media_count).toLocaleString() : '—'}</div><div class="social-stat__label">Posts</div></div>
+                </div>
+                ${igData.biography ? `<p style="font-size:0.78rem;color:var(--color-text-muted);margin:var(--space-3) 0 0;line-height:1.5;">${igData.biography.substring(0,120)}${igData.biography.length>120?'…':''}</p>` : ''}
+              </div>` : ''}
+              ${ttData ? `<div class="social-profile-card">
+                <div class="social-profile-card__platform">
+                  <div class="social-profile-card__icon" style="background:#000;border:1px solid rgba(255,255,255,0.15);">🎵</div>
+                  <div>
+                    <div class="social-profile-card__name">TikTok</div>
+                    <div class="social-profile-card__handle">@${ttData.username || c.tiktok_handle || '—'}</div>
+                  </div>
+                </div>
+                <div class="social-stat-row">
+                  <div class="social-stat"><div class="social-stat__num">${ttData.follower_count != null ? Number(ttData.follower_count).toLocaleString() : '—'}</div><div class="social-stat__label">Followers</div></div>
+                  <div class="social-stat"><div class="social-stat__num">${ttData.video_count != null ? Number(ttData.video_count).toLocaleString() : '—'}</div><div class="social-stat__label">Videos</div></div>
+                </div>
+                ${ttData.bio_description ? `<p style="font-size:0.78rem;color:var(--color-text-muted);margin:var(--space-3) 0 0;line-height:1.5;">${ttData.bio_description.substring(0,120)}${ttData.bio_description.length>120?'…':''}</p>` : ''}
+              </div>` : ''}
+            </div>
+          </div>
+        </div>` : ''}
+
+        <!-- Brand Voice Summary -->
+        ${(profile || bv) ? `
+        <div class="analytics-card">
+          <div class="analytics-card__header" style="display:flex;align-items:center;gap:10px;">
+            <i data-lucide="fingerprint" style="width:18px;height:18px;color:var(--color-accent);"></i>
+            <h3 class="analytics-card__title">Brand Voice Summary</h3>
+          </div>
+          <div class="analytics-card__body">
+            ${profile?.archetype ? `<div class="archetype-badge">🎭 ${profile.archetype}</div>` : ''}
+            ${bv?.tone_adjectives ? `<div style="margin-bottom:var(--space-4);">
+              ${bv.tone_adjectives.split(',').map(t => `<span class="bv-tag">${t.trim()}</span>`).join('')}
+            </div>` : ''}
+            ${profile?.voice_summary ? `<p style="font-size:var(--text-sm);color:var(--color-text-muted);line-height:1.7;margin:0 0 var(--space-3);">${profile.voice_summary}</p>` : ''}
+            ${bv?.last_updated ? `<div style="font-size:0.75rem;color:var(--color-text-muted);">Last updated: ${new Date(bv.last_updated).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>` : ''}
+          </div>
+        </div>` : ''}
+      `;
+      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+    }
+
+    // ━━━ Brand Voice Page ━━━
+    function renderBrandVoicePage(data) {
+      const content = document.getElementById('dash-content');
+      const bv = data.brand_voice;
+      const profile = data.profile;
+      content.innerHTML = `
+        <div style="margin-bottom:var(--space-6);">
+          <h2 style="font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;color:var(--color-text);margin:0 0 var(--space-1);">Brand Voice</h2>
+          <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin:0;">How your AI writes, speaks, and represents your brand</p>
+        </div>
+        ${profile?.archetype ? `
+        <div class="dash-card" style="margin-bottom:var(--space-6);">
+          <div class="dash-card__header"><h3 class="dash-card__title">Brand Archetype</h3></div>
+          <div style="padding:var(--space-5) var(--space-6);">
+            <div style="font-size:1.25rem;font-weight:600;color:var(--color-text);margin-bottom:var(--space-2);">🎭 ${profile.archetype}</div>
+            <p style="font-size:var(--text-sm);color:var(--color-text-muted);line-height:1.6;margin:0;">${profile.voice_summary || 'Your AI writes in a tone that matches this archetype.'}</p>
+          </div>
+        </div>` : ''}
+        <div class="dash-card" style="margin-bottom:var(--space-6);">
+          <div class="dash-card__header"><h3 class="dash-card__title">Voice Configuration</h3></div>
+          <div style="padding:var(--space-5) var(--space-6);">
+            ${bv ? `
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);">
+                <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Tone</div><div style="font-size:var(--text-sm);color:var(--color-text);">${bv.tone_adjectives || 'Not configured'}</div></div>
+                <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Style</div><div style="font-size:var(--text-sm);color:var(--color-text);">${bv.writing_style || 'Default'}</div></div>
+                <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Audience</div><div style="font-size:var(--text-sm);color:var(--color-text);">${bv.target_audience || 'Not set'}</div></div>
+                <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Version</div><div style="font-size:var(--text-sm);color:var(--color-text);">${bv.version || 'v1'}</div></div>
+              </div>
+              ${bv.sample_caption ? `<div style="margin-top:var(--space-5);padding:var(--space-4);background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.12);border-radius:var(--radius-md);">
+                <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-accent);margin-bottom:var(--space-2);">Sample Caption</div>
+                <p style="font-size:var(--text-sm);color:var(--color-text);line-height:1.6;margin:0;font-style:italic;">"${bv.sample_caption}"</p>
+              </div>` : ''}
+            ` : `
+              <div style="text-align:center;padding:var(--space-6);">
+                <i data-lucide="message-square" style="width:32px;height:32px;margin-bottom:var(--space-3);opacity:0.4;color:var(--color-text-muted);"></i>
+                <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin:0;">Complete the onboarding questionnaire to activate your brand voice. Your AI will learn your tone, style, and audience.</p>
+              </div>
+            `}
+          </div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card__header"><h3 class="dash-card__title">Train Your Voice</h3></div>
+          <div style="padding:var(--space-5) var(--space-6);">
+            <p style="font-size:var(--text-sm);color:var(--color-text-muted);line-height:1.6;margin:0 0 var(--space-4);">The more content you approve, the better your AI understands your preferences. Every approval and rejection teaches the system what you like.</p>
+            ${!isPaid() ? `<div style="margin-bottom:var(--space-4);padding:16px 20px;background:linear-gradient(135deg,rgba(59,130,246,0.06),rgba(139,92,246,0.06));border:1px solid rgba(59,130,246,0.18);border-radius:10px;"><div style="display:flex;align-items:flex-start;gap:12px;"><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;color:var(--color-text);margin-bottom:4px;">Unlock Full Brand Voice Calibration</div><div style="font-size:0.75rem;color:var(--color-text-muted);line-height:1.5;margin-bottom:10px;">AI archetype analysis, onboarding questionnaire, tone training, and vocabulary calibration — all included in Pro.</div><a href="${STRIPE_LINK}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--color-accent);color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:0.75rem;">Upgrade — $297/mo ${ARROW_SVG}</a></div></div></div>` : ''}
+            <div style="display:flex;gap:var(--space-3);">
+              <button class="btn btn--primary btn--sm" onclick="document.querySelector('[data-nav=content]').click();">Review Content</button>
+              <button class="btn btn--sm" style="background:transparent;border:1px solid var(--color-border);color:var(--color-text);" onclick="document.querySelector('[data-nav=ai-coach]').click();">Talk to AI Coach</button>
+            </div>
+          </div>
+        </div>
+      `;
+      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+    }
+
+    // ━━━ Settings Page ━━━
+    function renderSettingsPage(data) {
+      const content = document.getElementById('dash-content');
+      const c = data.client;
+      const isShopifyConnected = !!(c.shopify_domain && c.shopify_domain.length > 0);
+      const isIGConnected = !!(c.instagram_user_id);
+
+      content.innerHTML = `
+        <div style="margin-bottom:var(--space-6);">
+          <h2 style="font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;color:var(--color-text);margin:0 0 var(--space-1);">Settings</h2>
+          <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin:0;">Manage your account and integrations</p>
+        </div>
+
+        <!-- Account Info -->
+        <div class="dash-card" style="margin-bottom:var(--space-6);">
+          <div class="dash-card__header"><h3 class="dash-card__title">Account</h3></div>
+          <div style="padding:var(--space-5) var(--space-6);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);">
+              <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Business Name</div><div style="font-size:var(--text-sm);color:var(--color-text);">${c.business_name || '—'}</div></div>
+              <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Contact</div><div style="font-size:var(--text-sm);color:var(--color-text);">${c.contact_name || '—'}</div></div>
+              <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Email</div><div style="font-size:var(--text-sm);color:var(--color-text);">${c.contact_email || '—'}</div></div>
+              <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Website</div><div style="font-size:var(--text-sm);color:var(--color-text);">${c.website || '—'}</div></div>
+              <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Plan</div><div style="font-size:var(--text-sm);color:var(--color-text);">${c.tier || 'Pro'} &middot; $${c.tier === 'Annual' ? '247' : '297'}/mo</div></div>
+              <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:var(--space-2);">Platforms</div><div style="font-size:var(--text-sm);color:var(--color-text);">${(c.platforms || []).join(', ') || 'Not configured'}</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connect Shopify -->
+        <div class="dash-card" style="margin-bottom:var(--space-6);" id="settings-shopify-card">
+          <div class="dash-card__header" style="display:flex;align-items:center;gap:10px;">
+            <i data-lucide="shopping-bag" style="width:18px;height:18px;color:var(--color-accent);"></i>
+            <h3 class="dash-card__title">Connect Shopify</h3>
+            ${isShopifyConnected ? `<span style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:0.75rem;color:#10B981;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:#10B981;box-shadow:0 0 6px #10B981;"></span>Connected</span>` : ''}
+          </div>
+          <div style="padding:var(--space-5) var(--space-6);">
+            ${isShopifyConnected ? `
+              <div class="connect-status connect-status--success">
+                <div class="connect-status-dot connect-status-dot--green"></div>
+                Connected to <strong>${c.shopify_domain}</strong>
+              </div>
+              <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin:0 0 var(--space-4);">Your Shopify store is connected. SocialEngine reads your product catalog, inventory levels, and orders to create targeted content.</p>
+              <button class="connect-btn connect-btn--secondary" id="shopify-reconnect-btn"><i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Update Connection</button>
+              <div id="shopify-reconnect-form" style="display:none;margin-top:var(--space-5);"></div>
+            ` : `
+              <p style="font-size:var(--text-sm);color:var(--color-text-muted);line-height:1.6;margin:0 0 var(--space-5);">Connect your Shopify store to give SocialEngine full access to your product catalog, inventory, and orders. This enables inventory-intelligent content and competitor insights.</p>
+              <ul class="shopify-connect-steps">
+                <li><span>Go to your <strong>Shopify admin</strong> → <strong>Settings</strong> → <strong>Apps and sales channels</strong> → <strong>Develop apps</strong></span></li>
+                <li><span>Click <strong>"Create an app"</strong> and name it <strong>SocialEngine</strong></span></li>
+                <li><span>Configure Admin API scopes: <strong>read_products</strong>, <strong>read_orders</strong>, <strong>read_inventory</strong>, <strong>read_customers</strong> → Save</span></li>
+                <li><span>Click <strong>"Install app"</strong> then copy your <strong>Admin API access token</strong> (shown only once)</span></li>
+                <li><span>Paste your token and store domain below</span></li>
+              </ul>
+              <div id="shopify-connect-form">
+                ${shopifyFormHTML()}
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- Connect Instagram -->
+        <div class="dash-card" style="margin-bottom:var(--space-6);">
+          <div class="dash-card__header" style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.1rem;">📸</span>
+            <h3 class="dash-card__title">Connect Instagram</h3>
+            ${isIGConnected ? `<span style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:0.75rem;color:#10B981;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:#10B981;box-shadow:0 0 6px #10B981;"></span>Connected</span>` : ''}
+          </div>
+          <div style="padding:var(--space-5) var(--space-6);">
+            ${isIGConnected ? `
+              <div class="connect-status connect-status--success">
+                <div class="connect-status-dot connect-status-dot--green"></div>
+                Connected as <strong>@${c.instagram_handle || 'your account'}</strong>
+              </div>
+              <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin:0;">Instagram is connected. SocialEngine can read your profile stats and schedule content directly to your feed.</p>
+            ` : `
+              <p style="font-size:var(--text-sm);color:var(--color-text-muted);line-height:1.6;margin:0 0 var(--space-4);">Connect your Instagram Business or Creator account to enable direct posting, profile analytics, and engagement tracking.</p>
+              <a href="${API}/api/auth/instagram?email=${encodeURIComponent(clientEmail)}" class="instagram-connect-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                Connect Instagram Account
+              </a>
+              <p style="font-size:0.75rem;color:var(--color-text-muted);margin:var(--space-3) 0 0;">You'll be redirected to Meta to authorize access. We only request read + publish permissions.</p>
+            `}
+          </div>
+        </div>
+
+        <!-- Connected Platforms -->
+        <div class="dash-card" style="margin-bottom:var(--space-6);">
+          <div class="dash-card__header"><h3 class="dash-card__title">Connected Platforms</h3></div>
+          <div style="padding:var(--space-5) var(--space-6);">
+            ${(c.platforms || []).length > 0 ? (c.platforms || []).map(p => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <span style="font-size:var(--text-sm);color:var(--color-text);text-transform:capitalize;">${p}</span>
+                <span style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:#10B981;font-weight:500;"><span style="width:6px;height:6px;border-radius:50%;background:#10B981;"></span>Connected</span>
+              </div>
+            `).join('') : '<p style="font-size:var(--text-sm);color:var(--color-text-muted);">No publishing platforms configured yet. Contact support to set up your platforms.</p>'}
+          </div>
+        </div>
+
+        <!-- Subscription -->
+        <div class="dash-card">
+          <div class="dash-card__header"><h3 class="dash-card__title">Subscription</h3></div>
+          <div style="padding:var(--space-5) var(--space-6);">
+            <p style="font-size:var(--text-sm);color:var(--color-text-muted);line-height:1.6;margin:0 0 var(--space-4);">Manage your subscription, update payment info, or cancel anytime.</p>
+            <a href="mailto:hello@socialengine.agency" class="connect-btn connect-btn--secondary">Contact Support</a>
+          </div>
+        </div>
+      `;
+
+      setTimeout(() => {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        // Bind Shopify form if on settings
+        bindShopifyForm('shopify-connect-form');
+        // Reconnect button toggle
+        document.getElementById('shopify-reconnect-btn')?.addEventListener('click', function() {
+          const form = document.getElementById('shopify-reconnect-form');
+          if (form) {
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            if (form.style.display === 'block') {
+              form.innerHTML = shopifyFormHTML();
+              bindShopifyForm('shopify-reconnect-form');
+              if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+          }
+        });
+      }, 50);
+    }
+
+    function shopifyFormHTML() {
+      return `
+        <div class="connect-form-group">
+          <label class="connect-form-label">Shopify Store Domain</label>
+          <input type="text" class="connect-form-input shopify-domain-input" placeholder="mystore.myshopify.com" autocomplete="off">
+        </div>
+        <div class="connect-form-group">
+          <label class="connect-form-label">Admin API Access Token</label>
+          <input type="password" class="connect-form-input shopify-token-input" placeholder="shpat_xxxxx" autocomplete="off">
+        </div>
+        <div class="shopify-connect-msg" style="display:none;margin-bottom:var(--space-4);"></div>
+        <button class="connect-btn shopify-connect-submit">
+          <i data-lucide="link" style="width:16px;height:16px;"></i>
+          Connect Store
+        </button>
+      `;
+    }
+
+    function bindShopifyForm(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const btn = container.querySelector('.shopify-connect-submit');
+      const msg = container.querySelector('.shopify-connect-msg');
+      if (!btn) return;
+      btn.addEventListener('click', async () => {
+        const domain = (container.querySelector('.shopify-domain-input')?.value || '').trim();
+        const token = (container.querySelector('.shopify-token-input')?.value || '').trim();
+        if (!domain || !token) {
+          showShopifyMsg(msg, 'error', 'Please enter both your store domain and access token.');
+          return;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Connecting...';
+        try {
+          const res = await fetch(`${API}/api/connect-shopify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+            body: JSON.stringify({ shopify_domain: domain, shopify_token: token })
+          });
+          const result = await res.json();
+          if (res.ok && result.success) {
+            showShopifyMsg(msg, 'success', `Connected: ${result.shop_name || domain} (${result.product_count != null ? result.product_count + ' products' : 'connected'})`);
+            // Update local client data
+            if (clientData?.client) { clientData.client.shopify_domain = domain; }
+            btn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Connected!';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+          } else {
+            showShopifyMsg(msg, 'error', result.error || result.message || 'Connection failed. Check your domain and token.');
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="link" style="width:16px;height:16px;"></i> Connect Store';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+          }
+        } catch(e) {
+          showShopifyMsg(msg, 'error', 'Network error. Please try again.');
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="link" style="width:16px;height:16px;"></i> Connect Store';
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+      });
+    }
+
+    function showShopifyMsg(msgEl, type, text) {
+      if (!msgEl) return;
+      msgEl.style.display = 'block';
+      msgEl.className = `shopify-connect-msg connect-status connect-status--${type === 'success' ? 'success' : 'error'}`;
+      msgEl.innerHTML = `<div class="connect-status-dot connect-status-dot--${type === 'success' ? 'green' : 'gray'}"></div>${text}`;
+    }
+
+    // ━━━ AI Coach ━━━
+    function renderAICoach() {
+      const content = document.getElementById('dash-content');
+      const defaultSuggestions = [
+        'What should I post this week?',
+        'How can I grow faster on Instagram?',
+        'Review my brand voice strategy'
+      ];
+
+      content.innerHTML = `
+        <div class="chat-page-header">
+          <div class="chat-page-header__icon"><i data-lucide="sparkles" style="width:20px;height:20px;"></i></div>
+          <div>
+            <p class="chat-page-header__title">AI Marketing Coach</p>
+            <p class="chat-page-header__sub">Knows your brand, products, and strategy inside out</p>
+          </div>
+        </div>
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages">
+            <div class="chat-msg chat-msg--ai" id="chat-welcome"><strong>Your AI Marketing Strategist is ready.</strong><br><br>I have your full product catalog, content queue, and brand profile loaded. Ask me anything — content strategy, caption writing, best posting times, what to promote this week, or show me a specific product and I'll build a post around it.</div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-suggestions" id="chat-suggestions">
+              ${defaultSuggestions.map(s => `<button class="chat-chip" data-msg="${s}">${s}</button>`).join('')}
+            </div>
+            <div class="chat-input-bar">
+              <textarea class="chat-input" id="chat-input" placeholder="Ask your marketing coach..." rows="1"></textarea>
+              <button class="chat-send-btn" id="chat-send" aria-label="Send message"><i data-lucide="send" style="width:18px;height:18px;"></i></button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+
+      // Free tier: show upgrade notice in chat
+      if (!isPaid()) {
+        let msgCount = 0;
+        const limitNotice = document.createElement('div');
+        limitNotice.style.cssText = 'padding:16px 20px;background:linear-gradient(135deg,rgba(59,130,246,0.06),rgba(139,92,246,0.06));border:1px solid rgba(59,130,246,0.18);border-radius:10px;margin:12px 16px;';
+        limitNotice.innerHTML = `<div style="font-size:0.8125rem;font-weight:600;color:var(--color-text);margin-bottom:4px;">Free Preview — 2 messages</div><div style="font-size:0.75rem;color:var(--color-text-muted);line-height:1.5;margin-bottom:10px;">Ask your AI coach anything about social media strategy, content ideas, or growth tactics. Upgrade for unlimited conversations.</div><a href="${STRIPE_LINK}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--color-accent);color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:0.75rem;">Unlimited Coaching — $297/mo ${ARROW_SVG}</a>`;
+        document.getElementById('chat-messages').parentElement.insertBefore(limitNotice, document.getElementById('chat-messages'));
+        var _origSend;
+      }
+
+      const messagesEl = document.getElementById('chat-messages');
+      const inputEl = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('chat-send');
+      const suggestionsEl = document.getElementById('chat-suggestions');
+
+      function scrollToBottom() {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function formatAIText(text) {
+        return text
+          // Markdown images: ![alt](url) — render as product preview cards
+          .replace(/!\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, alt, url) =>
+            `<div style="margin:10px 0;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);background:#111;">
+              <img src="${url}" alt="${alt}" style="width:100%;max-height:260px;object-fit:cover;display:block;">
+              <div style="padding:8px 12px;font-size:0.75rem;color:#888;">${alt}</div>
+            </div>`
+          )
+          // Bold
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          // Bullet lists
+          .replace(/^[-•] (.+)$/gm, '<li style="margin:3px 0;">$1</li>')
+          .replace(/(<li[^>]*>.*<\/li>)/s, '<ul style="margin:8px 0 8px 16px;padding:0;">$1</ul>')
+          // Numbered lists
+          .replace(/^(\d+)\. (.+)$/gm, '<li style="margin:3px 0;">$2</li>')
+          // Line breaks
+          .replace(/\n\n/g, '<br><br>')
+          .replace(/\n/g, '<br>');
+      }
+
+      function appendMessage(text, role) {
+        const div = document.createElement('div');
+        div.className = `chat-msg chat-msg--${role}`;
+        if (role === 'ai') {
+          div.innerHTML = formatAIText(text);
+        } else {
+          div.textContent = text;
+        }
+        messagesEl.appendChild(div);
+        scrollToBottom();
+        return div;
+      }
+
+      function updateSuggestions(suggestions) {
+        if (!suggestions || !suggestions.length) return;
+        suggestionsEl.innerHTML = suggestions.map(s =>
+          `<button class="chat-chip" data-msg="${s}">${s}</button>`
+        ).join('');
+        suggestionsEl.querySelectorAll('.chat-chip').forEach(chip => {
+          chip.addEventListener('click', () => {
+            inputEl.value = chip.dataset.msg;
+            inputEl.focus();
+          });
+        });
+      }
+
+      async function sendMessage() {
+        const message = inputEl.value.trim();
+        if (!message) return;
+        inputEl.value = '';
+        inputEl.style.height = 'auto';
+        sendBtn.disabled = true;
+
+        appendMessage(message, 'user');
+
+        const typingEl = appendMessage('Thinking...', 'ai');
+        typingEl.classList.add('chat-msg--typing');
+
+        try {
+          const res = await fetch(`${API}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-client-email': clientEmail,
+              'x-client-hash': clientHash
+            },
+            body: JSON.stringify({ message })
+          });
+
+          if (!res.ok) throw new Error('API error');
+          const data = await res.json();
+
+          typingEl.classList.remove('chat-msg--typing');
+          typingEl.innerHTML = formatAIText(data.reply || 'Got it!');
+          scrollToBottom();
+
+          if (data.suggestions) updateSuggestions(data.suggestions);
+        } catch (err) {
+          typingEl.classList.remove('chat-msg--typing');
+          typingEl.innerHTML = 'Sorry, something went wrong. Please try again.';
+          typingEl.style.color = '#EF4444';
+        } finally {
+          sendBtn.disabled = false;
+          inputEl.focus();
+        }
+      }
+
+      sendBtn.addEventListener('click', sendMessage);
+
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Auto-resize textarea
+      inputEl.addEventListener('input', () => {
+        inputEl.style.height = 'auto';
+        inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+      });
+
+      // Chip click handlers
+      suggestionsEl.querySelectorAll('.chat-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          inputEl.value = chip.dataset.msg;
+          inputEl.focus();
+        });
+      });
+    }
+
+    // ━━━ Competitor Intel ━━━
+    function renderCompetitorIntel() {
+      const content = document.getElementById('dash-content');
+
+      content.innerHTML = `
+        <div class="ci-page">
+          <div class="ci-header">
+            <h2 class="ci-header__title">Competitor Intelligence</h2>
+            <p class="ci-header__sub">Enter any Shopify store URL to see how you stack up</p>
+          </div>
+          <div class="ci-input-row">
+            <input type="url" class="ci-url-input" id="ci-url" placeholder="https://competitor-store.myshopify.com" autocomplete="off">
+            <button class="ci-analyze-btn" id="ci-analyze-btn">
+              <i data-lucide="search" style="width:16px;height:16px;"></i>
+              Analyze
+            </button>
+          </div>
+          <div class="ci-error" id="ci-error"></div>
+          <div class="ci-loading" id="ci-loading">
+            <div class="ci-spinner"></div>
+            <span id="ci-loading-text">Analyzing store...</span>
+          </div>
+          <div class="ci-results" id="ci-results"></div>
+        </div>
+      `;
+
+      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+
+      // Free tier gate
+      if (!isPaid()) {
+        document.getElementById('ci-results').innerHTML = '';
+        const gateDiv = document.createElement('div');
+        gateDiv.innerHTML = upgradeFullpageHTML(
+          'search',
+          'Competitor Intelligence',
+          'Enter any Shopify store URL and get a full breakdown — their pricing strategy, top products, SWOT analysis, and AI-generated content ideas to outperform them.',
+          [
+            'SWOT analysis on any competitor store',
+            'Side-by-side pricing comparison',
+            'AI-generated content ideas that beat them',
+            'Top product identification + gap analysis',
+          ]
+        );
+        document.getElementById('ci-analyze-btn').disabled = true;
+        document.getElementById('ci-url').disabled = true;
+        document.querySelector('.ci-page').appendChild(gateDiv);
+        setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+      }
+
+      const urlInput = document.getElementById('ci-url');
+      const analyzeBtn = document.getElementById('ci-analyze-btn');
+      const errorEl = document.getElementById('ci-error');
+      const loadingEl = document.getElementById('ci-loading');
+      const loadingText = document.getElementById('ci-loading-text');
+      const resultsEl = document.getElementById('ci-results');
+
+      function scoreClass(score) {
+        if (score >= 70) return 'ci-score-card__value--high';
+        if (score >= 40) return 'ci-score-card__value--mid';
+        return 'ci-score-card__value--low';
+      }
+
+      function renderResults(data) {
+        const r = data;
+        const compScore = r.competitor_score ?? 0;
+        const clientScore = r.client_score ?? 0;
+        const pricing = { competitor: r.competitor_pricing || {}, client: r.client_pricing || {} };
+        const swot = { strengths: r.strengths || [], weaknesses: r.weaknesses || [], opportunities: r.opportunities || [], threats: r.threats || [] };
+        const ideas = r.content_ideas || [];
+        const products = r.top_competitor_products || [];
+
+        const pricingRows = ['low', 'avg', 'high'].map(k => `
+          <tr>
+            <td>${k.charAt(0).toUpperCase() + k.slice(1)}</td>
+            <td>${pricing.competitor?.[k] != null ? '$' + pricing.competitor[k] : '—'}</td>
+            <td>${pricing.client?.[k] != null ? '$' + pricing.client[k] : '—'}</td>
+          </tr>
+        `).join('');
+
+        const productRows = products.map(p => `
+          <tr>
+            <td>${p.title || p.name || '—'}</td>
+            <td>${p.price != null ? '$' + p.price : '—'}</td>
+            <td>${p.product_type || p.type || '—'}</td>
+          </tr>
+        `).join('');
+
+        const swotSections = [
+          { key: 'strengths', label: 'Strengths', cls: 's' },
+          { key: 'weaknesses', label: 'Weaknesses', cls: 'w' },
+          { key: 'opportunities', label: 'Opportunities', cls: 'o' },
+          { key: 'threats', label: 'Threats', cls: 't' },
+        ].map(s => {
+          const items = swot[s.key] || [];
+          return `
+            <div class="ci-swot-card ci-swot-card--${s.cls}">
+              <div class="ci-swot-card__label">${s.label}</div>
+              <ul>${items.map(i => `<li>${i}</li>`).join('') || '<li>No data</li>'}</ul>
+            </div>
+          `;
+        }).join('');
+
+        resultsEl.innerHTML = `
+          <div class="ci-score-row">
+            <div class="ci-score-card">
+              <div class="ci-score-card__label">Competitor Score</div>
+              <div class="ci-score-card__value ${scoreClass(compScore)}">${compScore}</div>
+              <div class="ci-score-card__sub">${r.competitor_name || 'Competitor'}</div>
+            </div>
+            <div class="ci-score-card">
+              <div class="ci-score-card__label">Your Score</div>
+              <div class="ci-score-card__value ${scoreClass(clientScore)}">${clientScore}</div>
+              <div class="ci-score-card__sub">${clientData?.client?.business_name || 'Your Store'}</div>
+            </div>
+          </div>
+
+          ${r.overall_summary ? `
+          <div class="ci-section">
+            <div class="ci-section__header"><h3 class="ci-section__title">Summary</h3></div>
+            <div class="ci-section__body"><p class="ci-summary">${r.overall_summary}${r.pricing_insight ? '<br><br><strong>Pricing:</strong> ' + r.pricing_insight : ''}</p></div>
+          </div>` : ''}
+
+          <div class="ci-section">
+            <div class="ci-section__header"><h3 class="ci-section__title">Pricing Comparison</h3></div>
+            <table class="ci-table">
+              <thead><tr><th></th><th>Competitor</th><th>You</th></tr></thead>
+              <tbody>
+                ${pricingRows || '<tr><td colspan="3" style="text-align:center;color:var(--color-text-faint);padding:var(--space-4)">No pricing data</td></tr>'}
+                <tr>
+                  <td>Product Count</td>
+                  <td>${r.competitor_product_count ?? '—'}</td>
+                  <td>${r.client_product_count ?? '—'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ci-section">
+            <div class="ci-section__header"><h3 class="ci-section__title">SWOT Analysis</h3></div>
+            <div class="ci-swot">${swotSections}</div>
+          </div>
+
+          ${ideas.length ? `
+          <div class="ci-section">
+            <div class="ci-section__header"><h3 class="ci-section__title">Content Ideas</h3></div>
+            <ol class="ci-ideas-list">${ideas.map(i => `<li>${i}</li>`).join('')}</ol>
+          </div>` : ''}
+
+          ${products.length ? `
+          <div class="ci-section">
+            <div class="ci-section__header"><h3 class="ci-section__title">Top Competitor Products</h3></div>
+            <table class="ci-table">
+              <thead><tr><th>Product</th><th>Price</th><th>Type</th></tr></thead>
+              <tbody>${productRows}</tbody>
+            </table>
+          </div>` : ''}
+        `;
+        resultsEl.classList.add('visible');
+      }
+
+      async function runAnalysis() {
+        const url = urlInput.value.trim();
+        if (!url) return;
+
+        errorEl.classList.remove('visible');
+        resultsEl.classList.remove('visible');
+        resultsEl.innerHTML = '';
+
+        let domain = url;
+        try { domain = new URL(url.startsWith('http') ? url : 'https://' + url).hostname; } catch(e) {}
+        loadingText.textContent = `Analyzing ${domain}...`;
+        loadingEl.classList.add('visible');
+        analyzeBtn.disabled = true;
+
+        try {
+          const res = await fetch(`${API}/api/competitor-intel`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-client-email': clientEmail,
+              'x-client-hash': clientHash
+            },
+            body: JSON.stringify({ competitor_url: url })
+          });
+
+          loadingEl.classList.remove('visible');
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || err.message || `Error ${res.status}`);
+          }
+
+          const data = await res.json();
+          renderResults(data);
+        } catch (err) {
+          loadingEl.classList.remove('visible');
+          errorEl.textContent = err.message.includes('not a Shopify')
+            ? 'This URL does not appear to be a Shopify store. Please enter a valid Shopify store URL.'
+            : (err.message || 'Analysis failed. Make sure the URL is a valid Shopify store.');
+          errorEl.classList.add('visible');
+        } finally {
+          analyzeBtn.disabled = false;
+        }
+      }
+
+      analyzeBtn.addEventListener('click', runAnalysis);
+      urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runAnalysis(); });
+    }
+
+    // ━━━ Lucide Icons ━━━
+    function initLucide() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
+    if (typeof lucide !== 'undefined') initLucide();
+    else window.addEventListener('load', initLucide);
+  })();
+  </script>
+</body>
+</html>

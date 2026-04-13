@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SocialEngine — Inventory-Driven Social Media for Shopify</title>
+  <meta name="description" content="SocialEngine connects to your live Shopify inventory and creates daily content across Instagram, TikTok, Facebook, LinkedIn & X. 60+ posts/month. Full approval control. $397/mo flat.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="SocialEngine — Your Shopify store writes your content for you.">
+  <meta property="og:description" content="SocialEngine reads your live Shopify inventory and creates daily content across five platforms. 60+ posts/month. Full approval control. $397/mo flat.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://socialengine.agency">
+
+  <!-- Fonts -->
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-grotesk@400,500,600,700&f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="./base.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <!-- Skip to content -->
+  <a href="#main" class="sr-only skip-link">Skip to content</a>
+
+  <!-- =====================
+       HEADER
+       ===================== -->
+  <header class="header" role="banner">
+    <div class="container header__inner">
+      <a href="#" class="header__logo" aria-label="SocialEngine home">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="28" height="28" rx="7" stroke="#34D399" stroke-width="2"/>
+          <circle cx="11" cy="16" r="3" fill="#34D399"/>
+          <circle cx="21.5" cy="10" r="2.2" fill="#60A5FA" opacity="0.85"/>
+          <circle cx="21.5" cy="22" r="2.2" fill="#60A5FA" opacity="0.85"/>
+          <line x1="13.8" y1="14.6" x2="19.5" y2="11.2" stroke="#34D399" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="13.8" y1="17.4" x2="19.5" y2="20.8" stroke="#34D399" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="header__logo-text">SocialEngine</span>
+      </a>
+
+      <nav class="header__nav" aria-label="Primary">
+        <ul class="header__nav-links" role="list">
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="portal.html" class="header__nav-portal">Client Portal</a></li>
+        </ul>
+        <div class="header__actions">
+          <button class="theme-toggle" data-theme-toggle aria-label="Switch to light mode">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </button>
+          <a href="#ai-audit" class="btn btn--accent btn--sm">Free Audit</a>
+          <button class="mobile-nav-toggle" aria-label="Open menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Mobile Nav Overlay -->
+  <div class="mobile-nav" id="mobile-nav" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <button class="mobile-nav__close" aria-label="Close menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <ul class="mobile-nav__links" role="list">
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="portal.html">Client Portal</a></li>
+    </ul>
+    <div class="mobile-nav__cta">
+      <a href="#ai-audit" class="btn btn--accent btn--lg">Get Your Free Audit →</a>
+    </div>
+  </div>
+
+  <!-- =====================
+       MAIN
+       ===================== -->
+  <main id="main">
+
+    <!-- ========== HERO (DARK) ========== -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container">
+        <div class="hero__inner">
+          <div class="hero__badge reveal">
+            <span class="badge-dot"></span>
+            Inventory-Driven Social Media for Shopify
+          </div>
+          <h1 id="hero-title" class="hero__title reveal reveal--delay-1">
+            You're sitting on a goldmine of content.<br>
+            <span class="hero__title-accent">Your Shopify store writes it for you.</span>
+          </h1>
+          <p class="hero__subtitle reveal reveal--delay-2">
+            SocialEngine reads your live inventory every morning and builds the day's posts — urgency content, spotlight campaigns, platform-native captions. Nothing goes live until you say so.
+          </p>
+          <div class="hero__ctas reveal reveal--delay-3">
+            <a href="#ai-audit" class="btn btn--accent btn--lg">Get Your Free Audit →</a>
+            <a href="#how-it-works" class="btn btn--ghost btn--lg">See How It Works</a>
+          </div>
+          <div class="hero__metrics reveal reveal--delay-4">
+            <div class="hero__metric">
+              <span class="hero__metric-value">5</span>
+              <span class="hero__metric-label">Platforms</span>
+            </div>
+            <div class="hero__metric-divider"></div>
+            <div class="hero__metric">
+              <span class="hero__metric-value">60+</span>
+              <span class="hero__metric-label">Posts/Mo</span>
+            </div>
+            <div class="hero__metric-divider"></div>
+            <div class="hero__metric">
+              <span class="hero__metric-value">24/7</span>
+              <span class="hero__metric-label">Inventory Sync</span>
+            </div>
+            <div class="hero__metric-divider"></div>
+            <div class="hero__metric">
+              <span class="hero__metric-value">$397</span>
+              <span class="hero__metric-label">Flat/Month</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== TRUST STRIP (DARK SURFACE) ========== -->
+    <section class="trust-strip" aria-label="Platform statistics">
+      <div class="container">
+        <div class="trust-strip__grid">
+          <div class="trust-stat reveal">
+            <div class="trust-stat__icon">
+              <i data-lucide="file-text" width="22" height="22"></i>
+            </div>
+            <div class="trust-stat__body">
+              <div class="trust-stat__number" data-count-to="150" data-suffix="K+">150K+</div>
+              <div class="trust-stat__label">Posts Published</div>
+            </div>
+          </div>
+          <div class="trust-stat reveal reveal--delay-1">
+            <div class="trust-stat__icon">
+              <i data-lucide="trending-up" width="22" height="22"></i>
+            </div>
+            <div class="trust-stat__body">
+              <div class="trust-stat__number">3.2x</div>
+              <div class="trust-stat__label">Avg. Engagement Lift</div>
+            </div>
+          </div>
+          <div class="trust-stat reveal reveal--delay-2">
+            <div class="trust-stat__icon">
+              <i data-lucide="dollar-sign" width="22" height="22"></i>
+            </div>
+            <div class="trust-stat__body">
+              <div class="trust-stat__number">$2.4M</div>
+              <div class="trust-stat__label">Revenue Attributed</div>
+            </div>
+          </div>
+          <div class="trust-stat reveal reveal--delay-3">
+            <div class="trust-stat__icon">
+              <i data-lucide="zap" width="22" height="22"></i>
+            </div>
+            <div class="trust-stat__body">
+              <div class="trust-stat__number">&lt;48h</div>
+              <div class="trust-stat__label">Onboarding to First Post</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== FREE AUDIT (DARK) ========== -->
+    <section class="ai-audit" id="ai-audit" aria-labelledby="audit-title">
+      <div class="container">
+        <div class="ai-audit__layout">
+
+          <!-- Left: Copy -->
+          <div class="ai-audit__content reveal">
+            <div class="section-label">Free Inventory Audit</div>
+            <h2 class="ai-audit__title" id="audit-title">
+              See exactly what 90 days of content looks like for your store — in 60 seconds.
+            </h2>
+            <p class="ai-audit__desc">
+              Drop in your Shopify URL and we scan your entire catalog. You get a real report: which products to push now, which are being ignored, and what your first 90 days of content actually looks like.
+            </p>
+            <ul class="ai-audit__benefits">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Products selling fast that need urgency content right now
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Slow movers that actually could sell with the right campaign
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Out-of-stock items you might still be promoting (and shouldn't)
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                A full 90-day content plan built around your real inventory
+              </li>
+            </ul>
+            <div class="ai-audit__note">
+              No credit card. No sales call. No obligation.
+            </div>
+          </div>
+
+          <!-- Right: Form Card -->
+          <div class="ai-audit__form-wrapper reveal reveal--delay-1">
+            <div class="ai-audit__card">
+              <div class="ai-audit__card-header">
+                <div class="ai-audit__card-header-icon">
+                  <i data-lucide="sparkles" width="20" height="20"></i>
+                </div>
+                <span>AI-Powered Inventory Analysis</span>
+              </div>
+
+              <form class="ai-audit__form" id="audit-form" novalidate>
+                <div class="ai-audit__field">
+                  <label for="audit-url" class="ai-audit__field-label">Shopify Store URL <span class="required-star">*</span></label>
+                  <div class="ai-audit__input-wrap">
+                    <svg class="ai-audit__input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <input type="url" id="audit-url" name="business_url" class="ai-audit__input" placeholder="yourstore.myshopify.com" required autocomplete="url">
+                  </div>
+                  <span class="ai-audit__field-error" id="audit-url-error"></span>
+                </div>
+
+                <div class="ai-audit__field">
+                  <label for="audit-email" class="ai-audit__field-label">Email Address <span class="required-star">*</span></label>
+                  <div class="ai-audit__input-wrap">
+                    <svg class="ai-audit__input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    <input type="email" id="audit-email" name="prospect_email" class="ai-audit__input" placeholder="you@yourstore.com" required autocomplete="email">
+                  </div>
+                  <span class="ai-audit__field-error" id="audit-email-error"></span>
+                </div>
+
+                <div class="ai-audit__field">
+                  <label for="audit-name" class="ai-audit__field-label">Your Name <span class="ai-audit__optional">(optional)</span></label>
+                  <div class="ai-audit__input-wrap">
+                    <svg class="ai-audit__input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <input type="text" id="audit-name" name="prospect_name" class="ai-audit__input" placeholder="Jane Smith" autocomplete="name">
+                  </div>
+                </div>
+
+                <div class="ai-audit__socials-row">
+                  <div class="audit-field">
+                    <label class="audit-field__label" for="audit-instagram">Instagram <span class="ai-audit__optional">(optional)</span></label>
+                    <input class="audit-field__input" type="text" id="audit-instagram" name="instagram_handle" placeholder="@yourbrand">
+                  </div>
+                  <div class="audit-field">
+                    <label class="audit-field__label" for="audit-tiktok">TikTok <span class="ai-audit__optional">(optional)</span></label>
+                    <input class="audit-field__input" type="text" id="audit-tiktok" name="tiktok_handle" placeholder="@yourbrand">
+                  </div>
+                </div>
+
+                <div class="ai-audit__field">
+                  <label class="audit-field__label" for="audit-facebook">Facebook Page <span class="ai-audit__optional">(optional)</span></label>
+                  <input class="audit-field__input" type="text" id="audit-facebook" name="facebook_handle" placeholder="facebook.com/yourbrand">
+                </div>
+
+                <button type="submit" class="btn btn--accent btn--lg ai-audit__submit" id="audit-submit">
+                  <span class="ai-audit__submit-text">Run My Free Audit →</span>
+                  <span class="ai-audit__submit-loading" aria-hidden="true">
+                    <svg class="ai-audit__spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-dasharray="56" stroke-dashoffset="14" stroke-linecap="round"/></svg>
+                    Analyzing your store…
+                  </span>
+                </button>
+              </form>
+
+              <!-- Success state -->
+              <div class="ai-audit__success" id="audit-success" hidden>
+                <div class="ai-audit__success-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <h3 class="ai-audit__success-title">Your audit is on its way.</h3>
+                <p class="ai-audit__success-text">Check your inbox in the next 2 minutes. Your personalized inventory analysis and 90-day content strategy will be waiting.</p>
+              </div>
+
+              <!-- Error state -->
+              <div class="ai-audit__error" id="audit-error" hidden>
+                <p class="ai-audit__error-text">Something went wrong. Please try again.</p>
+                <button class="btn btn--ghost btn--sm" id="audit-retry">Try Again</button>
+              </div>
+
+              <!-- Results container (populated by app.js) -->
+              <div id="audit-results" hidden></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PROBLEM (LIGHT) ========== -->
+    <section class="problem-section" aria-labelledby="problem-title">
+      <div class="container">
+        <div class="section-header reveal">
+          <div class="section-label section-label--dark">The Gap in the Market</div>
+          <h2 class="section-title section-title--dark" id="problem-title">
+            Everyone else is posting blind. Here's why that's costing you.
+          </h2>
+          <p class="section-desc section-desc--dark">
+            Agencies. Freelancers. Scheduling tools. None of them know what's in your store. They create content in a vacuum — no idea what's selling, what's sitting, or what just sold out.
+          </p>
+        </div>
+
+        <div class="problem-grid">
+          <div class="problem-card reveal">
+            <div class="problem-card__stat">$5K</div>
+            <div class="problem-card__stat-label">AVG. AGENCY RETAINER</div>
+            <h3 class="problem-card__title">Agencies Don't Know Your Inventory</h3>
+            <p class="problem-card__text">Agencies charge $3,000–$5,000/mo and deliver polished content calendars with zero connection to your Shopify data. They don't know your bestseller is almost out of stock. You're paying premium for content that's flying blind.</p>
+          </div>
+
+          <div class="problem-card reveal reveal--delay-1">
+            <div class="problem-card__stat">15h</div>
+            <div class="problem-card__stat-label">WASTED PER WEEK</div>
+            <h3 class="problem-card__title">DIY Works Until It Doesn't</h3>
+            <p class="problem-card__text">You can do it yourself — until you hit 50, 100, 200 products across five platforms. At that point you're spending 15+ hours a week on social instead of sourcing, fulfilling, and growing. No human can obsess over inventory and content at that volume.</p>
+          </div>
+
+          <div class="problem-card reveal reveal--delay-2">
+            <div class="problem-card__stat">0</div>
+            <div class="problem-card__stat-label">INVENTORY CONNECTIONS</div>
+            <h3 class="problem-card__title">Scheduling Tools Just Press Publish</h3>
+            <p class="problem-card__text">Buffer, Later, Hootsuite — they're calendars with a timer. They have no idea what you sell, what's in stock, or what needs promoting. You still decide what to post, write every caption, design every graphic. The tool just presses "publish."</p>
+          </div>
+        </div>
+
+        <div class="problem-bridge reveal">
+          <p>SocialEngine is the first platform that connects your live Shopify data to your content strategy — so every post is actually based on what's happening in your store right now.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== HOW IT WORKS (DARK) ========== -->
+    <section class="how-it-works" id="how-it-works" aria-labelledby="how-title">
+      <div class="container">
+        <div class="section-header reveal">
+          <div class="section-label">How It Works</div>
+          <h2 class="section-title" id="how-title">Connect once. Content runs itself.</h2>
+          <p class="section-desc">No onboarding calls. No contracts. No technical setup required.</p>
+        </div>
+
+        <div class="steps">
+
+          <!-- Step 1 -->
+          <div class="step reveal">
+            <div class="step__content">
+              <div class="step__number">01</div>
+              <h3 class="step__title">Connect Your Shopify Store</h3>
+              <p class="step__desc">One-click Shopify integration. We pull every product, variant, price, and stock level instantly. Connect your social accounts and the AI starts learning your brand voice from your existing content — immediately.</p>
+            </div>
+            <div class="step__visual">
+              <div class="mock-window">
+                <div class="mock-titlebar">
+                  <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+                  <span class="mock-titlebar__label">SocialEngine Dashboard</span>
+                </div>
+                <div class="mock-body mock-body--connect">
+                  <div class="mock-sidebar">
+                    <div class="mock-sidebar__logo">SE</div>
+                    <div class="mock-sidebar__item mock-sidebar__item--active">Dashboard</div>
+                    <div class="mock-sidebar__item">Content</div>
+                    <div class="mock-sidebar__item">Calendar</div>
+                    <div class="mock-sidebar__item">Analytics</div>
+                  </div>
+                  <div class="mock-main">
+                    <div class="mock-kpi-row">
+                      <div class="mock-kpi"><span class="mock-kpi__label">Followers</span><span class="mock-kpi__val">24.8K</span><span class="mock-kpi__trend mock-kpi__trend--up">+12%</span></div>
+                      <div class="mock-kpi"><span class="mock-kpi__label">Engagement</span><span class="mock-kpi__val">4.8%</span><span class="mock-kpi__trend mock-kpi__trend--up">+0.6%</span></div>
+                      <div class="mock-kpi"><span class="mock-kpi__label">Reach</span><span class="mock-kpi__val">8.4K</span><span class="mock-kpi__trend mock-kpi__trend--up">+18%</span></div>
+                    </div>
+                    <div class="mock-platforms">
+                      <div class="mock-plat mock-plat--ig"><span class="mock-plat__dot"></span>Instagram</div>
+                      <div class="mock-plat mock-plat--tt"><span class="mock-plat__dot"></span>TikTok</div>
+                      <div class="mock-plat mock-plat--fb"><span class="mock-plat__dot"></span>Facebook</div>
+                      <div class="mock-plat mock-plat--li"><span class="mock-plat__dot"></span>LinkedIn</div>
+                      <div class="mock-plat mock-plat--tw"><span class="mock-plat__dot"></span>X / Twitter</div>
+                    </div>
+                    <div class="mock-shopify-bar">
+                      <span class="mock-shopify-icon">&#9632;</span>
+                      Shopify Connected
+                      <span class="mock-check">&#10003;</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step step--reverse reveal">
+            <div class="step__content">
+              <div class="step__number">02</div>
+              <h3 class="step__title">AI Creates Content From Your Live Inventory</h3>
+              <p class="step__desc">Every morning, the AI checks your inventory and generates the day's posts. Low-stock items get urgency content. Stagnant products get spotlight campaigns. Each post is written natively for its platform — not copy-pasted five ways.</p>
+            </div>
+            <div class="step__visual">
+              <div class="mock-window">
+                <div class="mock-titlebar">
+                  <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+                  <span class="mock-titlebar__label">AI Content Generator</span>
+                  <span class="mock-live-badge">Live</span>
+                </div>
+                <div class="mock-body mock-body--content">
+                  <div class="mock-post-item">
+                    <div class="mock-post-icon mock-post-icon--ig"></div>
+                    <div class="mock-post-info">
+                      <div class="mock-post-title">Only 3 left — selling fast</div>
+                      <div class="mock-post-meta">Instagram · 9:00 AM</div>
+                    </div>
+                    <span class="mock-post-badge mock-post-badge--approved">Approved</span>
+                  </div>
+                  <div class="mock-post-item">
+                    <div class="mock-post-icon mock-post-icon--tt"></div>
+                    <div class="mock-post-info">
+                      <div class="mock-post-title">Behind the scenes: new arrivals</div>
+                      <div class="mock-post-meta">TikTok · 12:30 PM</div>
+                    </div>
+                    <span class="mock-post-badge mock-post-badge--pending">Pending</span>
+                  </div>
+                  <div class="mock-post-item">
+                    <div class="mock-post-icon mock-post-icon--fb"></div>
+                    <div class="mock-post-info">
+                      <div class="mock-post-title">Spotlight: hidden gem collection</div>
+                      <div class="mock-post-meta">Facebook · 10:00 AM</div>
+                    </div>
+                    <span class="mock-post-badge mock-post-badge--approved">Approved</span>
+                  </div>
+                  <div class="mock-post-item">
+                    <div class="mock-post-icon mock-post-icon--li"></div>
+                    <div class="mock-post-info">
+                      <div class="mock-post-title">Inventory-driven content trends</div>
+                      <div class="mock-post-meta">LinkedIn · 2:00 PM</div>
+                    </div>
+                    <span class="mock-post-badge mock-post-badge--pending">Pending</span>
+                  </div>
+                  <div class="mock-ai-gen">
+                    <span class="mock-ai-gen__label">Generated Caption</span>
+                    <div class="mock-ai-gen__text">Only 3 left in stock. This one's been our fastest seller all month. Grab yours before it's gone.</div>
+                    <div class="mock-ai-gen__tags"><span>#LimitedStock</span><span>#ShopNow</span><span>#BestSeller</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step reveal">
+            <div class="step__content">
+              <div class="step__number">03</div>
+              <h3 class="step__title">You Approve. We Publish.</h3>
+              <p class="step__desc">Every post lands in your approval queue first. Preview it, tweak the caption, swap an image, or reject it in one click. Nothing ever goes live without your explicit say-so. Set a schedule and walk away — you're done.</p>
+            </div>
+            <div class="step__visual">
+              <div class="mock-window">
+                <div class="mock-titlebar">
+                  <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+                  <span class="mock-titlebar__label">Approval Queue</span>
+                </div>
+                <div class="mock-body mock-body--approve">
+                  <div class="mock-approve-card mock-approve-card--active">
+                    <div class="mock-approve-platform mock-approve-platform--ig">Instagram</div>
+                    <div class="mock-approve-caption">"Our sequin mini is down to its last 3. Move fast — this one won't come back in stock."</div>
+                    <div class="mock-approve-tags">#NewArrivals #LimitedStock #ShopNow</div>
+                    <div class="mock-approve-actions">
+                      <button class="mock-btn mock-btn--approve" aria-label="Approve post">✓ Approve</button>
+                      <button class="mock-btn mock-btn--edit" aria-label="Edit post">Edit</button>
+                      <button class="mock-btn mock-btn--reject" aria-label="Reject post">✕</button>
+                    </div>
+                  </div>
+                  <div class="mock-approve-card">
+                    <div class="mock-approve-platform mock-approve-platform--tt">TikTok</div>
+                    <div class="mock-approve-caption">"Behind the scenes of our latest drop — swipe to see what just hit the shelves."</div>
+                    <div class="mock-approve-actions">
+                      <button class="mock-btn mock-btn--approve" aria-label="Approve post">✓ Approve</button>
+                      <button class="mock-btn mock-btn--edit" aria-label="Edit post">Edit</button>
+                      <button class="mock-btn mock-btn--reject" aria-label="Reject post">✕</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== FEATURES BENTO (DARK) ========== -->
+    <section class="features" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <div class="section-header reveal">
+          <div class="section-label">Platform Features</div>
+          <h2 class="section-title" id="features-title">Built to compound. Not just to post.</h2>
+        </div>
+
+        <div class="bento-grid">
+
+          <!-- Hero Card: Inventory Intelligence (full width) -->
+          <div class="bento-card bento-card--hero reveal">
+            <div class="bento-card__hero-left">
+              <div class="bento-card__icon bento-card__icon--lg">
+                <i data-lucide="database" width="28" height="28"></i>
+              </div>
+              <h3 class="bento-card__title bento-card__title--lg">Inventory Intelligence</h3>
+              <p class="bento-card__text">Your Shopify catalog is a living content brief. SocialEngine reads every product, every variant, every stock level — then turns that data into content strategy in real time. No more promoting sold-out items. No more missing urgency windows.</p>
+            </div>
+            <div class="bento-card__hero-right">
+              <div class="inv-table">
+                <div class="inv-table__header">
+                  <span>LIVE INVENTORY</span>
+                  <span class="inv-arrow">→</span>
+                  <span>CONTENT ENGINE</span>
+                </div>
+                <div class="inv-table__row">
+                  <span class="inv-table__product">Sequin Mini Dress</span>
+                  <span class="inv-badge inv-badge--warn">3 left</span>
+                  <span class="inv-arrow-sm">→</span>
+                  <span class="inv-table__action">Urgency Reel</span>
+                </div>
+                <div class="inv-table__row">
+                  <span class="inv-table__product">Velvet Blazer</span>
+                  <span class="inv-badge inv-badge--ok">142 units</span>
+                  <span class="inv-arrow-sm">→</span>
+                  <span class="inv-table__action">Spotlight Post</span>
+                </div>
+                <div class="inv-table__row">
+                  <span class="inv-table__product">Gold Hoop Earrings</span>
+                  <span class="inv-badge inv-badge--out">Sold Out</span>
+                  <span class="inv-arrow-sm">→</span>
+                  <span class="inv-table__action">Auto-removed</span>
+                </div>
+                <div class="inv-table__row">
+                  <span class="inv-table__product">Linen Maxi Skirt</span>
+                  <span class="inv-badge inv-badge--ok">89 units</span>
+                  <span class="inv-arrow-sm">→</span>
+                  <span class="inv-table__action">Carousel Draft</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 1: 3 cards -->
+          <div class="bento-card bento-card--third reveal">
+            <div class="bento-card__icon">
+              <i data-lucide="pencil-line" width="22" height="22"></i>
+            </div>
+            <h3 class="bento-card__title">Brand Voice AI</h3>
+            <p class="bento-card__text">Learns your tone, vocabulary, and style from your existing content. Every approval and rejection sharpens the model. Within 2–3 weeks, the content is indistinguishable from what you'd write yourself.</p>
+          </div>
+
+          <div class="bento-card bento-card--third reveal reveal--delay-1">
+            <div class="bento-card__icon">
+              <i data-lucide="layout-grid" width="22" height="22"></i>
+            </div>
+            <h3 class="bento-card__title">Platform-Native Formats</h3>
+            <p class="bento-card__text">Instagram carousels, TikTok hooks, LinkedIn articles, Facebook posts, X threads — each piece written for that platform's algorithm and audience. Not copy-pasted five ways.</p>
+          </div>
+
+          <div class="bento-card bento-card--third reveal reveal--delay-2">
+            <div class="bento-card__icon">
+              <i data-lucide="bar-chart-2" width="22" height="22"></i>
+            </div>
+            <h3 class="bento-card__title">Weekly Analytics Report</h3>
+            <p class="bento-card__text">Follower growth, engagement rate, reach, saves, link clicks, best-performing content types, and optimal posting windows — delivered to your inbox every week. No dashboards to log into.</p>
+          </div>
+
+          <!-- Row 2: 3 cards -->
+          <div class="bento-card bento-card--third reveal">
+            <div class="bento-card__icon">
+              <i data-lucide="check-circle-2" width="22" height="22"></i>
+            </div>
+            <h3 class="bento-card__title">Approval-First Publishing</h3>
+            <p class="bento-card__text">Nothing goes live without your explicit say-so. Every post lands in your queue first — preview, edit, or reject in one click. You decide what your audience sees. Always.</p>
+          </div>
+
+          <div class="bento-card bento-card--third reveal reveal--delay-1">
+            <div class="bento-card__icon">
+              <i data-lucide="brain-circuit" width="22" height="22"></i>
+            </div>
+            <h3 class="bento-card__title">AI Marketing Coach</h3>
+            <p class="bento-card__text">Built-in competitor intelligence and trend signals keep your content timely. Surfaces what's working in your category and what to double down on — without you having to monitor a thing.</p>
+          </div>
+
+          <div class="bento-card bento-card--third reveal reveal--delay-2">
+            <div class="bento-card__icon">
+              <i data-lucide="calendar-days" width="22" height="22"></i>
+            </div>
+            <h3 class="bento-card__title">Content Calendar Control</h3>
+            <p class="bento-card__text">Your entire month, mapped out across every platform. Approve, edit, swap, or reschedule any post before it goes live. Full visibility into what's coming. Complete control over what your audience sees.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PRICING (LIGHT) ========== -->
+    <section class="pricing" id="pricing" aria-labelledby="pricing-title">
+      <div class="container">
+        <div class="section-header reveal">
+          <div class="section-label section-label--dark">Pricing</div>
+          <h2 class="section-title section-title--dark" id="pricing-title">Everything included. One flat price.</h2>
+          <p class="section-desc section-desc--dark">Every feature. Every platform. One flat rate. No setup fees, no add-ons, no contracts.</p>
+        </div>
+
+        <div class="pricing-single reveal">
+          <div class="pricing-card">
+            <div class="pricing-card__badge">Everything Included</div>
+            <h3 class="pricing-card__name">SocialEngine</h3>
+            <p class="pricing-card__desc">Full-service social media. No tiers, no upsells.</p>
+
+            <div class="pricing-card__price-block">
+              <div class="pricing-card__price">
+                <span class="pricing-card__amount">$397</span>
+                <span class="pricing-card__period">/month</span>
+              </div>
+              <div class="pricing-card__annual-note">or $297/mo billed annually — save $1,200/year</div>
+            </div>
+
+            <div class="pricing-card__divider"></div>
+
+            <ul class="pricing-card__features" role="list">
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Daily posts across all 5 platforms — 60+ per month</li>
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Instagram, TikTok, Facebook, LinkedIn &amp; X — nothing extra</li>
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>AI video reels, captions, graphics, and carousels</li>
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Live inventory intelligence — urgency posts, spotlight campaigns, auto-pause</li>
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Approval dashboard — nothing posts without you</li>
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Full content calendar with edit, reschedule, and reject controls</li>
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Brand voice AI — learns your tone, evolves with every post</li>
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Weekly analytics — what's working, what to double down on</li>
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>AI marketing coach + competitor intelligence built in</li>
+              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority support — real humans, fast responses</li>
+            </ul>
+
+            <div class="pricing-card__ctas" style="display:flex;flex-direction:column;gap:0.75rem;width:100%;">
+              <a href="https://buy.stripe.com/fZu4gz7KP4LSfYY40vcQU05" class="btn btn--dark btn--lg" target="_blank" rel="noopener" style="width:100%;text-align:center;">Start Now — $397/mo</a>
+              <a href="https://buy.stripe.com/4gM4gz5CHguA5kkdB5cQU06" class="btn btn--outline-dark btn--lg" target="_blank" rel="noopener" style="width:100%;text-align:center;">Save $1,200/yr — $297/mo Annual</a>
+            </div>
+
+            <p class="pricing-card__note">Cancel anytime. No contracts.</p>
+          </div>
+        </div>
+
+        <div class="pricing-trust reveal">
+          <div class="pricing-trust__item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+            <span>Free audit — no card required</span>
+          </div>
+          <div class="pricing-trust__item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span>Cancel in one click — no contracts, no lock-ins</span>
+          </div>
+          <div class="pricing-trust__item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Platform-native content — built to the algorithm</span>
+          </div>
+          <div class="pricing-trust__item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+            <span>Month-to-month flexibility — go annual to save $1,200/yr</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========== SOCIAL PROOF (DARK) ========== -->
+    <section class="social-proof" style="padding:80px 0;background:var(--bg-dark);border-top:1px solid rgba(255,255,255,0.04);">
+      <div class="container">
+        <div style="text-align:center;max-width:600px;margin:0 auto 48px;">
+          <div class="section-label" style="margin-bottom:12px;">Platform Power</div>
+          <h2 style="font-family:var(--font-display);font-size:clamp(1.75rem,4vw,2.5rem);font-weight:700;color:#fff;margin:0 0 12px;letter-spacing:-0.03em;">Built for Scale, Designed for Results</h2>
+          <p style="font-size:1rem;color:rgba(255,255,255,0.5);line-height:1.6;margin:0;">Enterprise-grade AI infrastructure powering your social presence.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:1000px;margin:0 auto;">
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;text-align:center;">
+            <div style="font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#34D399,#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:var(--font-display,'Clash Grotesk',sans-serif);line-height:1;">60+</div>
+            <div style="font-size:0.9375rem;font-weight:600;color:rgba(255,255,255,0.8);margin-top:8px;">Posts per month, per client</div>
+            <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:6px;line-height:1.5;">Across Instagram, TikTok, and Facebook &mdash; all brand-matched and on-schedule</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;text-align:center;">
+            <div style="font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#8B5CF6,#6D28D9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:var(--font-display,'Clash Grotesk',sans-serif);line-height:1;">99%</div>
+            <div style="font-size:0.9375rem;font-weight:600;color:rgba(255,255,255,0.8);margin-top:8px;">Product accuracy rate</div>
+            <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:6px;line-height:1.5;">AI preserves every product detail &mdash; textures, colors, text, and silhouettes stay pixel-perfect</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;text-align:center;">
+            <div style="font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#F59E0B,#D97706);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:var(--font-display,'Clash Grotesk',sans-serif);line-height:1;">&lt;5 min</div>
+            <div style="font-size:0.9375rem;font-weight:600;color:rgba(255,255,255,0.8);margin-top:8px;">Weekly client time</div>
+            <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:6px;line-height:1.5;">Quick-tap approve, one-click regenerate with presets. Review 30 posts in minutes.</div>
+          </div>
+        </div>
+    </section>
+
+    <!-- ========== FAQ (DARK) ========== -->
+    <section class="faq" id="faq" aria-labelledby="faq-title">
+      <div class="container">
+        <div class="faq__layout">
+          <div class="faq__header reveal">
+            <div class="section-label">FAQ</div>
+            <h2 class="section-title" id="faq-title">Real answers to real questions</h2>
+            <p class="section-desc" style="margin-top:1rem;">Still on the fence? <a href="mailto:hello@socialengine.agency" class="faq__email-link">hello@socialengine.agency</a></p>
+          </div>
+
+          <div class="faq-list">
+            <div class="faq-item reveal" data-open="false">
+              <button class="faq-item__trigger" aria-expanded="false">
+                Will it actually sound like my brand, or like a robot?
+                <svg class="faq-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <div class="faq-item__content">
+                <div class="faq-item__content-inner">
+                  <p class="faq-item__answer">The AI builds your brand voice profile during setup by analyzing your product descriptions, existing social content, and any guidelines you provide. It learns your tone, vocabulary, and style. Every time you approve or reject a post, the model gets sharper. Within 2–3 weeks, the content is indistinguishable from what you'd write yourself.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item reveal reveal--delay-1" data-open="false">
+              <button class="faq-item__trigger" aria-expanded="false">
+                Which platforms do you support?
+                <svg class="faq-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <div class="faq-item__content">
+                <div class="faq-item__content-inner">
+                  <p class="faq-item__answer">Instagram, TikTok, LinkedIn, Facebook, and X (Twitter) — all five, all included, no platform add-ons. Every piece of content is written natively for that platform's format, audience behavior, and algorithm. You're not getting the same caption copy-pasted five ways. Pinterest and YouTube Shorts are on the roadmap.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item reveal reveal--delay-1" data-open="false">
+              <button class="faq-item__trigger" aria-expanded="false">
+                Do I have full control over what gets published?
+                <svg class="faq-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <div class="faq-item__content">
+                <div class="faq-item__content-inner">
+                  <p class="faq-item__answer">Yes — every post. Nothing goes live without your explicit approval. Every piece of content lands in your dashboard first — preview it, edit the caption, adjust the image direction, or reject it with one click. You decide what your audience sees.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item reveal reveal--delay-2" data-open="false">
+              <button class="faq-item__trigger" aria-expanded="false">
+                What happens when I reject a post?
+                <svg class="faq-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <div class="faq-item__content">
+                <div class="faq-item__content-inner">
+                  <p class="faq-item__answer">Hit reject, tell it why in plain English — "too salesy," "focus on the material quality," "use a different hook" — and it regenerates in seconds. Every rejection trains the model. Most clients find the content consistently on-point by the end of week one.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item reveal reveal--delay-2" data-open="false">
+              <button class="faq-item__trigger" aria-expanded="false">
+                How quickly will I see results?
+                <svg class="faq-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <div class="faq-item__content">
+                <div class="faq-item__content-inner">
+                  <p class="faq-item__answer">Most stores see measurable engagement lift within 2–3 weeks. Follower growth becomes noticeable in month one. The real inflection point hits around months 2–3, when the AI has enough audience data to optimize aggressively — that's when engagement compounds and revenue signals get clear.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item reveal reveal--delay-3" data-open="false">
+              <button class="faq-item__trigger" aria-expanded="false">
+                What's the commitment? Can I cancel?
+                <svg class="faq-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <div class="faq-item__content">
+                <div class="faq-item__content-inner">
+                  <p class="faq-item__answer">No contracts, no minimums. You’re month-to-month from day one and can cancel with a single click. We don’t need lock-ins because results speak for themselves — most clients see measurable traction within 30 days and stay because they want to. Go annual and you save $1,200/year — that’s $297/mo instead of $397.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item reveal reveal--delay-3" data-open="false">
+              <button class="faq-item__trigger" aria-expanded="false">
+                Do you handle comments and DMs?
+                <svg class="faq-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <div class="faq-item__content">
+                <div class="faq-item__content-inner">
+                  <p class="faq-item__answer">SocialEngine handles content creation, scheduling, publishing, and analytics end-to-end. For comments and DMs, your dashboard surfaces high-priority conversations so you can respond without scrolling through every platform separately.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item reveal reveal--delay-4" data-open="false">
+              <button class="faq-item__trigger" aria-expanded="false">
+                What metrics do you track?
+                <svg class="faq-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <div class="faq-item__content">
+                <div class="faq-item__content-inner">
+                  <p class="faq-item__answer">Follower growth, engagement rate, impressions, reach, link clicks, saves, shares, best-performing content types, optimal posting windows, and audience demographics — all in your weekly report. Competitive benchmarking against similar stores included. No dashboards to log into, no manual exports.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== FINAL CTA (DARK) ========== -->
+    <section class="final-cta" aria-labelledby="cta-title">
+      <div class="final-cta__glow" aria-hidden="true"></div>
+      <div class="container">
+        <div class="final-cta__inner reveal">
+          <h2 class="final-cta__title" id="cta-title">
+            Your store writes your content for you.<br>
+            <span class="final-cta__title-accent">You've just been doing it the hard way.</span>
+          </h2>
+          <p class="final-cta__subtitle">Run your free audit and see exactly what 90 days of inventory-driven content looks like for your store. Takes 60 seconds. No credit card.</p>
+          <a href="#ai-audit" class="btn btn--accent btn--xl">Run My Free Audit →</a>
+          <p class="final-cta__note">60 seconds. No credit card. No sales call.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =====================
+       FOOTER (DARK)
+       ===================== -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer__layout">
+        <div class="footer__brand">
+          <a href="#" class="footer__logo" aria-label="SocialEngine home">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="2" y="2" width="28" height="28" rx="7" stroke="#34D399" stroke-width="2"/>
+              <circle cx="11" cy="16" r="3" fill="#34D399"/>
+              <circle cx="21.5" cy="10" r="2.2" fill="#60A5FA" opacity="0.85"/>
+              <circle cx="21.5" cy="22" r="2.2" fill="#60A5FA" opacity="0.85"/>
+              <line x1="13.8" y1="14.6" x2="19.5" y2="11.2" stroke="#34D399" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="13.8" y1="17.4" x2="19.5" y2="20.8" stroke="#34D399" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>SocialEngine</span>
+          </a>
+          <p class="footer__desc">The only platform that reads your live Shopify inventory and turns it into daily, revenue-targeted content across 5 platforms. Nothing posts without your approval.</p>
+          <div class="footer__socials">
+            <a href="https://x.com/socialengineai" target="_blank" rel="noopener" class="footer__social-link" aria-label="X / Twitter">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+            </a>
+            <a href="https://linkedin.com/company/socialengine-agency" target="_blank" rel="noopener" class="footer__social-link" aria-label="LinkedIn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+            <a href="https://instagram.com/socialengineagency" target="_blank" rel="noopener" class="footer__social-link" aria-label="Instagram">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="footer__col">
+          <div class="footer__heading">Product</div>
+          <ul class="footer__links" role="list">
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#ai-audit">Free Audit</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+
+        <div class="footer__col">
+          <div class="footer__heading">Resources</div>
+          <ul class="footer__links" role="list">
+            <li><a href="portal.html">Client Login</a></li>
+            <li><a href="#ai-audit">Free Audit</a></li>
+            <li><a href="mailto:hello@socialengine.agency">Contact</a></li>
+            <li><a href="#faq">Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer__col">
+          <div class="footer__heading">Legal</div>
+          <ul class="footer__links" role="list">
+            <li><a href="/privacy.html">Privacy Policy</a></li>
+            <li><a href="/terms.html">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <span>&copy; 2026 SocialEngine. All rights reserved.</span>
+        <span class="footer__bottom-tagline">Inventory-driven social media for Shopify stores.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — SocialEngine</title>
+  <meta name="description" content="SocialEngine Terms of Service — the rules governing use of our AI-powered social media management platform for Shopify merchants.">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-grotesk@400,500,600,700&f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0A1628;
+      --card:      #111D30;
+      --border:    #1E2D45;
+      --text:      #E2E8F0;
+      --muted:     #94A3B8;
+      --accent:    #34D399;
+      --accent-dim:#1A6B4A;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Satoshi', system-ui, sans-serif;
+      font-size: 1rem;
+      line-height: 1.75;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(10, 22, 40, 0.90);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .logo svg { flex-shrink: 0; }
+
+    .logo-text {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .logo-text span { color: var(--accent); }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    nav a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    nav a:hover { color: var(--text); }
+
+    nav .cta {
+      background: var(--accent);
+      color: #0A1628;
+      padding: 0.45rem 1.1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: opacity 0.15s;
+    }
+
+    nav .cta:hover { opacity: 0.88; color: #0A1628; }
+
+    /* ── Layout ──────────────────────────────────── */
+    .page-wrap {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem 6rem;
+    }
+
+    /* ── Hero Block ──────────────────────────────── */
+    .doc-hero {
+      margin-bottom: 3rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .doc-tag {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .doc-hero h1 {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .doc-meta {
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    .doc-meta strong { color: var(--text); }
+
+    /* ── Table of Contents ───────────────────────── */
+    .toc {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .toc-title {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .toc ol {
+      list-style: none;
+      counter-reset: toc;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.35rem 1.5rem;
+    }
+
+    .toc li {
+      counter-increment: toc;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .toc li::before {
+      content: counter(toc, decimal-leading-zero);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .toc a {
+      font-size: 0.875rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .toc a:hover { color: var(--accent); }
+
+    /* ── Sections ────────────────────────────────── */
+    .section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 88px;
+    }
+
+    .section h2 {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-size: 1.375rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .section h2 .sec-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 0.7rem;
+      font-weight: 700;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    .section h3 {
+      font-family: 'Clash Grotesk', system-ui, sans-serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 1.75rem 0 0.6rem;
+    }
+
+    .section p {
+      color: var(--muted);
+      margin-bottom: 0.875rem;
+      line-height: 1.8;
+    }
+
+    .section p:last-child { margin-bottom: 0; }
+
+    .section ul, .section ol {
+      padding-left: 1.5rem;
+      margin-bottom: 0.875rem;
+      color: var(--muted);
+    }
+
+    .section li { margin-bottom: 0.4rem; line-height: 1.75; }
+
+    .section a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid var(--accent-dim);
+      transition: border-color 0.15s;
+    }
+
+    .section a:hover { border-color: var(--accent); }
+
+    strong, b { color: var(--text); font-weight: 600; }
+
+    /* ── Highlight Cards ─────────────────────────── */
+    .callout {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+      color: var(--muted);
+      font-size: 0.9375rem;
+      line-height: 1.75;
+    }
+
+    .callout strong { color: var(--text); }
+
+    /* ── Divider ─────────────────────────────────── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    /* ── Footer ──────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .footer-links a {
+      font-size: 0.875rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    @media (max-width: 640px) {
+      nav .cta { display: none; }
+      .toc ol { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────── -->
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo" aria-label="SocialEngine Home">
+      <!-- Inline SVG Logo -->
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#34D399" fill-opacity="0.15"/>
+        <circle cx="10" cy="16" r="3" fill="#34D399"/>
+        <circle cx="22" cy="9" r="3" fill="#34D399"/>
+        <circle cx="22" cy="23" r="3" fill="#34D399"/>
+        <line x1="13" y1="14.5" x2="19" y2="10.5" stroke="#34D399" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="13" y1="17.5" x2="19" y2="21.5" stroke="#34D399" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-text">Social<span>Engine</span></span>
+    </a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="index.html" class="cta">Get Started</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ── Main Content ────────────────────────────────── -->
+<main class="page-wrap">
+
+  <div class="doc-hero">
+    <div class="doc-tag">Legal</div>
+    <h1>Terms of Service</h1>
+    <p class="doc-meta">
+      <strong>Effective Date:</strong> April 9, 2026 &nbsp;·&nbsp;
+      <strong>Last Updated:</strong> April 9, 2026 &nbsp;·&nbsp;
+      Questions? <a href="mailto:hello@socialengine.agency" style="color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-dim);">hello@socialengine.agency</a>
+    </p>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc" aria-label="Table of Contents">
+    <div class="toc-title">Table of Contents</div>
+    <ol>
+      <li><a href="#acceptance">Acceptance of Terms</a></li>
+      <li><a href="#eligibility">Eligibility</a></li>
+      <li><a href="#services">Description of Services</a></li>
+      <li><a href="#accounts">Accounts &amp; Registration</a></li>
+      <li><a href="#subscriptions">Subscriptions &amp; Billing</a></li>
+      <li><a href="#trial">Free Trial</a></li>
+      <li><a href="#cancellation">Cancellation &amp; Termination</a></li>
+      <li><a href="#acceptable-use">Acceptable Use</a></li>
+      <li><a href="#data">Data &amp; Privacy</a></li>
+      <li><a href="#shopify">Shopify Integration</a></li>
+      <li><a href="#social-media">Social Media Integrations</a></li>
+      <li><a href="#ai-content">AI-Generated Content</a></li>
+      <li><a href="#ip">Intellectual Property</a></li>
+      <li><a href="#third-party">Third-Party Services</a></li>
+      <li><a href="#warranty">Disclaimers</a></li>
+      <li><a href="#liability">Limitation of Liability</a></li>
+      <li><a href="#indemnification">Indemnification</a></li>
+      <li><a href="#disputes">Dispute Resolution</a></li>
+      <li><a href="#governing-law">Governing Law</a></li>
+      <li><a href="#changes">Changes to Terms</a></li>
+      <li><a href="#contact">Contact Information</a></li>
+    </ol>
+  </div>
+
+  <div class="callout">
+    <strong>Please read these Terms carefully.</strong> By accessing or using SocialEngine, you agree to be bound by these Terms of Service and our <a href="privacy.html">Privacy Policy</a>. If you do not agree with any part of these Terms, you must not use our Service.
+  </div>
+
+  <!-- 1. Acceptance -->
+  <section class="section" id="acceptance">
+    <h2><span class="sec-num">01</span> Acceptance of Terms</h2>
+    <p>These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and SocialEngine Agency ("SocialEngine," "we," "us," or "our"), a social media management platform accessible at <strong>socialengine.agency</strong> ("Service").</p>
+    <p>By creating an account, installing our Shopify application, clicking "I Agree," or otherwise accessing or using the Service in any manner, you acknowledge that you have read, understood, and agree to be bound by these Terms and our <a href="privacy.html">Privacy Policy</a>, which is incorporated herein by reference.</p>
+    <p>If you are accessing or using the Service on behalf of a company, organization, or other legal entity, you represent and warrant that you have the authority to bind that entity to these Terms, and all references to "you" shall apply to that entity.</p>
+  </section>
+
+  <!-- 2. Eligibility -->
+  <section class="section" id="eligibility">
+    <h2><span class="sec-num">02</span> Eligibility</h2>
+    <p>To use SocialEngine, you must:</p>
+    <ul>
+      <li>Be at least 18 years of age, or the age of majority in your jurisdiction, whichever is greater;</li>
+      <li>Have the legal capacity and authority to enter into a binding contract;</li>
+      <li>Operate or have authorization to manage a Shopify store;</li>
+      <li>Not be prohibited from receiving services under applicable law;</li>
+      <li>Provide accurate, current, and complete information during registration;</li>
+      <li>Comply with all applicable laws and regulations, including those governing social media marketing, advertising disclosure, and consumer protection.</li>
+    </ul>
+    <p>We reserve the right to refuse Service to anyone for any reason at any time. Use of the Service is void where prohibited by law.</p>
+  </section>
+
+  <!-- 3. Services -->
+  <section class="section" id="services">
+    <h2><span class="sec-num">03</span> Description of Services</h2>
+    <p>SocialEngine provides an AI-powered social media management platform specifically designed for Shopify store owners. Our Service includes, but is not limited to:</p>
+    <h3>Core Features</h3>
+    <ul>
+      <li><strong>AI Content Generation:</strong> Automated creation of social media posts, captions, hashtags, and promotional copy informed by your store's products, branding, and inventory;</li>
+      <li><strong>Post Scheduling:</strong> Tools to schedule and publish content across connected social media platforms including Instagram, Facebook, TikTok, Pinterest, X (Twitter), and LinkedIn;</li>
+      <li><strong>Analytics &amp; Reporting:</strong> Performance metrics for scheduled and published content, including engagement rates, reach, impressions, and link clicks;</li>
+      <li><strong>Inventory-Aware Posting:</strong> Integration with your Shopify store's product catalog and inventory data to surface relevant products for promotion;</li>
+      <li><strong>Content Calendar:</strong> Visual planning tools for organizing and managing your social media publishing schedule;</li>
+      <li><strong>Brand Voice Configuration:</strong> Settings and AI training options to align generated content with your brand's tone, voice, and style.</li>
+    </ul>
+    <h3>Service Availability</h3>
+    <p>We aim to maintain high availability but do not guarantee uninterrupted access. Planned maintenance will be communicated in advance where possible. We reserve the right to modify, suspend, or discontinue any feature of the Service at any time with reasonable notice.</p>
+  </section>
+
+  <!-- 4. Accounts -->
+  <section class="section" id="accounts">
+    <h2><span class="sec-num">04</span> Accounts &amp; Registration</h2>
+    <p>To access the Service, you must register for an account. When creating your account, you agree to:</p>
+    <ul>
+      <li>Provide accurate, complete, and current registration information including your name, business email address, and Shopify store URL;</li>
+      <li>Maintain and promptly update your account information to keep it accurate and current;</li>
+      <li>Keep your login credentials confidential and not share your password with any third party;</li>
+      <li>Accept responsibility for all activity that occurs under your account, whether or not authorized by you;</li>
+      <li>Notify us immediately at <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a> of any unauthorized use of your account or any other breach of security.</li>
+    </ul>
+    <p>We reserve the right to terminate or suspend accounts that we determine, in our sole discretion, to contain false or misleading information, to be used in violation of these Terms, or to be otherwise inappropriate.</p>
+    <p>You may not create more than one account per Shopify store without our express written permission. Accounts are non-transferable.</p>
+  </section>
+
+  <!-- 5. Subscriptions & Billing -->
+  <section class="section" id="subscriptions">
+    <h2><span class="sec-num">05</span> Subscriptions &amp; Billing</h2>
+    <h3>Subscription Plans</h3>
+    <p>SocialEngine offers subscription-based plans billed on a monthly basis. Specific plan pricing, features, and limits are described on our pricing page and may be updated from time to time with notice to subscribers.</p>
+    <h3>Billing Methods</h3>
+    <p>Billing is processed through two authorized payment channels:</p>
+    <ul>
+      <li><strong>Shopify Billing API:</strong> For merchants who install SocialEngine through the Shopify App Store, charges may be processed through Shopify's native billing infrastructure and will appear on your Shopify invoice;</li>
+      <li><strong>Stripe:</strong> For direct subscriptions outside the Shopify App Store, billing is processed through Stripe, Inc. By providing payment information, you authorize us to charge the applicable subscription fees to your designated payment method.</li>
+    </ul>
+    <h3>Billing Cycle</h3>
+    <p>Subscription fees are billed in advance on a recurring monthly basis beginning on the date your paid subscription commences (the "Billing Date"). All fees are charged in USD unless otherwise specified.</p>
+    <h3>Price Changes</h3>
+    <p>We reserve the right to change our subscription prices at any time. We will provide at least 30 days' advance notice of any price increase via email to your registered address and/or in-app notification. Your continued use of the Service after the effective date of a price change constitutes your acceptance of the new price.</p>
+    <h3>Taxes</h3>
+    <p>Subscription fees are exclusive of all taxes, levies, or duties imposed by taxing authorities. You are responsible for paying all such taxes associated with your use of the Service.</p>
+    <h3>Failed Payments</h3>
+    <p>If payment fails, we will attempt to notify you and may retry the charge. We reserve the right to suspend or downgrade your account if payment remains outstanding after reasonable notice.</p>
+  </section>
+
+  <!-- 6. Free Trial -->
+  <section class="section" id="trial">
+    <h2><span class="sec-num">06</span> Free Trial</h2>
+    <div class="callout">
+      SocialEngine offers a <strong>14-day free trial</strong> for new subscribers. No credit card may be required to start a trial, depending on the onboarding flow. Full platform access is granted during the trial period.
+    </div>
+    <p>The following conditions apply to free trials:</p>
+    <ul>
+      <li>Each individual or business entity is entitled to one free trial, regardless of the number of email addresses or Shopify stores used;</li>
+      <li>We reserve the right to determine trial eligibility at our sole discretion;</li>
+      <li>At the end of the trial period, your account will automatically convert to a paid subscription unless you cancel before the trial expires;</li>
+      <li>If payment information was provided at trial sign-up, your payment method will be charged the applicable subscription fee on the day following trial expiration unless cancelled;</li>
+      <li>Trial features may differ from paid plan features;</li>
+      <li>We reserve the right to modify or discontinue the free trial offer at any time.</li>
+    </ul>
+  </section>
+
+  <!-- 7. Cancellation & Termination -->
+  <section class="section" id="cancellation">
+    <h2><span class="sec-num">07</span> Cancellation &amp; Termination</h2>
+    <h3>Cancellation by You</h3>
+    <p>You may cancel your subscription at any time through your account settings or by contacting us at <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a>. There are no long-term contracts and no cancellation fees. Cancellation will take effect at the end of the current billing period; you will retain access to the Service until that date. We do not provide prorated refunds for unused time within a billing cycle.</p>
+    <h3>Termination by SocialEngine</h3>
+    <p>We reserve the right to suspend or terminate your account immediately, with or without notice, for:</p>
+    <ul>
+      <li>Violation of these Terms;</li>
+      <li>Fraudulent, abusive, or illegal activity;</li>
+      <li>Non-payment of fees;</li>
+      <li>Activity that harms or threatens to harm other users, third parties, or SocialEngine;</li>
+      <li>Requests from law enforcement or government agencies;</li>
+      <li>Discontinuation of the Service.</li>
+    </ul>
+    <h3>Effect of Termination</h3>
+    <p>Upon termination: (a) your right to access and use the Service ceases immediately; (b) we may delete your account data subject to our data retention practices outlined in the Privacy Policy; (c) any outstanding fees become immediately due. Provisions of these Terms that by their nature should survive termination shall survive, including intellectual property rights, disclaimers, indemnification, and limitations of liability.</p>
+  </section>
+
+  <!-- 8. Acceptable Use -->
+  <section class="section" id="acceptable-use">
+    <h2><span class="sec-num">08</span> Acceptable Use</h2>
+    <p>You agree not to use the Service to:</p>
+    <ul>
+      <li>Violate any applicable law, regulation, or third-party rights, including intellectual property rights, privacy rights, or publicity rights;</li>
+      <li>Post or distribute content that is defamatory, obscene, harassing, hateful, discriminatory, or otherwise objectionable;</li>
+      <li>Publish false, misleading, or deceptive advertising or marketing content;</li>
+      <li>Violate the terms of service or community guidelines of any social media platform to which you connect;</li>
+      <li>Attempt to circumvent, disable, or interfere with the security features of the Service;</li>
+      <li>Use automated tools, bots, or scrapers to access the Service or extract data, except as expressly permitted;</li>
+      <li>Reverse engineer, decompile, or attempt to extract the source code of the Service;</li>
+      <li>Use the Service in any way that could overburden, damage, or impair its infrastructure;</li>
+      <li>Engage in spam, phishing, or any deceptive practice;</li>
+      <li>Resell, sublicense, or redistribute the Service without our written consent;</li>
+      <li>Use the Service in industries or for products prohibited by applicable law (e.g., firearms, regulated pharmaceuticals, illegal substances);</li>
+      <li>Collect or harvest personal data from the Service's users or interfaces.</li>
+    </ul>
+    <p>Violation of this section may result in immediate suspension or termination of your account without refund.</p>
+  </section>
+
+  <!-- 9. Data & Privacy -->
+  <section class="section" id="data">
+    <h2><span class="sec-num">09</span> Data &amp; Privacy</h2>
+    <p>Your privacy is important to us. Our <a href="privacy.html">Privacy Policy</a> describes in detail how we collect, use, store, share, and protect your personal information and your store's data. By using the Service, you consent to the data practices described in the Privacy Policy.</p>
+    <p>In connection with providing the Service, we collect and process:</p>
+    <ul>
+      <li>Account registration data (name, email address, Shopify store URL);</li>
+      <li>Shopify store data including product catalogs, descriptions, pricing, and inventory levels;</li>
+      <li>Social media account access tokens and publishing permissions (for connected platforms);</li>
+      <li>Usage data and analytics relating to your use of the Service.</li>
+    </ul>
+    <p>You grant SocialEngine a limited, non-exclusive license to access and use your store data and social media accounts solely for the purpose of providing the Service. You represent and warrant that you have all necessary rights and permissions to grant us this access.</p>
+  </section>
+
+  <!-- 10. Shopify Integration -->
+  <section class="section" id="shopify">
+    <h2><span class="sec-num">10</span> Shopify Integration</h2>
+    <p>SocialEngine integrates with the Shopify platform pursuant to Shopify's Partner Program Agreement and API Terms. Your use of our Shopify integration is subject to:</p>
+    <ul>
+      <li><a href="https://www.shopify.com/legal/terms" target="_blank" rel="noopener noreferrer">Shopify's Terms of Service</a>;</li>
+      <li><a href="https://www.shopify.com/legal/api-terms" target="_blank" rel="noopener noreferrer">Shopify's API License and Terms of Use</a>;</li>
+      <li><a href="https://www.shopify.com/legal/privacy" target="_blank" rel="noopener noreferrer">Shopify's Privacy Policy</a>.</li>
+    </ul>
+    <p>By connecting your Shopify store, you authorize SocialEngine to access the following data scopes: product information, inventory data, store metadata, and any additional scopes disclosed in the app installation flow. You may revoke this access at any time through your Shopify admin panel or by contacting us.</p>
+    <p>SocialEngine is not affiliated with, endorsed by, or sponsored by Shopify Inc. "Shopify" is a trademark of Shopify Inc.</p>
+    <p>We are not responsible for any changes to Shopify's platform, APIs, billing systems, or policies that may affect our Service. If Shopify limits or terminates our access to their platform, we will notify you and work to minimize disruption.</p>
+  </section>
+
+  <!-- 11. Social Media Integrations -->
+  <section class="section" id="social-media">
+    <h2><span class="sec-num">11</span> Social Media Integrations</h2>
+    <p>SocialEngine enables you to connect and publish to third-party social media platforms. Your use of connected social media accounts is governed by the respective platform's terms of service, community guidelines, and advertising policies, including but not limited to:</p>
+    <ul>
+      <li><a href="https://www.instagram.com/legal/terms/" target="_blank" rel="noopener noreferrer">Instagram Terms of Use</a> (Meta Platforms, Inc.)</li>
+      <li><a href="https://www.facebook.com/legal/terms" target="_blank" rel="noopener noreferrer">Facebook Terms of Service</a> (Meta Platforms, Inc.)</li>
+      <li><a href="https://www.tiktok.com/legal/page/us/terms-of-service/en" target="_blank" rel="noopener noreferrer">TikTok Terms of Service</a> (TikTok Ltd.)</li>
+      <li><a href="https://twitter.com/en/tos" target="_blank" rel="noopener noreferrer">X (Twitter) Terms of Service</a></li>
+      <li><a href="https://policy.pinterest.com/en/terms-of-service" target="_blank" rel="noopener noreferrer">Pinterest Terms of Service</a></li>
+      <li><a href="https://www.linkedin.com/legal/user-agreement" target="_blank" rel="noopener noreferrer">LinkedIn User Agreement</a></li>
+    </ul>
+    <p>You are solely responsible for ensuring that all content published through SocialEngine complies with the applicable platform's terms, advertising standards, and community guidelines. We are not liable for content rejected, removed, or penalized by social media platforms, or for account suspensions resulting from your content.</p>
+    <p>Platform API availability and features are outside our control. Functionality may change or become unavailable based on third-party platform decisions.</p>
+  </section>
+
+  <!-- 12. AI-Generated Content -->
+  <section class="section" id="ai-content">
+    <h2><span class="sec-num">12</span> AI-Generated Content</h2>
+    <p>SocialEngine uses artificial intelligence and machine learning to generate social media content based on your store data, brand settings, and preferences. You acknowledge and agree that:</p>
+    <ul>
+      <li><strong>Review is your responsibility:</strong> AI-generated content is provided as a starting point and should be reviewed before publication. You are solely responsible for all content published from your account, regardless of its source;</li>
+      <li><strong>Accuracy is not guaranteed:</strong> AI-generated content may contain errors, inaccuracies, or statements that do not accurately reflect your products, business, or brand. We make no warranty regarding the accuracy, completeness, or quality of AI-generated content;</li>
+      <li><strong>Compliance is your responsibility:</strong> You are responsible for ensuring all published content complies with applicable advertising regulations, disclosure requirements (e.g., FTC guidelines for paid endorsements), and platform-specific policies;</li>
+      <li><strong>No IP warranty:</strong> We do not warrant that AI-generated content is free from intellectual property claims. You should independently verify that published content does not infringe third-party rights;</li>
+      <li><strong>Continuous improvement:</strong> We may use aggregated, anonymized interaction data to improve AI model performance. We will not use your proprietary product or brand data to train models for other customers without your consent.</li>
+    </ul>
+  </section>
+
+  <!-- 13. Intellectual Property -->
+  <section class="section" id="ip">
+    <h2><span class="sec-num">13</span> Intellectual Property</h2>
+    <h3>Our Intellectual Property</h3>
+    <p>The Service and all its components — including software, algorithms, AI models, user interface designs, graphics, text, documentation, and trademarks — are owned by SocialEngine or its licensors and are protected by applicable intellectual property laws. These Terms do not convey any ownership interest to you. You receive only a limited, revocable, non-exclusive, non-transferable license to use the Service as described herein.</p>
+    <h3>Your Content</h3>
+    <p>You retain all intellectual property rights in content you create, upload, or otherwise provide to the Service ("Your Content"), including your brand assets, product images, and copy. By using the Service, you grant SocialEngine a limited, non-exclusive, royalty-free license to access, store, process, and use Your Content solely to provide the Service to you.</p>
+    <h3>Feedback</h3>
+    <p>If you provide us with feedback, suggestions, or ideas about the Service ("Feedback"), you grant us a perpetual, irrevocable, royalty-free license to use such Feedback for any purpose without compensation to you.</p>
+  </section>
+
+  <!-- 14. Third-Party Services -->
+  <section class="section" id="third-party">
+    <h2><span class="sec-num">14</span> Third-Party Services</h2>
+    <p>The Service integrates with and depends upon third-party services including Shopify, Stripe, social media platforms, and AI infrastructure providers. We are not responsible for the availability, accuracy, content, or practices of these third-party services.</p>
+    <p>Links to third-party websites or services in our platform are provided for convenience only and do not constitute our endorsement of those sites or services. Your interactions with third parties are governed solely by their own terms and policies.</p>
+    <p>You acknowledge that disruptions to third-party services may temporarily affect our ability to deliver the Service, and we shall have no liability for such disruptions.</p>
+  </section>
+
+  <!-- 15. Disclaimers -->
+  <section class="section" id="warranty">
+    <h2><span class="sec-num">15</span> Disclaimers of Warranties</h2>
+    <div class="callout">
+      <strong>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND.</strong>
+    </div>
+    <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, SOCIALENGINE EXPRESSLY DISCLAIMS ALL WARRANTIES, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.</p>
+    <p>We do not warrant that:</p>
+    <ul>
+      <li>The Service will meet your specific requirements or expectations;</li>
+      <li>The Service will be uninterrupted, timely, secure, or error-free;</li>
+      <li>Any AI-generated content will be accurate, appropriate, or suitable for publication;</li>
+      <li>The results obtained from use of the Service will be accurate, reliable, or achieve any particular business outcome;</li>
+      <li>Any defects or errors in the Service will be corrected.</li>
+    </ul>
+    <p>No advice or information obtained from SocialEngine, whether oral or written, shall create any warranty not expressly set forth in these Terms.</p>
+  </section>
+
+  <!-- 16. Limitation of Liability -->
+  <section class="section" id="liability">
+    <h2><span class="sec-num">16</span> Limitation of Liability</h2>
+    <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL SOCIALENGINE, ITS DIRECTORS, OFFICERS, EMPLOYEES, AGENTS, PARTNERS, SUPPLIERS, OR LICENSORS BE LIABLE FOR ANY:</p>
+    <ul>
+      <li>INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES;</li>
+      <li>LOSS OF PROFITS, REVENUE, BUSINESS, DATA, GOODWILL, OR ANTICIPATED SAVINGS;</li>
+      <li>DAMAGE TO REPUTATION OR BRAND;</li>
+      <li>COSTS OF PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</li>
+    </ul>
+    <p>ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF OR INABILITY TO USE THE SERVICE, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+    <p>IN ANY CASE, SOCIALENGINE'S TOTAL AGGREGATE LIABILITY TO YOU FOR ALL CLAIMS ARISING OUT OF OR RELATING TO THESE TERMS OR THE SERVICE SHALL NOT EXCEED THE GREATER OF: (A) THE TOTAL FEES PAID BY YOU TO SOCIALENGINE IN THE THREE (3) MONTHS IMMEDIATELY PRECEDING THE EVENT GIVING RISE TO THE CLAIM, OR (B) ONE HUNDRED US DOLLARS (USD $100).</p>
+    <p>Some jurisdictions do not allow the exclusion of certain warranties or limitation of liability for incidental or consequential damages, so some limitations above may not apply to you. In such jurisdictions, our liability is limited to the greatest extent permitted by law.</p>
+  </section>
+
+  <!-- 17. Indemnification -->
+  <section class="section" id="indemnification">
+    <h2><span class="sec-num">17</span> Indemnification</h2>
+    <p>You agree to indemnify, defend, and hold harmless SocialEngine and its officers, directors, employees, agents, and successors from and against any claims, liabilities, damages, losses, costs, expenses, or fees (including reasonable attorneys' fees) arising out of or relating to:</p>
+    <ul>
+      <li>Your use of or access to the Service;</li>
+      <li>Your violation of these Terms;</li>
+      <li>Content you publish or authorize to be published through the Service;</li>
+      <li>Your violation of any applicable law or regulation;</li>
+      <li>Your violation of any rights of a third party, including intellectual property, privacy, or publicity rights;</li>
+      <li>Your Shopify store operations, products, or services;</li>
+      <li>Any dispute between you and a third-party social media platform.</li>
+    </ul>
+    <p>We reserve the right, at our own expense, to assume the exclusive defense and control of any matter otherwise subject to indemnification by you, in which case you agree to cooperate with our defense of such claim.</p>
+  </section>
+
+  <!-- 18. Dispute Resolution -->
+  <section class="section" id="disputes">
+    <h2><span class="sec-num">18</span> Dispute Resolution</h2>
+    <h3>Informal Resolution</h3>
+    <p>Before filing a formal claim, you agree to first contact us at <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a> and provide a written description of the dispute, your desired resolution, and your contact information. We will attempt to resolve the dispute informally within 30 days.</p>
+    <h3>Binding Arbitration</h3>
+    <p>If informal resolution fails, any dispute, claim, or controversy arising out of or relating to these Terms or the Service shall be resolved by binding individual arbitration administered in accordance with the rules of a recognized arbitration body, rather than in court — except as provided below.</p>
+    <h3>Class Action Waiver</h3>
+    <p>YOU AND SOCIALENGINE AGREE THAT EACH MAY BRING CLAIMS AGAINST THE OTHER ONLY IN AN INDIVIDUAL CAPACITY AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS OR REPRESENTATIVE PROCEEDING. The arbitrator may not consolidate more than one person's claims.</p>
+    <h3>Exceptions</h3>
+    <p>Notwithstanding the foregoing, either party may seek injunctive or other equitable relief in a court of competent jurisdiction to prevent or enjoin infringement of intellectual property rights or misuse of confidential information.</p>
+    <h3>GDPR / EU Users</h3>
+    <p>If you are located in the European Union or European Economic Area, you may also have the right to lodge a complaint with your local data protection supervisory authority regarding our data practices. The arbitration clause does not limit your rights under GDPR.</p>
+  </section>
+
+  <!-- 19. Governing Law -->
+  <section class="section" id="governing-law">
+    <h2><span class="sec-num">19</span> Governing Law</h2>
+    <p>These Terms shall be governed by and construed in accordance with the laws of the United States, without regard to its conflict of law provisions. To the extent court proceedings are permitted under Section 18, you consent to the exclusive personal jurisdiction of the federal and state courts located in the United States for resolution of any disputes.</p>
+    <p>For users in the European Union: Nothing in these Terms limits your rights under mandatory consumer protection laws of your country of residence. If any provision of these Terms is contrary to mandatory applicable law in your jurisdiction, that provision shall be severed and the remainder of the Terms shall continue in full force.</p>
+  </section>
+
+  <!-- 20. Changes to Terms -->
+  <section class="section" id="changes">
+    <h2><span class="sec-num">20</span> Changes to Terms</h2>
+    <p>We reserve the right to modify these Terms at any time. When we make changes, we will:</p>
+    <ul>
+      <li>Update the "Last Updated" date at the top of this page;</li>
+      <li>Send an email notification to your registered email address for material changes;</li>
+      <li>Display an in-app notice for a reasonable period following the change.</li>
+    </ul>
+    <p>Your continued use of the Service after the effective date of any updated Terms constitutes your acceptance of the revised Terms. If you do not agree to the revised Terms, you must stop using the Service and cancel your subscription before the effective date.</p>
+    <p>We encourage you to review these Terms periodically. The most current version will always be available at <strong>socialengine.agency/terms</strong>.</p>
+  </section>
+
+  <!-- 21. Contact -->
+  <section class="section" id="contact">
+    <h2><span class="sec-num">21</span> Contact Information</h2>
+    <p>If you have any questions, concerns, or requests regarding these Terms of Service, please contact us:</p>
+    <div class="callout">
+      <strong>SocialEngine Agency</strong><br>
+      Email: <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a><br>
+      Website: <a href="https://socialengine.agency">socialengine.agency</a>
+    </div>
+    <p>For privacy-specific requests (data access, deletion, portability), please see our <a href="privacy.html">Privacy Policy</a> for the appropriate contact and process.</p>
+    <p>We will make every effort to respond to all inquiries within 5 business days.</p>
+  </section>
+
+  <hr>
+  <p style="color:var(--muted);font-size:0.875rem;text-align:center;">
+    These Terms of Service were last reviewed and updated on <strong style="color:var(--text);">April 9, 2026</strong>. For prior versions, contact <a href="mailto:hello@socialengine.agency">hello@socialengine.agency</a>.
+  </p>
+
+</main>
+
+<!-- ── Footer ──────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="terms.html" aria-current="page">Terms of Service</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="mailto:hello@socialengine.agency">Contact</a>
+    </div>
+    <p class="footer-copy">&copy; 2026 SocialEngine Agency. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>
