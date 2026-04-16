@@ -296,6 +296,16 @@ const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
           ${portalEmail ? `<p style="font-size:0.72rem;color:#666;text-align:center;margin:10px 0 0;">Login: <strong style="color:#aaa;">${portalEmail}</strong> &nbsp;&bull;&nbsp; Password: <strong style="color:#aaa;">${portalPassword}</strong></p>` : ''}
         </div>
 
+        <!-- Upgrade CTA: below free portal, above revenue teaser -->
+        <div style="background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(59,130,246,0.05));border:1px solid rgba(16,185,129,0.2);border-radius:14px;padding:20px 24px;margin-bottom:16px;">
+          <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#10B981;margin:0 0 10px;">READY TO GO FULL THROTTLE?</p>
+          <p style="font-size:0.85rem;color:#ccc;line-height:1.55;margin:0 0 16px;">Your free portal shows you the preview. Growth Plan unlocks <strong style="color:#fff;">45 posts/month, AI video reels, full analytics, competitor intel, and the AI marketing coach</strong> — all pre-trained on your brand.</p>
+          <a href="https://buy.stripe.com/fZu4gz7KP4LSfYY40vcQU05" target="_blank" rel="noopener" class="btn btn--accent btn--lg" style="width:100%;text-align:center;display:block;padding:14px;border-radius:10px;font-size:0.95rem;font-weight:700;text-decoration:none;background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;">
+            Start Growth Plan &mdash; $297/mo &#8594;
+          </a>
+          <p style="font-size:0.72rem;color:#666;text-align:center;margin:10px 0 0;">30-day money-back guarantee &nbsp;&bull;&nbsp; Cancel anytime</p>
+        </div>
+
         <!-- Revenue opportunity teaser -->
         ${audit.revenue_opportunity ? `
         <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;margin-bottom:16px;">
