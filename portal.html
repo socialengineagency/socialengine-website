@@ -3214,8 +3214,8 @@
           </div>
           <div class="kpi-card">
             <div class="kpi-card__label">Platforms</div>
-            <div class="kpi-card__value">${(c.platforms || []).length || '—'}</div>
-            <div class="kpi-card__trend neutral">${(c.platforms || []).join(', ') || 'Not set'}</div>
+            <div class="kpi-card__value">${(Array.isArray(c.platforms) ? c.platforms : (c.platforms ? String(c.platforms).split(',').map(p=>p.trim()) : [])).length || '—'}</div>
+            <div class="kpi-card__trend neutral">${(Array.isArray(c.platforms) ? c.platforms : (c.platforms ? String(c.platforms).split(',').map(p=>p.trim()) : [])).join(', ') || 'Not set'}</div>
           </div>
         </div>
 
@@ -3252,20 +3252,107 @@
             </div>
             ${!isPaid() ? upgradeGateHTML('Analytics Dashboard', 'Track engagement rates, follower growth, best-performing content, and revenue attribution — all in real time.') : ''}
           </div>
-          <div class="dash-card">
-            <div class="dash-card__header"><h3 class="dash-card__title">Brand Voice</h3></div>
-            <div style="padding:var(--space-5) var(--space-6);">
-              ${data.brand_voice ? `
-                <div style="font-size:var(--text-sm);color:var(--color-text);margin-bottom:var(--space-3);"><strong>Tone:</strong> ${data.brand_voice.tone_adjectives || 'Not set'}</div>
-                <div style="font-size:var(--text-sm);color:var(--color-text-muted);">Version: ${data.brand_voice.version || 'v1'}</div>
-              ` : `
-                <div style="font-size:var(--text-sm);color:var(--color-text-muted);">Complete onboarding to activate your brand voice.</div>
-              `}
+          <div class="dash-card" id="ai-intelligence-card">
+            <div class="dash-card__header"><h3 class="dash-card__title">AI Intelligence</h3></div>
+            <div style="padding:var(--space-5) var(--space-6);" id="ai-intelligence-body">
+              <div style="display:flex;align-items:center;gap:8px;color:var(--color-text-muted);font-size:var(--text-sm);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Loading...</div>
             </div>
           </div>
         </div>
       `;
       setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+      // Fetch and render AI Intelligence widget asynchronously
+      loadAIIntelligenceWidget();
+    }
+
+    async function loadAIIntelligenceWidget() {
+      const el = document.getElementById('ai-intelligence-body');
+      if (!el) return;
+      try {
+        const res = await apiFetch('/api/learning-progress');
+        const d = await res.json();
+        if (!d.success) throw new Error('Failed');
+
+        const score = d.accuracy_score;
+        const stage = d.stage;
+        const total = d.total_interactions;
+        const approved = d.approved_count;
+        const rejected = d.rejected_count;
+        const msg = d.stage_message;
+
+        const pct = Math.round(((score - 40) / 58) * 100);
+        const scoreColor = score >= 80 ? '#34D399' : score >= 65 ? '#FBBF24' : '#A78BFA';
+
+        const stagePills = {
+          pre_trained:  { label: 'Pre-Trained',  color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
+          learning:     { label: 'Learning',     color: '#FBBF24', bg: 'rgba(251,191,36,0.12)'  },
+          calibrating:  { label: 'Calibrating',  color: '#34D399', bg: 'rgba(52,211,153,0.12)'  },
+          personalized: { label: 'Personalized', color: '#34D399', bg: 'rgba(52,211,153,0.15)'  },
+          mastered:     { label: 'Mastered',     color: '#10B981', bg: 'rgba(16,185,129,0.15)'  },
+          initializing: { label: 'Setting Up',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)' },
+        };
+        const pill = stagePills[stage] || stagePills.learning;
+
+        el.innerHTML = `
+          <div style="margin-bottom:14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-size:0.75rem;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.06em;">Brand Accuracy</span>
+              <span style="font-size:0.6875rem;font-weight:600;padding:3px 10px;border-radius:20px;background:${pill.bg};color:${pill.color};">${pill.label}</span>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:8px;">
+              <span style="font-size:2rem;font-weight:800;color:${scoreColor};line-height:1;">${score}%</span>
+              <span style="font-size:0.75rem;color:var(--color-text-muted);padding-bottom:4px;">accuracy score</span>
+            </div>
+            <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#A78BFA,${scoreColor});border-radius:3px;transition:width 0.8s ease;"></div>
+            </div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--color-text-muted);line-height:1.5;margin-bottom:14px;padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:2px solid ${scoreColor};">${msg}</div>
+          ${total > 0 ? `<div style="display:flex;gap:12px;margin-bottom:12px;">
+            <div style="flex:1;text-align:center;padding:8px;background:rgba(52,211,153,0.06);border-radius:8px;">
+              <div style="font-size:1.1rem;font-weight:700;color:#34D399;">${approved}</div>
+              <div style="font-size:0.68rem;color:var(--color-text-muted);margin-top:2px;">Approved</div>
+            </div>
+            <div style="flex:1;text-align:center;padding:8px;background:rgba(244,63,94,0.06);border-radius:8px;">
+              <div style="font-size:1.1rem;font-weight:700;color:#F43F5E;">${rejected}</div>
+              <div style="font-size:0.68rem;color:var(--color-text-muted);margin-top:2px;">Refined</div>
+            </div>
+            <div style="flex:1;text-align:center;padding:8px;background:rgba(167,139,250,0.06);border-radius:8px;">
+              <div style="font-size:1.1rem;font-weight:700;color:#A78BFA;">${d.regenerated_count}</div>
+              <div style="font-size:0.68rem;color:var(--color-text-muted);margin-top:2px;">Regenerated</div>
+            </div>
+          </div>` : `<div style="font-size:0.75rem;color:var(--color-text-faint);text-align:center;padding:8px 0 12px;">Start approving posts to train your AI →</div>`}
+          <button onclick="refreshBrandIntelligence(this)" style="width:100%;padding:8px 12px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);border-radius:8px;color:#A78BFA;font-size:0.74rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(167,139,250,0.18)'" onmouseout="this.style.background='rgba(167,139,250,0.1)'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/></svg>
+            Refresh Brand Intelligence
+          </button>
+        `;
+      } catch (e) {
+        if (el) el.innerHTML = '<div style="font-size:0.75rem;color:var(--color-text-muted);">AI intelligence loading...</div>';
+      }
+    }
+
+    async function refreshBrandIntelligence(btn) {
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Running Perplexity analysis...';
+      try {
+        const res = await apiFetch('/api/brand-intelligence', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+        const d = await res.json();
+        if (d.success) {
+          btn.style.background = 'rgba(52,211,153,0.12)';
+          btn.style.borderColor = 'rgba(52,211,153,0.3)';
+          btn.style.color = '#34D399';
+          btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Brand Intelligence Updated';
+          setTimeout(() => { btn.disabled = false; btn.style = ''; btn.innerHTML = orig; }, 3000);
+        } else {
+          btn.disabled = false; btn.innerHTML = orig;
+          showToast('Brand intelligence refresh failed — try again', 'error');
+        }
+      } catch (e) {
+        btn.disabled = false; btn.innerHTML = orig;
+        showToast('Network error — check connection', 'error');
+      }
     }
 
     // Platform icon map
@@ -6139,9 +6226,9 @@
             <h3 style="font-family:var(--font-display);font-size:0.9375rem;font-weight:700;color:#fff;margin:0;letter-spacing:-0.01em;">Target Platforms</h3>
           </div>
           <div style="padding:16px 24px;">
-            ${(c.platforms || []).length > 0 ? (() => {
+            ${(() => { const _pArr = Array.isArray(c.platforms) ? c.platforms : (c.platforms ? String(c.platforms).split(',').map(p=>p.trim()) : []); return _pArr.length > 0 ? (() => {
               const oauthStatus = { instagram: isIGConnected, tiktok: isTTConnected, facebook: isFBConnected, shopify: isShopifyConnected };
-              return (c.platforms || []).map(p => {
+              return _pArr.map(p => {
                 const pLower = p.toLowerCase();
                 const isConnected = oauthStatus[pLower] || false;
                 return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
@@ -6152,8 +6239,8 @@
                   </div>
                 </div>`;
               }).join('');
-            })() : '<p style="font-size:0.875rem;color:var(--color-text-muted);margin:0;">No target platforms configured yet. Connect your accounts above to get started.</p>'}
-            ${(c.platforms || []).length > 0 && !isIGConnected && !isTTConnected && !isFBConnected ? '<p style="font-size:0.75rem;color:var(--color-text-faint);margin:10px 0 0;line-height:1.5;">Connect your social accounts above to enable direct publishing. SocialEngine will generate and schedule content for all target platforms.</p>' : ''}
+            })() : '<p style="font-size:0.875rem;color:var(--color-text-muted);margin:0;">No target platforms configured yet. Connect your accounts above to get started.</p>'; })()}
+            ${(() => { const _pArr2 = Array.isArray(c.platforms) ? c.platforms : (c.platforms ? String(c.platforms).split(',').map(p=>p.trim()) : []); return _pArr2.length > 0 && !isIGConnected && !isTTConnected && !isFBConnected ? '<p style="font-size:0.75rem;color:var(--color-text-faint);margin:10px 0 0;line-height:1.5;">Connect your social accounts above to enable direct publishing. SocialEngine will generate and schedule content for all target platforms.</p>' : ''; })()}
           </div>
         </div>
 
@@ -6336,7 +6423,8 @@
       const totalPosts = posts.length;
       const businessName = c.business_name || 'your business';
       const archetype = prof.archetype || '';
-      const platforms = (c.platforms || []).join(', ') || 'social media';
+      const _platformsArr = Array.isArray(c.platforms) ? c.platforms : (c.platforms ? String(c.platforms).split(',').map(p=>p.trim()) : []);
+      const platforms = _platformsArr.join(', ') || 'social media';
 
       // Build personalized welcome message
       let welcomeParts = [`<strong>Hey! I'm your dedicated marketing strategist for ${businessName}.</strong>`];
@@ -6348,7 +6436,7 @@
       if (prof.do_words || bv.do_words) knowItems.push(`<strong>Brand words:</strong> ${(prof.do_words || bv.do_words || '').substring(0, 100)}`);
       if (prof.customer_avatar) knowItems.push(`<strong>Target customer:</strong> ${prof.customer_avatar.substring(0, 120)}`);
       if (c.website) knowItems.push(`<strong>Product catalog:</strong> loaded from <strong>${c.website.replace(/^https?:\/\//, '')}</strong>`);
-      if ((c.platforms || []).length > 0) knowItems.push(`<strong>Platforms:</strong> ${platforms}`);
+      if (_platformsArr.length > 0) knowItems.push(`<strong>Platforms:</strong> ${platforms}`);
       if (totalPosts > 0) knowItems.push(`<strong>Content queue:</strong> ${totalPosts} pieces (${pendingCount} need review)`);
       if (c.brand_colors) knowItems.push(`<strong>Brand colors:</strong> ${c.brand_colors}`);
       if (knowItems.length > 0) {
@@ -6370,7 +6458,7 @@
       if (totalPosts > 0 && !posts.some(p => (p.content_type||'').includes('reel'))) smartSuggestions.push('Help me plan Reels content');
       if (totalPosts > 0) smartSuggestions.push('What should I promote this week?');
       if (!bv.tone_adjectives) smartSuggestions.push('Help me define my brand voice');
-      if (smartSuggestions.length < 3) smartSuggestions.push('How can I grow faster on ' + ((c.platforms||[])[0] || 'Instagram') + '?');
+      if (smartSuggestions.length < 3) smartSuggestions.push('How can I grow faster on ' + (_platformsArr[0] || 'Instagram') + '?');
       if (smartSuggestions.length < 3) smartSuggestions.push('Write a caption for my best-selling product');
       // Always add product description & voice calibration suggestions
       smartSuggestions.push('Write product descriptions in my brand voice');
