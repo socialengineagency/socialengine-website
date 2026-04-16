@@ -223,7 +223,8 @@ const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
   function renderAuditResults(data) {
     const audit = data.audit;
     const score = audit.overall_score || 0;
-    const scoreColor = score >= 65 ? '#10B981' : score >= 40 ? '#F59E0B' : '#EF4444';
+    // v7 palette: indigo for strong, orange for warn, red for weak
+    const scoreColor = score >= 65 ? '#7C3AED' : score >= 40 ? '#FF6B35' : '#EF4444';
     const circumference = 2 * Math.PI * 54;
     const offset = circumference - (score / 100) * circumference;
     const portalEmail = data.portal_access?.email || '';
@@ -263,63 +264,63 @@ const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
         ${strength || weakness ? `
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
           ${strength ? `<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:${weakness ? '12px' : '0'};">
-            <div style="color:#10B981;font-size:14px;margin-top:1px;flex-shrink:0;">&#10003;</div>
-            <p style="font-size:0.85rem;color:#ccc;margin:0;line-height:1.5;"><strong style="color:#fff;">Strength:</strong> ${strength}</p>
+            <div style="color:#00E5FF;font-size:14px;margin-top:1px;flex-shrink:0;">&#10003;</div>
+            <p style="font-size:0.85rem;color:#94A3B8;margin:0;line-height:1.5;"><strong style="color:#F1F5F9;">Strength:</strong> ${strength}</p>
           </div>` : ''}
           ${weakness ? `<div style="display:flex;gap:10px;align-items:flex-start;">
-            <div style="color:#F59E0B;font-size:14px;margin-top:1px;flex-shrink:0;">&#9888;</div>
-            <p style="font-size:0.85rem;color:#ccc;margin:0;line-height:1.5;"><strong style="color:#fff;">Biggest gap:</strong> ${weakness}</p>
+            <div style="color:#FF6B35;font-size:14px;margin-top:1px;flex-shrink:0;">&#9888;</div>
+            <p style="font-size:0.85rem;color:#94A3B8;margin:0;line-height:1.5;"><strong style="color:#F1F5F9;">Biggest gap:</strong> ${weakness}</p>
           </div>` : ''}
         </div>` : ''}
 
         <!-- What's waiting in portal -->
-        <div style="background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(99,102,241,0.06));border:1px solid rgba(168,85,247,0.2);border-radius:14px;padding:20px 24px;margin-bottom:20px;">
-          <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#a855f7;margin:0 0 14px;">YOUR FREE PORTAL IS READY</p>
+        <div style="background:linear-gradient(135deg,rgba(124,58,237,0.10),rgba(0,229,255,0.05));border:1px solid rgba(124,58,237,0.3);border-radius:14px;padding:20px 24px;margin-bottom:20px;">
+          <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#8B5CF6;margin:0 0 14px;">YOUR FREE PORTAL IS READY</p>
           <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
             <div style="display:flex;align-items:center;gap:10px;">
-              <div style="width:28px;height:28px;background:rgba(16,185,129,0.12);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#128203;</div>
-              <span style="font-size:0.85rem;color:#ccc;"><strong style="color:#fff;">${postCount} AI-generated posts</strong> drafted for your brand — ready to review &amp; approve</span>
+              <div style="width:28px;height:28px;background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.25);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#128203;</div>
+              <span style="font-size:0.85rem;color:#94A3B8;"><strong style="color:#F1F5F9;">${postCount} AI-generated posts</strong> drafted for your brand — ready to review &amp; approve</span>
             </div>
             <div style="display:flex;align-items:center;gap:10px;">
-              <div style="width:28px;height:28px;background:rgba(168,85,247,0.12);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#128200;</div>
-              <span style="font-size:0.85rem;color:#ccc;">Full score breakdown across <strong style="color:#fff;">5 categories</strong> with specific action items</span>
+              <div style="width:28px;height:28px;background:rgba(124,58,237,0.14);border:1px solid rgba(124,58,237,0.3);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#128200;</div>
+              <span style="font-size:0.85rem;color:#94A3B8;">Full score breakdown across <strong style="color:#F1F5F9;">5 categories</strong> with specific action items</span>
             </div>
             <div style="display:flex;align-items:center;gap:10px;">
-              <div style="width:28px;height:28px;background:rgba(59,130,246,0.12);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#129302;</div>
-              <span style="font-size:0.85rem;color:#ccc;">Your AI marketing coach <strong style="color:#fff;">knows your products</strong> — ask it anything</span>
+              <div style="width:28px;height:28px;background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.25);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#129302;</div>
+              <span style="font-size:0.85rem;color:#94A3B8;">Your AI marketing coach <strong style="color:#F1F5F9;">knows your products</strong> — ask it anything</span>
             </div>
           </div>
 
-          <a href="/portal.html" onclick="localStorage.setItem('se_prefill_email','${portalEmail}')" class="btn btn--primary" style="width:100%;text-align:center;display:block;padding:14px;border-radius:10px;font-size:0.95rem;font-weight:700;text-decoration:none;">
+          <a href="/portal.html" onclick="localStorage.setItem('se_prefill_email','${portalEmail}')" class="btn btn--primary" style="width:100%;text-align:center;display:block;padding:14px;border-radius:10px;font-size:0.95rem;font-weight:700;text-decoration:none;background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#fff;border:1px solid #7C3AED;box-shadow:0 8px 24px -8px rgba(124,58,237,0.45);">
             Open Your Free Portal &#8594;
           </a>
-          ${portalEmail ? `<p style="font-size:0.72rem;color:#666;text-align:center;margin:10px 0 0;">Login: <strong style="color:#aaa;">${portalEmail}</strong> &nbsp;&bull;&nbsp; Password: <strong style="color:#aaa;">${portalPassword}</strong></p>` : ''}
+          ${portalEmail ? `<p style="font-size:0.72rem;color:#64748B;text-align:center;margin:10px 0 0;">Login: <strong style="color:#94A3B8;">${portalEmail}</strong> &nbsp;&bull;&nbsp; Password: <strong style="color:#94A3B8;">${portalPassword}</strong></p>` : ''}
         </div>
 
         <!-- Upgrade CTA: below free portal, above revenue teaser -->
-        <div style="background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(59,130,246,0.05));border:1px solid rgba(16,185,129,0.2);border-radius:14px;padding:20px 24px;margin-bottom:16px;">
-          <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#10B981;margin:0 0 10px;">READY TO GO FULL THROTTLE?</p>
-          <p style="font-size:0.85rem;color:#ccc;line-height:1.55;margin:0 0 16px;">Your free portal shows you the preview. Growth Plan unlocks <strong style="color:#fff;">45 posts/month, AI video reels, full analytics, competitor intel, and the AI marketing coach</strong> — all pre-trained on your brand.</p>
-          <a href="https://buy.stripe.com/fZu4gz7KP4LSfYY40vcQU05" target="_blank" rel="noopener" class="btn btn--accent btn--lg" style="width:100%;text-align:center;display:block;padding:14px;border-radius:10px;font-size:0.95rem;font-weight:700;text-decoration:none;background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;">
+        <div style="background:linear-gradient(135deg,rgba(255,107,53,0.10),rgba(124,58,237,0.05));border:1px solid rgba(255,107,53,0.25);border-radius:14px;padding:20px 24px;margin-bottom:16px;">
+          <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#FF6B35;margin:0 0 10px;">READY TO GO FULL THROTTLE?</p>
+          <p style="font-size:0.85rem;color:#94A3B8;line-height:1.55;margin:0 0 16px;">Your free portal shows you the preview. Growth Plan unlocks <strong style="color:#F1F5F9;">45 posts/month, AI video reels, full analytics, competitor intel, and the AI marketing coach</strong> — all pre-trained on your brand.</p>
+          <a href="https://buy.stripe.com/fZu4gz7KP4LSfYY40vcQU05" target="_blank" rel="noopener" class="btn btn--accent btn--lg" style="width:100%;text-align:center;display:block;padding:14px;border-radius:10px;font-size:0.95rem;font-weight:700;text-decoration:none;background:linear-gradient(135deg,#FF6B35,#FF8F65);color:#fff;border:none;box-shadow:0 10px 28px -8px rgba(255,107,53,0.45);">
             Start Growth Plan &mdash; $297/mo &#8594;
           </a>
-          <p style="font-size:0.72rem;color:#666;text-align:center;margin:10px 0 0;">30-day money-back guarantee &nbsp;&bull;&nbsp; Cancel anytime</p>
+          <p style="font-size:0.72rem;color:#64748B;text-align:center;margin:10px 0 0;">30-day money-back guarantee &nbsp;&bull;&nbsp; Cancel anytime</p>
         </div>
 
         <!-- Revenue opportunity teaser -->
         ${audit.revenue_opportunity ? `
-        <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.2);border-radius:10px;margin-bottom:16px;">
           <div style="font-size:22px;">&#128176;</div>
           <div>
-            <div style="font-size:0.75rem;font-weight:600;color:#10B981;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">Revenue Opportunity</div>
-            <p style="font-size:0.82rem;color:#ccc;margin:0;line-height:1.5;">${audit.revenue_opportunity}</p>
+            <div style="font-size:0.75rem;font-weight:600;color:#00E5FF;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">Revenue Opportunity</div>
+            <p style="font-size:0.82rem;color:#94A3B8;margin:0;line-height:1.5;">${audit.revenue_opportunity}</p>
           </div>
         </div>` : ''}
 
         <!-- Social Profile Stats (if returned) -->
         ${(data.social_profiles && (data.social_profiles.instagram || data.social_profiles.tiktok)) ? `
         <div style="margin-bottom:16px;">
-          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#a855f7;margin-bottom:12px;">YOUR SOCIAL PRESENCE</div>
+          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#8B5CF6;margin-bottom:12px;">YOUR SOCIAL PRESENCE</div>
           <div style="display:grid;grid-template-columns:${data.social_profiles.instagram && data.social_profiles.tiktok ? '1fr 1fr' : '1fr'};gap:12px;">
             ${data.social_profiles.instagram ? `
             <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;">
