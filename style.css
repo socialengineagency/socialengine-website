@@ -1110,6 +1110,95 @@ input, textarea, select { font-family: inherit; }
   max-width: 520px;
 }
 
+/* Portal-authentic mini preview cards for How It Works */
+.step-video-card {
+  background: linear-gradient(180deg, rgba(16,16,30,0.95), rgba(12,18,34,0.96));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow:
+    0 28px 72px -42px rgba(124,58,237,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.step-video-card__topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(20,28,46,0.92), rgba(14,22,38,0.88));
+}
+
+.step-video-card__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+.step-video-card__dot:nth-child(1) { background: #FF5F57; }
+.step-video-card__dot:nth-child(2) { background: #FFBD2E; }
+.step-video-card__dot:nth-child(3) { background: #28C840; }
+
+.step-video-card__label {
+  margin-left: 0.5rem;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.step-video-card__badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.62rem;
+  border-radius: 999px;
+  border: 1px solid rgba(124,58,237,0.35);
+  background: linear-gradient(135deg, rgba(124,58,237,0.28), rgba(0,229,255,0.18));
+  color: rgba(233,249,255,0.95);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 24px -16px rgba(124,58,237,0.65);
+}
+
+.step-video-card__badge--live {
+  border-color: rgba(0,229,255,0.38);
+  background: linear-gradient(135deg, rgba(0,229,255,0.24), rgba(124,58,237,0.2));
+}
+
+.step-video-card__frame {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: #0B1020;
+}
+
+.step-video-card__frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 10% 16%, rgba(124,58,237,0.18), transparent 46%),
+    radial-gradient(circle at 90% 84%, rgba(0,229,255,0.12), transparent 46%);
+}
+
+.step-video-card__media {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+@keyframes pulse-live {
+  0% { box-shadow: 0 0 0 0 rgba(157,255,218,0.56); }
+  70% { box-shadow: 0 0 0 8px rgba(157,255,218,0); }
+  100% { box-shadow: 0 0 0 0 rgba(157,255,218,0); }
+}
+
 /* ============================================
    MOCK WINDOW (step visuals)
    ============================================ */
@@ -2369,7 +2458,8 @@ input, textarea, select { font-family: inherit; }
   }
   .trust-stat:last-child { border-bottom: none; }
 
-  .step__visual { display: none; }
+  .step__visual { display: block; }
+  .step-video-card__badge { font-size: 0.64rem; padding: 0.2rem 0.5rem; }
 
   .bento-card--hero { padding: 1.25rem; }
 }
