@@ -7656,7 +7656,7 @@
               <div class="vc-product-controls">
                 <div class="vc-product-search-wrap">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <input type="text" class="vc-product-search" id="vc-product-search" placeholder="Search products..." oninput="vcSearchProducts()">
+                  <input type="text" class="vc-product-search" id="vc-product-search" placeholder="Search by color, type, season (e.g. pink lingerie, purple ravewear, summer swimwear)..." oninput="vcSearchProducts()">
                 </div>
                 <select class="vc-category-select" id="vc-category-filter" onchange="vcFilterCategory()">
                   <option value="">All categories</option>
@@ -7877,6 +7877,95 @@
     let _vcCatalogLoadLimit = 250;
     let _vcCatalogLoadingMore = false;
     let _vcActiveSmartFilter = 'all';
+    let _vcAllShopifyProducts = [];
+    let _vcServerSearchActive = false;
+    let _vcServerSearchQuery = '';
+    let _vcServerSearchCategory = '';
+
+    const VC_PRODUCT_SEARCH_STOPWORDS = new Set(['a', 'an', 'and', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'with']);
+    const VC_PRODUCT_SEARCH_SYNONYMS = {
+      pink: ['fuchsia', 'magenta', 'rose', 'blush', 'hot pink'],
+      purple: ['violet', 'lavender', 'lilac', 'plum', 'mauve'],
+      red: ['crimson', 'scarlet', 'burgundy', 'wine'],
+      blue: ['navy', 'cobalt', 'azure', 'teal', 'turquoise'],
+      black: ['onyx', 'charcoal', 'jet black'],
+      white: ['ivory', 'cream', 'off white'],
+      green: ['emerald', 'olive', 'sage', 'mint'],
+      yellow: ['gold', 'mustard', 'lemon'],
+      lingerie: ['intimates', 'intimate', 'bra', 'panty', 'lace', 'teddy', 'corset', 'babydoll', 'bodysuit'],
+      ravewear: ['rave', 'festival', 'clubwear', 'edm', 'neon', 'holographic', 'sequin'],
+      clubwear: ['ravewear', 'festival', 'partywear', 'night out'],
+      swimwear: ['swim', 'swimsuit', 'bikini', 'beachwear'],
+      activewear: ['athleisure', 'gym', 'fitness', 'workout'],
+      festival: ['rave', 'coachella', 'edm', 'burning man', 'concert'],
+      spring: ['easter', 'pastel', 'floral'],
+      summer: ['beach', 'vacation', 'pool', 'sun', 'resort'],
+      fall: ['autumn', 'halloween', 'cozy', 'layer'],
+      autumn: ['fall', 'harvest', 'halloween', 'cozy'],
+      winter: ['holiday', 'christmas', 'new year', 'cold', 'cozy', 'velvet'],
+      seasonal: ['spring', 'summer', 'fall', 'autumn', 'winter', 'holiday'],
+    };
+
+    function vcNormalizeProductSearchText(value) {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/[^a-z0-9\s-]/g, ' ')
+        .replace(/[\s_-]+/g, ' ')
+        .trim();
+    }
+
+    function vcTokenizeProductSearch(query) {
+      const normalized = vcNormalizeProductSearchText(query || '');
+      if (!normalized) return [];
+      return normalized
+        .split(' ')
+        .map(t => t.trim())
+        .filter(t => t && !VC_PRODUCT_SEARCH_STOPWORDS.has(t));
+    }
+
+    function vcProductSearchVariants(token) {
+      const key = vcNormalizeProductSearchText(token || '');
+      if (!key) return [];
+      const synonyms = VC_PRODUCT_SEARCH_SYNONYMS[key] || [];
+      return [...new Set([key, ...synonyms.map(vcNormalizeProductSearchText).filter(Boolean)])];
+    }
+
+    function vcProductSearchText(product) {
+      const tags = Array.isArray(product?.tags) ? product.tags : String(product?.tags || '').split(',');
+      const variants = Array.isArray(product?.variants) ? product.variants : [];
+      const variantTitles = variants.map(v => v?.title || '');
+      const raw = [
+        product?.title || '',
+        product?.product_type || '',
+        product?.description || '',
+        product?.vendor || '',
+        product?.handle || '',
+        tags.join(' '),
+        variantTitles.join(' '),
+      ].join(' ');
+      return vcNormalizeProductSearchText(raw);
+    }
+
+    function vcProductMatchesQuery(product, query) {
+      const tokens = vcTokenizeProductSearch(query);
+      if (!tokens.length) return true;
+      const haystack = vcProductSearchText(product);
+      if (!haystack) return false;
+      return tokens.every(token => {
+        const variants = vcProductSearchVariants(token);
+        return variants.some(term => haystack.includes(term));
+      });
+    }
+
+    function vcProductsApiUrl(page, searchQuery, category) {
+      const params = new URLSearchParams();
+      params.set('limit', String(_vcCatalogLoadLimit));
+      params.set('page', String(page || 1));
+      if (searchQuery) params.set('search', String(searchQuery).trim());
+      if (category) params.set('category', String(category).trim());
+      return `${API}/api/studio/products?${params.toString()}`;
+    }
 
     function vcProductKey(product) {
       if (product && product.id != null && product.id !== '') return `id:${product.id}`;
@@ -7938,19 +8027,23 @@
       if (!grid) return;
       grid.innerHTML = '<div class="vc-product-loading"><div class="vc-product-loading__spinner"></div><div style="font-size:0.75rem;color:rgba(255,255,255,0.3);font-family:var(--font-body,\'Satoshi\',sans-serif);">Loading your Shopify products...</div></div>';
       try {
-        const res = await fetch(`${API}/api/studio/products?limit=${_vcCatalogLoadLimit}&page=1`, {
+        const res = await fetch(vcProductsApiUrl(1), {
           headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
         });
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
         const firstPageProducts = data.products || [];
         _vcShopifyProducts = firstPageProducts;
+        _vcAllShopifyProducts = firstPageProducts.slice();
         _vcShopifyCategories = data.categories || [];
         _vcCatalogTotal = Number(data.total || firstPageProducts.length);
         _vcCatalogPage = Number(data.page || 1);
         _vcCatalogPages = Number(data.pages || 1);
         _vcCatalogSource = data.source || 'none';
         _vcCatalogLoadingMore = false;
+        _vcServerSearchActive = false;
+        _vcServerSearchQuery = '';
+        _vcServerSearchCategory = '';
         _vcProductsLoaded = true;
         vcRenderCategoryFilterOptions();
         vcRenderProducts(_vcShopifyProducts);
@@ -7973,9 +8066,16 @@
       vcRenderProductPagination();
       const nextPage = _vcCatalogPage + 1;
       try {
-        const res = await fetch(`${API}/api/studio/products?limit=${_vcCatalogLoadLimit}&page=${nextPage}`, {
+        const res = await fetch(
+          vcProductsApiUrl(
+            nextPage,
+            _vcServerSearchActive ? _vcServerSearchQuery : '',
+            _vcServerSearchActive ? _vcServerSearchCategory : ''
+          ),
+          {
           headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
-        });
+          }
+        );
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
         const chunk = data.products || [];
@@ -7988,6 +8088,9 @@
           toAppend.push(product);
         }
         if (toAppend.length) _vcShopifyProducts = _vcShopifyProducts.concat(toAppend);
+        if (!_vcServerSearchActive && toAppend.length) {
+          _vcAllShopifyProducts = _vcAllShopifyProducts.concat(toAppend);
+        }
         if (Array.isArray(data.categories) && data.categories.length) {
           _vcShopifyCategories = data.categories;
           vcRenderCategoryFilterOptions();
@@ -8141,16 +8244,55 @@
 
         window.vcSearchProducts = function() {
       clearTimeout(_vcSearchTimeout);
-      _vcSearchTimeout = setTimeout(() => {
-        const q = (document.getElementById('vc-product-search')?.value || '').toLowerCase();
-        const cat = document.getElementById('vc-category-filter')?.value || '';
-        let filtered = _vcShopifyProducts;
-        if (q) filtered = filtered.filter(p =>
-          (p.title || '').toLowerCase().includes(q) ||
-          (p.product_type || '').toLowerCase().includes(q) ||
-          (p.tags || []).some(t => t.toLowerCase().includes(q))
-        );
-        if (cat) filtered = filtered.filter(p => p.product_type === cat);
+      _vcSearchTimeout = setTimeout(async () => {
+        const qRaw = (document.getElementById('vc-product-search')?.value || '').trim();
+        const q = vcNormalizeProductSearchText(qRaw);
+        const cat = (document.getElementById('vc-category-filter')?.value || '').trim();
+        const hasQuery = !!q;
+        const hasCategory = !!cat;
+
+        if (!hasQuery && !hasCategory) {
+          _vcServerSearchActive = false;
+          _vcServerSearchQuery = '';
+          _vcServerSearchCategory = '';
+          _vcShopifyProducts = _vcAllShopifyProducts.slice();
+          _vcCatalogTotal = _vcShopifyProducts.length;
+          _vcCatalogPage = 1;
+          _vcCatalogPages = 1;
+          vcRenderProducts(_vcShopifyProducts);
+          return;
+        }
+
+        _vcServerSearchActive = true;
+        _vcServerSearchQuery = qRaw;
+        _vcServerSearchCategory = cat;
+
+        try {
+          const res = await fetch(vcProductsApiUrl(1, qRaw, cat), {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+          });
+          if (!res.ok) throw new Error('search-api-error');
+          const data = await res.json();
+          _vcShopifyProducts = data.products || [];
+          _vcShopifyCategories = data.categories || _vcShopifyCategories;
+          _vcCatalogTotal = Number(data.total || _vcShopifyProducts.length);
+          _vcCatalogPage = Number(data.page || 1);
+          _vcCatalogPages = Number(data.pages || 1);
+          _vcCatalogSource = data.source || _vcCatalogSource || 'none';
+          _vcCatalogLoadingMore = false;
+          vcRenderCategoryFilterOptions();
+          vcRenderProducts(_vcShopifyProducts);
+          return;
+        } catch (_) {
+          // Fallback to local fuzzy filtering on already loaded products.
+        }
+
+        let filtered = _vcAllShopifyProducts.slice();
+        if (hasQuery) filtered = filtered.filter(p => vcProductMatchesQuery(p, qRaw));
+        if (hasCategory) filtered = filtered.filter(p => String(p.product_type || '') === cat);
+        _vcCatalogTotal = filtered.length;
+        _vcCatalogPage = 1;
+        _vcCatalogPages = 1;
         vcRenderProducts(filtered);
       }, 250);
     };
@@ -8844,6 +8986,9 @@
     let _adUrlLookupBusy = false;
     let _adUrlStatusMessage = '';
     let _adUrlStatusError = false;
+    let _adProductSearchTimeout = null;
+    let _adProductSearchQuery = '';
+    let _adSearchProducts = null;
 
     const AD_FORMATS = [
       { id: 'feed-square', name: 'Feed Post', dims: '1080×1080', ratio: '1:1', icon: '⬜', desc: 'Square feed ad for Instagram & Facebook', platforms: ['meta', 'instagram'] },
@@ -8952,6 +9097,41 @@
       adRenderSelectedSummary();
     }
 
+    function adProductsForRender(products) {
+      const pool = Array.isArray(_adSearchProducts) ? _adSearchProducts : products;
+      const q = String(_adProductSearchQuery || '').trim();
+      if (!q) return pool;
+      return pool.filter(p => vcProductMatchesQuery(p, q));
+    }
+
+    window.adSearchProducts = function() {
+      clearTimeout(_adProductSearchTimeout);
+      _adProductSearchTimeout = setTimeout(async () => {
+        const input = document.getElementById('ad-product-search');
+        const query = String(input?.value || '').trim();
+        _adProductSearchQuery = query;
+
+        if (!query) {
+          _adSearchProducts = null;
+          renderAdStudio();
+          return;
+        }
+
+        try {
+          const res = await fetch(vcProductsApiUrl(1, query, ''), {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+          });
+          if (!res.ok) throw new Error('ad-search-api-error');
+          const data = await res.json();
+          _adSearchProducts = data.products || [];
+          renderAdStudio();
+        } catch (_) {
+          _adSearchProducts = null;
+          renderAdStudio();
+        }
+      }, 220);
+    };
+
     window.adLookupProductUrl = async function() {
       if (_adUrlLookupBusy) return;
       const input = document.getElementById('ad-product-url');
@@ -9038,7 +9218,8 @@
         }
       }
       const products = (typeof _vcShopifyProducts !== 'undefined' && _vcShopifyProducts.length) ? _vcShopifyProducts : [];
-      const hasProducts = products.length > 0;
+      const productsToRender = adProductsForRender(products);
+      const hasProducts = productsToRender.length > 0;
       content.innerHTML = `
         <div style="max-width:1100px;margin:0 auto;">
           <!-- Header -->
@@ -9065,17 +9246,25 @@
                 Select Product
               </h3>
               <p style="font-size:0.78rem;color:var(--color-text-muted);margin:0 0 16px;">Choose which product to create ads for</p>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                <div style="position:relative;flex:1;min-width:220px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input id="ad-product-search" type="text" value="${adEscapeHtml(_adProductSearchQuery)}" oninput="adSearchProducts()" placeholder="Search by color, type, season (e.g. pink lingerie, purple ravewear)" style="width:100%;padding:9px 12px 9px 32px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#fff;font-size:0.76rem;font-family:var(--font-body);outline:none;box-sizing:border-box;">
+                </div>
+                <div style="font-size:0.68rem;color:rgba(255,255,255,0.45);font-family:var(--font-body);">${productsToRender.length} shown</div>
+              </div>
               <div id="ad-product-selector" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;max-height:300px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(139,92,246,0.3) transparent;padding:2px;">
-                ${hasProducts ? products.map(p => {
+                ${hasProducts ? productsToRender.map(p => {
                   const img = p.primary_image || '';
                   const title = (p.title || 'Product').replace(/"/g, '&quot;');
                   const price = p.price && p.price !== '0.00' ? '$' + parseFloat(p.price).toFixed(2) : '';
-                  return '<div class="ad-product-pick" data-product-id="' + (p.id||'') + '" data-title="' + title + '" data-image="' + img + '" data-price="' + price + '" onclick="adSelectProduct(this)" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;cursor:pointer;overflow:hidden;transition:all 0.15s;">' +
+                  const purl = (p.product_url || '').replace(/"/g, '&quot;');
+                  return '<div class="ad-product-pick" data-product-id="' + (p.id||'') + '" data-title="' + title + '" data-image="' + img + '" data-price="' + price + '" data-product-url="' + purl + '" onclick="adSelectProduct(this)" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;cursor:pointer;overflow:hidden;transition:all 0.15s;">' +
                     (img ? '<img src="' + img + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" loading="lazy">' : '<div style="width:100%;aspect-ratio:1;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;"><span style="font-size:1.5rem;opacity:0.15;">📦</span></div>') +
                     '<div style="padding:8px;"><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-body);">' + title + '</div>' +
                     (price ? '<div style="font-size:0.65rem;color:rgba(139,92,246,0.7);font-weight:600;margin-top:2px;">' + price + '</div>' : '') +
                     '</div></div>';
-                }).join('') : '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-size:0.82rem;font-family:var(--font-body);"><div style="width:24px;height:24px;border:2px solid rgba(139,92,246,0.2);border-top-color:rgba(139,92,246,0.7);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div><p>Loading products...</p></div>'}
+                }).join('') : '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-size:0.82rem;font-family:var(--font-body);"><div style="width:24px;height:24px;border:2px solid rgba(139,92,246,0.2);border-top-color:rgba(139,92,246,0.7);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div><p>' + (_adProductSearchQuery ? 'No products matched that search.' : 'Loading products...') + '</p></div>'}
               </div>
             </div>
           </div>
@@ -9156,6 +9345,9 @@
       // Products are loaded independently at top of renderAdStudio via fetch
 
       if (typeof lucide !== 'undefined') lucide.createIcons();
+      adSyncSelectedProductCard();
+      adRenderSelectedSummary();
+      adRenderUrlStatus();
       } catch(adErr) {
         console.warn('Ad Studio render error:', adErr);
         content.innerHTML = '<div style="padding:40px;text-align:center;"><h2 style="color:#fff;font-family:var(--font-display);margin-bottom:12px;">Ad Creative Studio</h2><p style="color:rgba(255,255,255,0.4);">Something went wrong. Please refresh the page.</p></div>';
@@ -9165,20 +9357,13 @@
     let _adSelectedTone = 'brand-voice';
 
     window.adSelectProduct = function(el) {
-      document.querySelectorAll('.ad-product-pick').forEach(p => {
-        p.style.borderColor = 'rgba(255,255,255,0.06)';
-        p.style.background = 'rgba(255,255,255,0.02)';
-      });
-      el.style.borderColor = 'rgba(139,92,246,0.5)';
-      el.style.background = 'rgba(139,92,246,0.08)';
-      _adSelectedProduct = {
+      adSetSelectedProduct({
         id: el.dataset.productId,
         title: el.dataset.title,
         image: el.dataset.image,
-        price: el.dataset.price
-      };
-      const btn = document.getElementById('ad-generate-btn');
-      if (btn) btn.disabled = false;
+        price: el.dataset.price,
+        product_url: el.dataset.productUrl || ''
+      });
     };
 
     window.adSelectPlatform = function(platformId, btn) {
