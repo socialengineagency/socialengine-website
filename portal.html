@@ -9217,7 +9217,9 @@
           }).catch(() => { window._adProductsLoading = false; });
         }
       }
-      const products = (typeof _vcShopifyProducts !== 'undefined' && _vcShopifyProducts.length) ? _vcShopifyProducts : [];
+      const products = (Array.isArray(_vcAllShopifyProducts) && _vcAllShopifyProducts.length)
+        ? _vcAllShopifyProducts
+        : ((typeof _vcShopifyProducts !== 'undefined' && _vcShopifyProducts.length) ? _vcShopifyProducts : []);
       const productsToRender = adProductsForRender(products);
       const hasProducts = productsToRender.length > 0;
       content.innerHTML = `
