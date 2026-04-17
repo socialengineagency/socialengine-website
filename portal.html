@@ -9502,42 +9502,82 @@
       { id: 'matilda', label: 'Matilda — Australian Female' }, { id: 'will', label: 'Will — American Male' }
     ];
 
-    let _hfRecommended = [];
-
-    // Features not yet available — coming soon to SocialEngine AI Studio
-    // Video generation is live via Marketing Studio; other features rolling out soon
-    const HF_UNAVAILABLE = new Set([
-      'cinema', 'popcorn', 'shots-9', 'transitions', 'motion-control', 'draw-to-video',
-      'whats-next', 'upscale', 'moodboard',
-      'generate-image', 'angles', 'skin-enhance', 'outfit-swap', 'virtual-tryon', 'recast',
-      'face-swap', 'lipsync', 'soul-id', 'translate', 'voice-swap', 'face-swap-video',
-      'character-clone', 'scene-director', 'brand-avatar', 'product-showcase', 'ugc-creator',
-      'ad-video', 'testimonial-creator', 'social-shorts', 'background-swap', 'style-transfer',
-      'batch-generator', 'color-grade',
-      'voiceover', 'voice-clone', 'voice-swap-audio', 'translate-audio'
-    ]);
+    let _hfRecommended = new Set();
+    let _hfAvailable = new Set();
+    const HF_FEATURE_ID_MAP = {
+      'generate-video': ['kling-3.0-pro', 'kling-2.6-pro', 'kling-2.1-pro', 'wan-2.5', 'seedance-1-pro', 'dop-preview', 'dop-turbo', 'minimax-01', 'sora-2', 'veo-3.1'],
+      'cinema': ['cinema_studio'],
+      'popcorn': ['popcorn'],
+      'shots-9': ['shots_9'],
+      'transitions': ['transitions'],
+      'motion-control': ['motion_control'],
+      'draw-to-video': ['draw_to_video'],
+      'whats-next': ['whats_next'],
+      'upscale': ['upscale'],
+      'moodboard': ['moodboard'],
+      'generate-image': ['nano-banana-pro', 'nano-banana-2', 'soul', 'seedream-4', 'seedream-5-lite', 'reve'],
+      'angles': ['angles'],
+      'skin-enhance': ['skin_enhancer'],
+      'outfit-swap': ['outfit_swap'],
+      'virtual-tryon': ['virtual_tryon'],
+      'recast': ['recast'],
+      'face-swap': ['face_swap_image'],
+      'lipsync': ['lipsync'],
+      'soul-id': ['soul_id'],
+      'translate': ['translate'],
+      'voice-swap': ['voice_swap'],
+      'face-swap-video': ['face_swap_video'],
+      'character-clone': ['soul_id'],
+      'scene-director': ['cinema_studio'],
+      'brand-avatar': ['soul_id'],
+      'product-showcase': ['dop-preview'],
+      'ugc-creator': ['minimax-01'],
+      'ad-video': ['kling-2.1-pro'],
+      'testimonial-creator': ['lipsync'],
+      'social-shorts': ['minimax-01'],
+      'background-swap': ['recast'],
+      'style-transfer': ['draw_to_video'],
+      'batch-generator': ['shots_9'],
+      'color-grade': ['upscale'],
+      'voiceover': ['voiceover'],
+      'voice-clone': ['voice_clone'],
+      'voice-swap-audio': ['voice_swap'],
+      'translate-audio': ['translate']
+    };
     let _hfActiveCategory = 'all';
     let _hfSearchQuery = '';
+    function hfBackendIdsFor(featureId) {
+      const mapped = HF_FEATURE_ID_MAP[featureId];
+      if (mapped && mapped.length) return mapped;
+      return [featureId.replace(/-/g, '_')];
+    }
+    function hfIsFeatureRecommended(featureId) {
+      if (!_hfRecommended.size) return false;
+      return hfBackendIdsFor(featureId).some(id => _hfRecommended.has(id));
+    }
+    function hfIsFeatureAvailable(featureId) {
+      if (!_hfAvailable.size) return true;
+      return hfBackendIdsFor(featureId).some(id => _hfAvailable.has(id));
+    }
 
-    function renderAIStudio() {
+    async function renderAIStudio() {
       console.log('[SE] renderAIStudio called, activeNav:', activeNav);
       const content = document.getElementById('dash-content');
       if (!content) { console.log('[SE] dash-content not found!'); return; }
       try {
-
-      // Fetch personalized features in background
+      _hfRecommended = new Set();
+      _hfAvailable = new Set();
       if (clientEmail) {
-        fetch(`${API}/api/studio/features?email=${encodeURIComponent(clientEmail)}`, {
-          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
-        }).then(r => r.json()).then(data => {
-          _hfRecommended = data.recommended_ids || data.features?.map(f => f.id) || [];
-          // Re-render cards with recommended badges
-          document.querySelectorAll('.hf-feature-card').forEach(card => {
-            const fid = card.dataset.featureId;
-            const badge = card.querySelector('.hf-rec-badge');
-            if (badge) badge.style.display = _hfRecommended.includes(fid) ? 'inline-flex' : 'none';
+        try {
+          const resp = await fetch(`${API}/api/studio/features?clientEmail=${encodeURIComponent(clientEmail)}`, {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
           });
-        }).catch(() => {});
+          const data = await resp.json();
+          const featured = data?.features?.featured_tools || [];
+          const available = data?.features?.available_tools || [];
+          _hfRecommended = new Set(featured.map(f => f.id).filter(Boolean));
+          _hfAvailable = new Set(available.map(f => f.id).filter(Boolean));
+        } catch (_) {}
       }
 
       const allFeatures = [
@@ -9546,6 +9586,8 @@
         ...HF_CATALOG.apps,
         ...HF_CATALOG.audio
       ];
+      const matchedFeatures = allFeatures.filter(f => hfIsFeatureAvailable(f.id));
+      const matchedCount = matchedFeatures.length;
 
       content.innerHTML = `
         <div style="max-width:1200px;margin:0 auto;">
@@ -9558,15 +9600,15 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
                   </span>
                   AI Studio
-                  <span style="font-size:0.6rem;font-weight:700;padding:3px 8px;background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(139,92,246,0.15));border:1px solid rgba(124,58,237,0.25);border-radius:6px;color:#7C3AED;letter-spacing:0.04em;">38 TOOLS</span>
-                  <span style="font-size:0.55rem;font-weight:600;padding:3px 8px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.15);border-radius:6px;color:rgba(249,115,22,0.7);letter-spacing:0.04em;">VIDEO GEN ACTIVE · MORE COMING SOON</span>
+                  <span style="font-size:0.6rem;font-weight:700;padding:3px 8px;background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(139,92,246,0.15));border:1px solid rgba(124,58,237,0.25);border-radius:6px;color:#7C3AED;letter-spacing:0.04em;">${matchedCount} MATCHED TOOLS</span>
+                  <span style="font-size:0.55rem;font-weight:600;padding:3px 8px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.15);border-radius:6px;color:rgba(249,115,22,0.7);letter-spacing:0.04em;">BRAND-DNA MATCHED ACCESS</span>
                 </h2>
-                <p style="font-size:0.875rem;color:var(--color-text-muted);margin:0;">SocialEngine AI — 4 video generation models active now. Image, audio, and advanced features rolling out soon.</p>
+                <p style="font-size:0.875rem;color:var(--color-text-muted);margin:0;">SocialEngine AI studio tools are now shown from your live Brand DNA matching profile.</p>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span style="font-size:0.75rem;color:rgba(124,58,237,0.7);background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.12);border-radius:8px;padding:5px 12px;font-weight:600;display:flex;align-items:center;gap:5px;">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="#7C3AED"><circle cx="12" cy="12" r="12"/></svg>
-                  SocialEngine AI (Video Models Active)
+                  SocialEngine AI (Personalized by Brand DNA)
                 </span>
               </div>
             </div>
@@ -9605,7 +9647,7 @@
 
           <!-- Feature Cards Grid -->
           <div id="hf-features-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
-            ${allFeatures.map(f => hfRenderFeatureCard(f)).join('')}
+            ${matchedFeatures.map(f => hfRenderFeatureCard(f)).join('')}
           </div>
 
           <!-- Empty state -->
@@ -9680,10 +9722,9 @@
     }
 
     function hfRenderFeatureCard(f) {
-      const isRec = _hfRecommended.includes(f.id);
+      const isRec = hfIsFeatureRecommended(f.id);
       return `
-        <div class="hf-feature-card dash-card" data-feature-id="${f.id}" data-category="${f.category}" data-label="${f.label.toLowerCase()}" style="padding:20px;border-radius:14px;position:relative;overflow:hidden;transition:all 0.2s;${HF_UNAVAILABLE.has(f.id) ? 'opacity:0.28;filter:grayscale(1) brightness(0.6);cursor:not-allowed;pointer-events:none;' : 'cursor:pointer;'}">
-          ${HF_UNAVAILABLE.has(f.id) ? '<div style="position:absolute;top:10px;right:10px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:0.55rem;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:0.06em;text-transform:uppercase;z-index:2;">COMING SOON</div>' : ''}
+        <div class="hf-feature-card dash-card" data-feature-id="${f.id}" data-category="${f.category}" data-label="${f.label.toLowerCase()}" style="padding:20px;border-radius:14px;position:relative;overflow:hidden;transition:all 0.2s;cursor:pointer;">
           <!-- Subtle top gradient bar -->
           <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,${f.badgeColor.replace('0.9','0.3')},transparent);"></div>
 
@@ -9705,8 +9746,8 @@
 
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <span style="font-size:0.6rem;font-weight:700;padding:3px 8px;background:${f.badgeBg};border:1px solid ${f.badgeColor.replace('0.9','0.25')};border-radius:6px;color:${f.badgeColor};letter-spacing:0.05em;">${f.badge}</span>
-            <button onclick="${HF_UNAVAILABLE.has(f.id) ? 'showToast(\'This feature is coming soon — currently in development\')' : 'hfOpenModal(\'' + f.id + '\')'}" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:${HF_UNAVAILABLE.has(f.id) ? 'rgba(255,255,255,0.03)' : 'rgba(124,58,237,0.1)'};border:1px solid ${HF_UNAVAILABLE.has(f.id) ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.2)'};border-radius:8px;color:${HF_UNAVAILABLE.has(f.id) ? 'rgba(255,255,255,0.3)' : '#7C3AED'};font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:all 0.15s;">
-              ${HF_UNAVAILABLE.has(f.id) ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Locked' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Use'}
+            <button onclick="hfOpenModal('${f.id}')" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);border-radius:8px;color:#7C3AED;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:all 0.15s;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Use
             </button>
           </div>
         </div>
