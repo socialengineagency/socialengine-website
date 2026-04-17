@@ -9771,6 +9771,11 @@
 
     let _hfRecommended = new Set();
     let _hfAvailable = new Set();
+    let _hfImageProductSelected = null;
+    let _hfImageProducts = [];
+    let _hfImageProductSearchQuery = '';
+    let _hfImageProductSearchTimeout = null;
+    let _hfImageProductLookupBusy = false;
     const HF_FEATURE_ID_MAP = {
       'generate-video': ['kling-3.0-pro', 'kling-2.6-pro', 'kling-2.1-pro', 'wan-2.5', 'seedance-1-pro', 'dop-preview', 'dop-turbo', 'minimax-01', 'sora-2', 'veo-3.1'],
       'cinema': ['cinema_studio'],
@@ -9826,6 +9831,151 @@
       if (!_hfAvailable.size) return true;
       return hfBackendIdsFor(featureId).some(id => _hfAvailable.has(id));
     }
+
+    function hfImageProductApiUrl(searchQuery = '') {
+      const params = new URLSearchParams();
+      params.set('limit', '24');
+      params.set('page', '1');
+      if (searchQuery) params.set('search', String(searchQuery).trim());
+      return `${API}/api/studio/products?${params.toString()}`;
+    }
+
+    function hfImageProductEscape(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function hfImageProductSelectionSummaryHTML() {
+      const product = _hfImageProductSelected;
+      if (!product) return '';
+      const title = hfImageProductEscape(product.title || 'Selected product');
+      const image = hfImageProductEscape(product.primary_image || '');
+      const priceRaw = String(product.price || '').trim();
+      const price = priceRaw
+        ? (priceRaw.startsWith('$') ? priceRaw : (/^\d+(\.\d+)?$/.test(priceRaw) ? `$${Number.parseFloat(priceRaw).toFixed(2)}` : priceRaw))
+        : '';
+      const url = hfImageProductEscape(product.product_url || '');
+      return `
+        <div style="margin:10px 0 14px;padding:10px;border:1px solid rgba(124,58,237,0.25);background:rgba(124,58,237,0.08);border-radius:10px;display:flex;align-items:flex-start;gap:10px;">
+          ${image ? `<img src="${image}" alt="${title}" style="width:46px;height:46px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.1);">` : '<div style="width:46px;height:46px;border-radius:8px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.35);font-size:1rem;">📦</div>'}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.76rem;font-weight:700;color:#fff;line-height:1.35;">${title}</div>
+            ${price ? `<div style="font-size:0.7rem;color:rgba(124,58,237,0.92);font-weight:600;">${hfImageProductEscape(price)}</div>` : ''}
+            ${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="font-size:0.67rem;color:rgba(125,211,252,0.9);text-decoration:none;word-break:break-all;">${url}</a>` : ''}
+          </div>
+          <button type="button" onclick="hfClearImageProductSelection()" style="padding:5px 8px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.45);font-size:0.66rem;font-weight:600;cursor:pointer;">Clear</button>
+        </div>
+      `;
+    }
+
+    function hfRenderImageProductSelectionSummary() {
+      const wrap = document.getElementById('hf-image-product-selected');
+      if (!wrap) return;
+      wrap.innerHTML = hfImageProductSelectionSummaryHTML();
+    }
+
+    function hfImageProductCardHTML(product) {
+      const id = hfImageProductEscape(product.id || '');
+      const title = hfImageProductEscape(product.title || 'Product');
+      const img = hfImageProductEscape(product.primary_image || '');
+      const type = hfImageProductEscape(product.product_type || 'Uncategorized');
+      const selected = _hfImageProductSelected && String(_hfImageProductSelected.id || '') === String(product.id || '');
+      const priceRaw = String(product.price || '').trim();
+      const price = priceRaw
+        ? (priceRaw.startsWith('$') ? priceRaw : (/^\d+(\.\d+)?$/.test(priceRaw) ? `$${Number.parseFloat(priceRaw).toFixed(2)}` : priceRaw))
+        : '';
+      return `
+        <button type="button" onclick="hfSelectImageProduct('${id}')" style="text-align:left;background:${selected ? 'rgba(124,58,237,0.14)' : 'rgba(255,255,255,0.03)'};border:1px solid ${selected ? 'rgba(124,58,237,0.38)' : 'rgba(255,255,255,0.07)'};border-radius:10px;overflow:hidden;padding:0;cursor:pointer;transition:all 0.15s;">
+          ${img ? `<img src="${img}" alt="${title}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;">` : `<div style="width:100%;aspect-ratio:1;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.3);font-size:1rem;">📦</div>`}
+          <div style="padding:8px 9px;">
+            <div style="font-size:0.67rem;font-weight:700;color:rgba(255,255,255,0.82);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:2px;">
+              <span style="font-size:0.62rem;color:rgba(255,255,255,0.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${type}</span>
+              ${price ? `<span style="font-size:0.63rem;color:rgba(124,58,237,0.9);font-weight:700;white-space:nowrap;">${hfImageProductEscape(price)}</span>` : ''}
+            </div>
+          </div>
+        </button>
+      `;
+    }
+
+    function hfRenderImageProductResults(products, source = '', total = 0) {
+      const grid = document.getElementById('hf-image-product-results');
+      const meta = document.getElementById('hf-image-product-meta');
+      if (!grid) return;
+      const list = Array.isArray(products) ? products : [];
+      if (meta) {
+        const shown = list.length;
+        const totalText = total ? `${shown} of ${total}` : `${shown}`;
+        meta.textContent = `${totalText} products${source ? ` • ${source}` : ''}`;
+      }
+      if (!list.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;padding:18px 10px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.72rem;">No products found. Try another search term (e.g. pink lingerie, ravewear, summer).</div>`;
+        return;
+      }
+      grid.innerHTML = list.map(hfImageProductCardHTML).join('');
+    }
+
+    async function hfLoadImageProducts(searchQuery = '') {
+      const grid = document.getElementById('hf-image-product-results');
+      if (!grid) return;
+      if (_hfImageProductLookupBusy) return;
+      _hfImageProductLookupBusy = true;
+      grid.innerHTML = `<div style="grid-column:1/-1;padding:18px 10px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.72rem;">Loading product catalog…</div>`;
+      try {
+        const res = await fetch(hfImageProductApiUrl(searchQuery), {
+          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+        });
+        if (!res.ok) throw new Error(`catalog-${res.status}`);
+        const data = await res.json();
+        _hfImageProducts = Array.isArray(data.products) ? data.products : [];
+        hfRenderImageProductResults(_hfImageProducts, data.source || '', Number(data.total || 0));
+      } catch (_) {
+        _hfImageProducts = [];
+        hfRenderImageProductResults([], '', 0);
+      } finally {
+        _hfImageProductLookupBusy = false;
+      }
+    }
+
+    async function hfInitImageProductSelector() {
+      _hfImageProductSelected = null;
+      _hfImageProducts = [];
+      _hfImageProductSearchQuery = '';
+      hfRenderImageProductSelectionSummary();
+      const search = document.getElementById('hf-image-product-search');
+      if (search) search.value = '';
+      await hfLoadImageProducts('');
+    }
+
+    window.hfSearchImageProducts = function() {
+      const input = document.getElementById('hf-image-product-search');
+      const query = String(input?.value || '').trim();
+      _hfImageProductSearchQuery = query;
+      clearTimeout(_hfImageProductSearchTimeout);
+      _hfImageProductSearchTimeout = setTimeout(() => {
+        hfLoadImageProducts(_hfImageProductSearchQuery);
+      }, 220);
+    };
+
+    window.hfSelectImageProduct = function(productId) {
+      const id = String(productId || '').trim();
+      if (!id) return;
+      const found = _hfImageProducts.find(p => String(p.id || '') === id);
+      if (!found) return;
+      _hfImageProductSelected = found;
+      hfRenderImageProductSelectionSummary();
+      hfRenderImageProductResults(_hfImageProducts);
+    };
+
+    window.hfClearImageProductSelection = function() {
+      _hfImageProductSelected = null;
+      hfRenderImageProductSelectionSummary();
+      hfRenderImageProductResults(_hfImageProducts);
+    };
 
     async function renderAIStudio() {
       console.log('[SE] renderAIStudio called, activeNav:', activeNav);
@@ -10072,6 +10222,9 @@
       const inner = document.getElementById('hf-modal-inner');
       if (!modal || !inner) return;
       inner.innerHTML = hfBuildModalForm(feature);
+      if (feature.formType === 'image-gen') {
+        setTimeout(() => { hfInitImageProductSelector(); }, 0);
+      }
       backdrop.style.display = 'block';
       modal.style.display = 'block';
       // Re-init lucide icons in modal
@@ -10159,6 +10312,16 @@
               <option value="product">Product Photography</option>
               <option value="editorial">Editorial</option>
             </select>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em;">Shopify Product (optional)</label>
+            <div style="position:relative;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="hf-image-product-search" type="text" oninput="hfSearchImageProducts()" placeholder="Search products by color, type, season (e.g. pink lingerie)" style="width:100%;padding:9px 11px 9px 31px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#fff;font-size:0.78rem;font-family:var(--font-body);outline:none;box-sizing:border-box;">
+            </div>
+            <div id="hf-image-product-meta" style="font-size:0.66rem;color:rgba(255,255,255,0.35);margin-top:6px;"></div>
+            <div id="hf-image-product-selected"></div>
+            <div id="hf-image-product-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;max-height:220px;overflow-y:auto;padding:2px;border-radius:10px;"></div>
           </div>` + aspectRatio('hf-ratio');
       } else if (ft === 'face-swap') {
         formHTML = imageUpload('hf-source-img', 'Source (Face to Use)') + imageUpload('hf-target-img', 'Target (Image or Video)');
@@ -10306,30 +10469,71 @@
       }, 1200);
 
       try {
-        // Build FormData
-        const fd = new FormData();
-        fd.append('email', clientEmail || '');
+        const prompt = (document.getElementById('hf-prompt')?.value || '').trim();
+        const text = (document.getElementById('hf-text-input')?.value || '').trim();
+        const ratio = (document.getElementById('hf-ratio')?.value || '').trim();
+        const voice = (document.getElementById('hf-voice-select')?.value || '').trim();
+        const lang = (document.getElementById('hf-lang-select')?.value || '').trim();
+        const model = (document.getElementById('hf-model-select')?.value || '').trim();
+        const style = (document.getElementById('hf-style-select')?.value || '').trim();
+        const charName = (document.getElementById('hf-char-name')?.value || '').trim();
 
-        // Collect file inputs
-        const fileInputs = document.querySelectorAll('#hf-modal input[type=file]');
-        fileInputs.forEach(inp => {
-          if (inp.files && inp.files[0]) fd.append(inp.id.replace('hf-', ''), inp.files[0]);
-        });
-        // Collect text inputs
-        const prompt = document.getElementById('hf-prompt')?.value; if (prompt) fd.append('prompt', prompt);
-        const text = document.getElementById('hf-text-input')?.value; if (text) fd.append('text', text);
-        const ratio = document.getElementById('hf-ratio')?.value; if (ratio) fd.append('aspect_ratio', ratio);
-        const voice = document.getElementById('hf-voice-select')?.value; if (voice) fd.append('voice_id', voice);
-        const lang = document.getElementById('hf-lang-select')?.value; if (lang) fd.append('target_language', lang);
-        const model = document.getElementById('hf-model-select')?.value; if (model) fd.append('model', model);
-        const style = document.getElementById('hf-style-select')?.value; if (style) fd.append('style', style);
-        const charName = document.getElementById('hf-char-name')?.value; if (charName) fd.append('character_name', charName);
+        const selectedProduct = _hfImageProductSelected && String(_hfImageProductSelected.id || '').trim()
+          ? _hfImageProductSelected
+          : null;
+        const fallbackPrompt = selectedProduct
+          ? `Create a premium product image for ${selectedProduct.title}. Keep the exact product identity, colors, and materials intact.`
+          : '';
 
-        const resp = await fetch(`${API}/api/studio/${endpoint}`, {
-          method: 'POST',
-          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
-          body: fd
-        });
+        let resp;
+        if (endpoint === 'generate-image') {
+          const payload = {
+            prompt: prompt || fallbackPrompt,
+            aspect_ratio: ratio || '1:1',
+            model: model || 'nano-banana-pro',
+            style
+          };
+          if (selectedProduct) {
+            payload.productId = selectedProduct.id;
+            payload.productTitle = selectedProduct.title;
+            payload.productImageUrl = selectedProduct.primary_image || '';
+          }
+          resp = await fetch(`${API}/api/studio/${endpoint}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-client-email': clientEmail,
+              'x-client-hash': clientHash
+            },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          // Build FormData for endpoints that require file uploads
+          const fd = new FormData();
+          fd.append('email', clientEmail || '');
+
+          // Collect file inputs
+          const fileInputs = document.querySelectorAll('#hf-modal input[type=file]');
+          fileInputs.forEach(inp => {
+            if (inp.files && inp.files[0]) fd.append(inp.id.replace('hf-', ''), inp.files[0]);
+          });
+
+          // Collect text inputs
+          if (prompt) fd.append('prompt', prompt);
+          if (text) fd.append('text', text);
+          if (ratio) fd.append('aspect_ratio', ratio);
+          if (voice) fd.append('voice_id', voice);
+          if (lang) fd.append('target_language', lang);
+          if (model) fd.append('model', model);
+          if (style) fd.append('style', style);
+          if (charName) fd.append('character_name', charName);
+
+          resp = await fetch(`${API}/api/studio/${endpoint}`, {
+            method: 'POST',
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+            body: fd
+          });
+        }
 
         clearInterval(progInterval);
         if (bar) bar.style.width = '100%';
