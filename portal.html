@@ -288,35 +288,7 @@
     .upgrade-fullpage__cta:hover { background: var(--color-accent-hover); transform: translateY(-1px); }
     .upgrade-fullpage__note { font-size: 0.75rem; color: var(--color-text-faint); margin-top: 12px; }
 
-    /* Onboarding flow */
-    .onboarding-overlay { position: fixed; inset: 0; z-index: 200; background: var(--color-bg); overflow-y: auto; display: none; }
-    .onboarding-overlay.active { display: block; }
-    .onboarding-container { max-width: 600px; margin: 0 auto; padding: var(--space-16) var(--space-6); }
-    .onboarding-header { text-align: center; margin-bottom: var(--space-12); }
-    .onboarding-header h2 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; color: var(--color-text); margin: 0 0 var(--space-3); }
-    .onboarding-header p { font-size: var(--text-base); color: var(--color-text-muted); line-height: 1.6; }
-    .onboarding-step { display: none; }
-    .onboarding-step.active { display: block; }
-    .onboarding-step__label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-primary); margin-bottom: var(--space-3); }
-    .onboarding-step__question { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600; color: var(--color-text); margin: 0 0 var(--space-2); }
-    .onboarding-step__hint { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0 0 var(--space-6); line-height: 1.5; }
-    .onboarding-step__textarea { width: 100%; min-height: 120px; padding: 1rem; font-size: var(--text-sm); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); color: var(--color-text); resize: vertical; outline: none; font-family: var(--font-body); line-height: 1.6; }
-    .onboarding-step__textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(124,58,237,0.08); }
-    .onboarding-options { display: grid; gap: var(--space-3); }
-    .onboarding-option { padding: var(--space-4); background: var(--color-surface); border: 2px solid var(--color-border); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.15s; text-align: left; }
-    .onboarding-option:hover { border-color: var(--color-primary); }
-    .onboarding-option.selected { border-color: #7C3AED; background: rgba(124,58,237,0.06); }
-    .onboarding-option__label { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); margin-bottom: 2px; }
-    .onboarding-option__desc { font-size: 0.8125rem; color: var(--color-text-muted); }
-    .onboarding-nav { display: flex; justify-content: space-between; margin-top: var(--space-8); }
-    .onboarding-nav__btn { padding: 0.75rem 1.5rem; font-size: var(--text-sm); font-weight: 600; border: none; border-radius: var(--radius-md); cursor: pointer; }
-    .onboarding-nav__btn--back { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
-    .onboarding-nav__btn--next { background: var(--color-primary); color: #fff; }
-    .onboarding-nav__btn--submit { background: var(--color-accent); color: #fff; }
-    .onboarding-progress { display: flex; gap: 4px; justify-content: center; margin-bottom: var(--space-8); }
-    .onboarding-progress__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-border); transition: background 0.2s; }
-    .onboarding-progress__dot.active { background: var(--color-primary); }
-    .onboarding-progress__dot.done { background: var(--color-accent); }
+    /* Onboarding flow removed (direct-access portal). */
 
     /* No content state */
     .empty-state { padding: var(--space-12); text-align: center; }
@@ -1351,36 +1323,7 @@
       letter-spacing: -0.02em;
     }
 
-    /* ── 21. ONBOARDING OVERLAY ── */
-    .onboarding-header h2 {
-      font-size: 1.75rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-    .onboarding-option {
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.06);
-      background: rgba(17,29,48,0.6);
-      padding: 18px;
-      transition: all 0.2s;
-    }
-    .onboarding-option:hover {
-      border-color: rgba(124,58,237,0.2);
-      background: rgba(255,255,255,0.03);
-    }
-    .onboarding-option.selected {
-      border-color: rgba(124,58,237,0.4);
-      background: rgba(124,58,237,0.04);
-    }
-    .onboarding-progress__dot.active { background: #7C3AED; }
-    .onboarding-progress__dot.done { background: #7C3AED; }
-    .onboarding-nav__btn--next,
-    .onboarding-nav__btn--submit {
-      background: linear-gradient(135deg, #7C3AED, #6D28D9);
-      border-radius: 10px;
-      padding: 12px 28px;
-      font-weight: 700;
-    }
+    /* ── 21. ONBOARDING OVERLAY REMOVED ── */
 
     /* ── 22. SCROLLBAR: Premium custom scrollbar ── */
     .dash-main::-webkit-scrollbar,
@@ -2470,72 +2413,6 @@
       </div>
     </div>
 
-    <!-- ONBOARDING OVERLAY -->
-    <div class="onboarding-overlay" id="onboarding-overlay">
-      <div class="onboarding-container">
-        <!-- Shopify Connect Step (shown before questions) -->
-        <div id="onboarding-shopify-step" style="display:none;">
-          <div class="onboarding-header">
-            <h2>Connect Your Store First</h2>
-            <p>Before we build your brand voice, let's connect your Shopify store for the deepest possible AI analysis of your products, inventory, and customers.</p>
-          </div>
-          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);margin-bottom:var(--space-6);">
-            <ul class="shopify-connect-steps" style="margin-bottom:var(--space-5);">
-              <li><span>Go to <strong>Shopify admin</strong> → <strong>Settings</strong> → <strong>Apps and sales channels</strong> → <strong>Develop apps</strong></span></li>
-              <li><span>Click <strong>"Create an app"</strong> → Name it <strong>SocialEngine</strong></span></li>
-              <li><span>Configure scopes: <strong>read_products</strong>, <strong>read_orders</strong>, <strong>read_inventory</strong>, <strong>read_customers</strong></span></li>
-              <li><span>Click <strong>"Install app"</strong> → Copy your <strong>Admin API access token</strong></span></li>
-              <li><span>Paste it below</span></li>
-            </ul>
-            <div id="onb-shopify-form">
-              <div class="connect-form-group">
-                <label class="connect-form-label">Shopify Store Domain</label>
-                <input type="text" class="connect-form-input" id="onb-shopify-domain" placeholder="mystore.myshopify.com">
-              </div>
-              <div class="connect-form-group">
-                <label class="connect-form-label">Admin API Access Token</label>
-                <input type="password" class="connect-form-input" id="onb-shopify-token" placeholder="shpat_xxxxx">
-              </div>
-              <div id="onb-shopify-msg" style="display:none;margin-bottom:var(--space-4);"></div>
-              <button class="connect-btn" id="onb-shopify-connect-btn">
-                <i data-lucide="link" style="width:16px;height:16px;"></i>
-                Connect Store
-              </button>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <button id="onb-shopify-skip" style="background:none;border:none;color:var(--color-text-muted);font-size:var(--text-sm);cursor:pointer;text-decoration:underline;">Skip — I'll connect later</button>
-            <button id="onb-shopify-continue" class="onboarding-nav__btn onboarding-nav__btn--next" style="display:none;">Continue to Questions</button>
-          </div>
-        </div>
-
-        <!-- Questions -->
-        <div id="onboarding-questions-section" style="display:none;">
-          <div class="onboarding-header">
-            <h2>Let's Build Your Brand Voice</h2>
-            <p>Answer 9 questions so our AI sounds like you, not a robot. This takes about 3 minutes.</p>
-            <button onclick="document.getElementById('onboarding-overlay').classList.remove('active')" style="margin-top:var(--space-4);background:none;border:none;color:var(--color-text-muted);font-size:var(--text-sm);cursor:pointer;text-decoration:underline;">Skip for now — I'll do this later</button>
-          </div>
-          <div class="onboarding-progress" id="onboarding-progress"></div>
-          <div id="onboarding-steps"></div>
-          <div id="onboarding-social-handles" style="display:none;margin-top:24px;">
-            <div class="onb-field" style="margin-top:16px;">
-              <label class="onb-label">Instagram Handle</label>
-              <input class="onb-input" id="onb-instagram" placeholder="@yourbrand">
-            </div>
-            <div class="onb-field" style="margin-top:12px;">
-              <label class="onb-label">TikTok Handle</label>
-              <input class="onb-input" id="onb-tiktok" placeholder="@yourbrand">
-            </div>
-            <div class="onb-field" style="margin-top:12px;">
-              <label class="onb-label">Facebook Page URL</label>
-              <input class="onb-input" id="onb-facebook" placeholder="facebook.com/yourbrand">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- REJECTION MODAL -->
     <div class="reject-modal" id="reject-modal">
       <div class="reject-modal__card">
@@ -3013,10 +2890,7 @@
           document.querySelector('.header')?.style.setProperty('display', 'none', 'important');
           document.getElementById('portal-footer').style.display = 'none';
 
-          // Check if onboarding needed
-          if (!data.client.has_onboarded || !data.profile) {
-            showOnboarding();
-          }
+          // Onboarding gates intentionally disabled for direct access flow.
 
           activeNav = 'dashboard';
           renderDashboard(data, true);
@@ -3812,223 +3686,7 @@
       setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
     }
 
-    // ━━━ Onboarding Flow ━━━
-    const onboardingQuestions = [
-      { id: 'q1', label: 'Question 1 of 9', question: 'How did your business start?', hint: 'Tell us the origin story. What problem were you solving? What made you say "I need to build this"?', type: 'textarea' },
-      { id: 'q2', label: 'Question 2 of 9', question: 'Describe your dream customer.', hint: 'Not demographics — describe the person. What do they care about? What keeps them up at night? Where do they hang out online?', type: 'textarea' },
-      { id: 'q3', label: 'Question 3 of 9', question: 'What makes you different from competitors?', hint: 'Be specific. "Better quality" is not enough. What would a customer say if asked why they chose you over the alternative?', type: 'textarea' },
-      { id: 'q4', label: 'Question 4 of 9', question: 'Name 2-3 brands you admire (any industry).', hint: 'Not competitors — brands whose voice, vibe, or energy you wish yours had. What specifically do you like about them?', type: 'textarea' },
-      { id: 'q5', label: 'Question 5 of 9', question: 'What words should NEVER describe your brand?', hint: 'This is more revealing than what you want. "Cheap," "corporate," "boring" — what makes you cringe?', type: 'textarea' },
-      { id: 'q6', label: 'Question 6 of 9', question: 'What transformation does your customer experience?', hint: 'Before they find you, they feel ___. After, they feel ___. Paint the picture.', type: 'textarea' },
-      { id: 'q7', label: 'Question 7 of 9', question: 'What do you hate about social media?', hint: 'What makes you unfollow a brand? What feels fake, forced, or cringe to you? We will make sure your content never does this.', type: 'textarea' },
-      { id: 'q8', label: 'Question 8 of 9 — Brand Archetype', question: 'If your brand were a person at a party, which fits best?',
-        hint: 'Pick the one that feels most natural.',
-        type: 'options',
-        options: [
-          { value: 'The Outlaw', label: 'The Rebel', desc: 'Says what everyone is thinking but won\'t say. Provocative, unapologetic.' },
-          { value: 'The Sage', label: 'The Expert', desc: 'Everyone turns to them for advice. Authoritative, measured.' },
-          { value: 'The Jester', label: 'The Life of the Party', desc: 'Making everyone laugh. Irreverent, playful.' },
-          { value: 'The Lover', label: 'The Magnetic One', desc: 'Quietly draws everyone in. Sensual, intimate, passionate.' },
-          { value: 'The Caregiver', label: 'The Dependable Friend', desc: 'Always shows up. Warm, nurturing, selfless.' },
-          { value: 'The Hero', label: 'The Ambitious One', desc: 'Always working toward something big. Bold, motivating.' },
-        ],
-      },
-      { id: 'q9', label: 'Question 9 of 9 — Anti-Brand', question: 'Which of these would feel WRONG for your brand?',
-        hint: 'People know instantly what they are NOT. This is actually more revealing than Q8.',
-        type: 'options',
-        options: [
-          { value: 'Corporate/Stiff', label: 'Corporate & Stiff', desc: 'Formal, buttoned-up, no personality.' },
-          { value: 'Aggressive/Pushy', label: 'Aggressive & Pushy', desc: 'Hard sales, countdown timers, BUY NOW energy.' },
-          { value: 'Childish/Silly', label: 'Childish & Silly', desc: 'Too many emojis, try-hard humor, not serious.' },
-          { value: 'Cold/Clinical', label: 'Cold & Clinical', desc: 'Data-only, no warmth, feels like a textbook.' },
-          { value: 'Edgy/Provocative', label: 'Edgy & Provocative', desc: 'Controversial for attention, shock value.' },
-          { value: 'Basic/Generic', label: 'Basic & Generic', desc: '"Rise and grind" energy. Nothing original.' },
-        ],
-      },
-    ];
-
-    let currentStep = 0;
-    const onboardingAnswers = {};
-
-    function showOnboarding() {
-      const overlay = document.getElementById('onboarding-overlay');
-      overlay.classList.add('active');
-
-      // Check if Shopify already connected — skip that step if so
-      const shopifyAlreadyConnected = !!(clientData?.client?.shopify_domain);
-      if (shopifyAlreadyConnected) {
-        startOnboardingQuestions();
-      } else {
-        showOnboardingShopifyStep();
-      }
-    }
-
-    function showOnboardingShopifyStep() {
-      document.getElementById('onboarding-shopify-step').style.display = 'block';
-      document.getElementById('onboarding-questions-section').style.display = 'none';
-      if (typeof lucide !== 'undefined') lucide.createIcons();
-
-      const connectBtn = document.getElementById('onb-shopify-connect-btn');
-      const skipBtn = document.getElementById('onb-shopify-skip');
-      const continueBtn = document.getElementById('onb-shopify-continue');
-      const msgEl = document.getElementById('onb-shopify-msg');
-
-      connectBtn?.addEventListener('click', async () => {
-        const domain = (document.getElementById('onb-shopify-domain')?.value || '').trim();
-        const token = (document.getElementById('onb-shopify-token')?.value || '').trim();
-        if (!domain || !token) {
-          showShopifyMsg(msgEl, 'error', 'Please enter both your store domain and token.');
-          return;
-        }
-        connectBtn.disabled = true;
-        connectBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Connecting...';
-        try {
-          const res = await fetch(`${API}/api/connect-shopify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
-            body: JSON.stringify({ shopify_domain: domain, shopify_token: token })
-          });
-          const result = await res.json();
-          if (res.ok && result.success) {
-            showShopifyMsg(msgEl, 'success', `Connected: ${result.shop_name || domain} (${result.product_count != null ? result.product_count + ' products' : 'connected'})`);
-            if (clientData?.client) clientData.client.shopify_domain = domain;
-            connectBtn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Connected!';
-            if (continueBtn) continueBtn.style.display = 'inline-flex';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-          } else {
-            showShopifyMsg(msgEl, 'error', result.error || result.message || 'Connection failed.');
-            connectBtn.disabled = false;
-            connectBtn.innerHTML = '<i data-lucide="link" style="width:16px;height:16px;"></i> Connect Store';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-          }
-        } catch(e) {
-          showShopifyMsg(msgEl, 'error', 'Network error. Please try again.');
-          connectBtn.disabled = false;
-          connectBtn.innerHTML = '<i data-lucide="link" style="width:16px;height:16px;"></i> Connect Store';
-          if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-      });
-
-      skipBtn?.addEventListener('click', startOnboardingQuestions);
-      continueBtn?.addEventListener('click', startOnboardingQuestions);
-    }
-
-    function startOnboardingQuestions() {
-      document.getElementById('onboarding-shopify-step').style.display = 'none';
-      document.getElementById('onboarding-questions-section').style.display = 'block';
-
-      // Build progress dots
-      const progress = document.getElementById('onboarding-progress');
-      progress.innerHTML = onboardingQuestions.map((_, i) => `<div class="onboarding-progress__dot ${i === 0 ? 'active' : ''}" data-step="${i}"></div>`).join('');
-
-      renderOnboardingStep(0);
-    }
-
-    function renderOnboardingStep(step) {
-      currentStep = step;
-      const q = onboardingQuestions[step];
-      const stepsEl = document.getElementById('onboarding-steps');
-      const isLast = step === onboardingQuestions.length - 1;
-
-      let inputHtml = '';
-      if (q.type === 'textarea') {
-        inputHtml = `<textarea class="onboarding-step__textarea" id="ob-input" placeholder="Type your answer...">${onboardingAnswers[q.id] || ''}</textarea>`;
-      } else if (q.type === 'options') {
-        inputHtml = `<div class="onboarding-options">${q.options.map(o => `
-          <button class="onboarding-option ${onboardingAnswers[q.id] === o.value ? 'selected' : ''}" data-value="${o.value}">
-            <div class="onboarding-option__label">${o.label}</div>
-            <div class="onboarding-option__desc">${o.desc}</div>
-          </button>
-        `).join('')}</div>`;
-      }
-
-      stepsEl.innerHTML = `
-        <div class="onboarding-step active">
-          <div class="onboarding-step__label">${q.label}</div>
-          <h3 class="onboarding-step__question">${q.question}</h3>
-          <p class="onboarding-step__hint">${q.hint}</p>
-          ${inputHtml}
-          <div class="onboarding-nav">
-            ${step > 0 ? '<button class="onboarding-nav__btn onboarding-nav__btn--back" id="ob-back">Back</button>' : '<div></div>'}
-            ${isLast
-              ? '<button class="onboarding-nav__btn onboarding-nav__btn--submit" id="ob-submit">Finish &amp; Activate</button>'
-              : '<button class="onboarding-nav__btn onboarding-nav__btn--next" id="ob-next">Continue</button>'}
-          </div>
-        </div>
-      `;
-
-      // Show social handles section on last step
-      const socialHandlesEl = document.getElementById('onboarding-social-handles');
-      if (socialHandlesEl) socialHandlesEl.style.display = isLast ? 'block' : 'none';
-
-      // Update progress dots
-      document.querySelectorAll('.onboarding-progress__dot').forEach((dot, i) => {
-        dot.classList.toggle('active', i === step);
-        dot.classList.toggle('done', i < step);
-      });
-
-      // Option selection
-      stepsEl.querySelectorAll('.onboarding-option').forEach(opt => {
-        opt.addEventListener('click', () => {
-          stepsEl.querySelectorAll('.onboarding-option').forEach(o => o.classList.remove('selected'));
-          opt.classList.add('selected');
-          onboardingAnswers[q.id] = opt.dataset.value;
-        });
-      });
-
-      // Nav buttons
-      document.getElementById('ob-back')?.addEventListener('click', () => {
-        saveCurrentAnswer(q);
-        renderOnboardingStep(step - 1);
-      });
-
-      document.getElementById('ob-next')?.addEventListener('click', () => {
-        saveCurrentAnswer(q);
-        renderOnboardingStep(step + 1);
-      });
-
-      document.getElementById('ob-submit')?.addEventListener('click', submitOnboarding);
-    }
-
-    function saveCurrentAnswer(q) {
-      if (q.type === 'textarea') {
-        const input = document.getElementById('ob-input');
-        if (input) onboardingAnswers[q.id] = input.value;
-      }
-    }
-
-    async function submitOnboarding() {
-      const q = onboardingQuestions[currentStep];
-      saveCurrentAnswer(q);
-
-      const submitBtn = document.getElementById('ob-submit');
-      submitBtn.textContent = 'Building your profile...';
-      submitBtn.disabled = true;
-
-      try {
-        const res = await fetch(`${API}/api/onboarding`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientEmail, clientHash, answers: { ...onboardingAnswers, instagram_handle: document.getElementById('onb-instagram')?.value || '', tiktok_handle: document.getElementById('onb-tiktok')?.value || '', facebook_handle: document.getElementById('onb-facebook')?.value || '' } }),
-        });
-
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-
-        // Close onboarding and refresh dashboard
-        document.getElementById('onboarding-overlay').classList.remove('active');
-
-        if (data.profile) {
-          clientData.profile = data.profile;
-          activeNav = 'dashboard';
-          renderDashboard(clientData, true);
-        }
-      } catch (err) {
-        console.error('Onboarding error:', err);
-        submitBtn.textContent = 'Try Again';
-        submitBtn.disabled = false;
-      }
-    }
+    // Onboarding flow removed per direct-access requirement.
 
     // ━━━ Active Nav Tracking ━━━
     let activeNav = 'dashboard';
@@ -5485,7 +5143,7 @@
           <div style="text-align:center;padding:48px 24px;">
             <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(255,255,255,0.04));display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.5rem;">🎭</div>
             <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:8px;">Brand voice not configured yet</div>
-            <p style="font-size:0.875rem;color:var(--color-text-muted);line-height:1.6;margin:0 0 20px;max-width:420px;margin-left:auto;margin-right:auto;">Complete the onboarding questionnaire to activate your AI brand voice. Your AI will learn your tone, style, and audience from your answers.</p>
+            <p style="font-size:0.875rem;color:var(--color-text-muted);line-height:1.6;margin:0 0 20px;max-width:420px;margin-left:auto;margin-right:auto;">Brand voice setup is managed for you automatically in your account baseline.</p>
           </div>
         </div>` : ''}
 
@@ -6053,7 +5711,7 @@
                   <i data-lucide="palette" style="width:24px;height:24px;color:var(--color-primary);opacity:0.6;"></i>
                 </div>
                 <div style="font-size:var(--text-sm);font-weight:500;color:var(--color-text);margin-bottom:var(--space-2);">No brand style configured yet</div>
-                <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.5;margin:0 0 var(--space-4);max-width:400px;margin-left:auto;margin-right:auto;">Complete onboarding and connect your Shopify store. SocialEngine will analyze your products and extract your visual DNA — colors, photography style, and aesthetic direction.</p>
+                <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.5;margin:0 0 var(--space-4);max-width:400px;margin-left:auto;margin-right:auto;">SocialEngine will continuously analyze your catalog and activity to refine your visual DNA — colors, photography style, and aesthetic direction.</p>
                 <button class="btn btn--primary btn--sm" onclick="document.querySelector('[data-nav=brand-voice]').click();">Set Up Brand Voice</button>
               </div>
             `}
