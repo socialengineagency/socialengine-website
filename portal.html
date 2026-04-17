@@ -7526,6 +7526,7 @@
                   <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);font-family:var(--font-body,'Satoshi',sans-serif);">Loading your Shopify products...</div>
                 </div>
               </div>
+              <div id="vc-product-pagination"></div>
             </div>
 
             <!-- Upload tab (hidden by default) -->
@@ -7717,39 +7718,157 @@
     let _vcShopifyCategories = [];
     let _vcProductsLoaded = false;
     let _vcSearchTimeout = null;
+    let _vcCatalogTotal = 0;
+    let _vcCatalogPage = 1;
+    let _vcCatalogPages = 1;
+    let _vcCatalogSource = 'none';
+    let _vcCatalogLoadLimit = 250;
+    let _vcCatalogLoadingMore = false;
+    let _vcActiveSmartFilter = 'all';
+
+    function vcProductKey(product) {
+      if (product && product.id != null && product.id !== '') return `id:${product.id}`;
+      const handle = product && product.handle ? product.handle : '';
+      const title = product && product.title ? product.title : '';
+      const image = product && product.primary_image ? product.primary_image : '';
+      return `fallback:${handle}|${title}|${image}`;
+    }
+
+    function vcRenderCategoryFilterOptions() {
+      const select = document.getElementById('vc-category-filter');
+      if (!select) return;
+      const currentValue = select.value || '';
+      select.innerHTML = '<option value="">All categories</option>' +
+        _vcShopifyCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+      if (currentValue && _vcShopifyCategories.includes(currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
+    function vcProductPaginationHTML() {
+      const total = Number(_vcCatalogTotal || 0);
+      if (!total) return '';
+      const loaded = Math.min(_vcShopifyProducts.length, total);
+      if (_vcCatalogPage < _vcCatalogPages && loaded < total) {
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;">
+          <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);font-family:var(--font-body,'Satoshi',sans-serif);">Showing ${loaded} of ${total} products</span>
+          <button onclick="vcLoadMoreProducts()" ${_vcCatalogLoadingMore ? 'disabled' : ''} style="padding:7px 12px;border-radius:8px;border:1px solid rgba(139,92,246,0.35);background:${_vcCatalogLoadingMore ? 'rgba(139,92,246,0.08)' : 'rgba(139,92,246,0.15)'};color:${_vcCatalogLoadingMore ? 'rgba(255,255,255,0.35)' : 'rgba(139,92,246,0.95)'};font-size:0.72rem;font-weight:600;cursor:${_vcCatalogLoadingMore ? 'default' : 'pointer'};font-family:var(--font-body,'Satoshi',sans-serif);">
+            ${_vcCatalogLoadingMore ? 'Loading more...' : 'Load more products'}
+          </button>
+        </div>`;
+      }
+      return `<div style="margin-top:10px;font-size:0.72rem;color:rgba(255,255,255,0.45);font-family:var(--font-body,'Satoshi',sans-serif);">Showing all ${total} products</div>`;
+    }
+
+    function vcRenderProductPagination() {
+      const pagination = document.getElementById('vc-product-pagination');
+      if (!pagination) return;
+      pagination.innerHTML = vcProductPaginationHTML();
+    }
+
+    function vcRenderCurrentProductView() {
+      const searchValue = (document.getElementById('vc-product-search')?.value || '').trim();
+      const categoryValue = (document.getElementById('vc-category-filter')?.value || '').trim();
+      if ((searchValue || categoryValue) && typeof window.vcSearchProducts === 'function') {
+        window.vcSearchProducts();
+        return;
+      }
+      if (_vcActiveSmartFilter && _vcActiveSmartFilter !== 'all' && typeof window.vcSmartFilter === 'function') {
+        const activeChip = document.querySelector('.vc-cat-chip.active');
+        window.vcSmartFilter(_vcActiveSmartFilter, activeChip || null);
+        return;
+      }
+      vcRenderProducts(_vcShopifyProducts);
+    }
 
     async function vcLoadShopifyProducts() {
       const grid = document.getElementById('vc-product-grid');
       if (!grid) return;
       grid.innerHTML = '<div class="vc-product-loading"><div class="vc-product-loading__spinner"></div><div style="font-size:0.75rem;color:rgba(255,255,255,0.3);font-family:var(--font-body,\'Satoshi\',sans-serif);">Loading your Shopify products...</div></div>';
       try {
-        const res = await fetch(`${API}/api/studio/products?limit=100`, {
+        const res = await fetch(`${API}/api/studio/products?limit=${_vcCatalogLoadLimit}&page=1`, {
           headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
         });
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
-        _vcShopifyProducts = data.products || [];
+        const firstPageProducts = data.products || [];
+        _vcShopifyProducts = firstPageProducts;
         _vcShopifyCategories = data.categories || [];
+        _vcCatalogTotal = Number(data.total || firstPageProducts.length);
+        _vcCatalogPage = Number(data.page || 1);
+        _vcCatalogPages = Number(data.pages || 1);
+        _vcCatalogSource = data.source || 'none';
+        _vcCatalogLoadingMore = false;
         _vcProductsLoaded = true;
-        // Populate category filter
-        const select = document.getElementById('vc-category-filter');
-        if (select) {
-          select.innerHTML = '<option value="">All categories</option>' +
-            _vcShopifyCategories.map(c => `<option value="${c}">${c}</option>`).join('');
-        }
+        vcRenderCategoryFilterOptions();
         vcRenderProducts(_vcShopifyProducts);
       } catch (err) {
         console.warn('Shopify products load failed:', err);
+        _vcCatalogTotal = 0;
+        _vcCatalogPage = 1;
+        _vcCatalogPages = 1;
+        _vcCatalogLoadingMore = false;
         // Fall back to content post images
         vcRenderProductsFallback();
+        vcRenderProductPagination();
       }
     }
+
+    window.vcLoadMoreProducts = async function() {
+      if (_vcCatalogLoadingMore) return;
+      if (_vcCatalogPage >= _vcCatalogPages) return;
+      _vcCatalogLoadingMore = true;
+      vcRenderProductPagination();
+      const nextPage = _vcCatalogPage + 1;
+      try {
+        const res = await fetch(`${API}/api/studio/products?limit=${_vcCatalogLoadLimit}&page=${nextPage}`, {
+          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+        });
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        const chunk = data.products || [];
+        const seen = new Set(_vcShopifyProducts.map(vcProductKey));
+        const toAppend = [];
+        for (const product of chunk) {
+          const key = vcProductKey(product);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          toAppend.push(product);
+        }
+        if (toAppend.length) _vcShopifyProducts = _vcShopifyProducts.concat(toAppend);
+        if (Array.isArray(data.categories) && data.categories.length) {
+          _vcShopifyCategories = data.categories;
+          vcRenderCategoryFilterOptions();
+        }
+        _vcCatalogTotal = Number(data.total || _vcCatalogTotal || _vcShopifyProducts.length);
+        _vcCatalogPage = Number(data.page || nextPage);
+        _vcCatalogPages = Number(data.pages || _vcCatalogPages || 1);
+        if (data.source) _vcCatalogSource = data.source;
+        vcRenderCurrentProductView();
+      } catch (err) {
+        console.warn('Shopify load more failed:', err);
+      } finally {
+        _vcCatalogLoadingMore = false;
+        vcRenderProductPagination();
+      }
+    };
 
     function vcRenderProducts(products) {
       const grid = document.getElementById('vc-product-grid');
       if (!grid) return;
       const countEl = document.getElementById('vc-product-count');
-      if (countEl) countEl.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+      if (countEl) {
+        const loadedCount = Math.min(_vcShopifyProducts.length, _vcCatalogTotal || _vcShopifyProducts.length);
+        if (_vcCatalogTotal > 0) {
+          if (products.length !== _vcShopifyProducts.length) {
+            countEl.textContent = `${products.length} shown • ${loadedCount} of ${_vcCatalogTotal} loaded`;
+          } else {
+            countEl.textContent = `${loadedCount} of ${_vcCatalogTotal} loaded`;
+          }
+        } else {
+          countEl.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+        }
+      }
 
       if (!products.length) {
         grid.innerHTML = `<div class="vc-product-empty">
@@ -7757,6 +7876,7 @@
           <div class="vc-product-empty__title">No products found</div>
           <div class="vc-product-empty__sub">Try adjusting your search or category filter,<br>or switch to the Upload tab to use a custom image.</div>
         </div>`;
+        vcRenderProductPagination();
         return;
       }
 
@@ -7786,12 +7906,15 @@
           ${allImgs.length > 1 ? `<div class="vc-image-variants">${allImgs.map((img, idx) => `<img class="vc-image-variant${idx===0?' active':''}" src="${img.url}" alt="Variant ${idx+1}" onclick="event.stopPropagation();vcSelectVariantImage(this,'${img.url}')" loading="lazy">`).join('')}</div>` : ''}
         </div>`;
       }).join('');
+      vcRenderProductPagination();
     }
 
     // Fallback: use content post images if Shopify products unavailable
     function vcRenderProductsFallback() {
       const grid = document.getElementById('vc-product-grid');
       if (!grid) return;
+      const pagination = document.getElementById('vc-product-pagination');
+      if (pagination) pagination.innerHTML = '';
       // Hide search controls since we're in fallback mode
       const controls = document.querySelector('.vc-product-controls');
       if (controls) controls.style.display = 'none';
@@ -7886,6 +8009,7 @@
 
     // ━━━ Smart Category Chips Filter ━━━
     window.vcSmartFilter = function(category, btn) {
+      _vcActiveSmartFilter = category || 'all';
       // Update active state
       document.querySelectorAll('.vc-cat-chip').forEach(c => {
         c.style.background = 'rgba(255,255,255,0.04)';
@@ -8603,11 +8727,16 @@
       if (typeof _vcShopifyProducts === 'undefined' || !_vcShopifyProducts.length) {
         if (!window._adProductsLoading) {
           window._adProductsLoading = true;
-          fetch(`${_adAPI}/api/studio/products?limit=100`, {
+          fetch(`${_adAPI}/api/studio/products?limit=250&page=1`, {
             headers: { 'x-client-email': _adEmail, 'x-client-hash': _adHash }
           }).then(r => r.json()).then(data => {
             _vcShopifyProducts = data.products || [];
             _vcShopifyCategories = data.categories || [];
+            _vcCatalogTotal = Number(data.total || _vcShopifyProducts.length);
+            _vcCatalogPage = Number(data.page || 1);
+            _vcCatalogPages = Number(data.pages || 1);
+            _vcCatalogSource = data.source || _vcCatalogSource || 'none';
+            _vcCatalogLoadingMore = false;
             _vcProductsLoaded = true;
             window._adProductsLoading = false;
             // Re-render Ad Studio with products
