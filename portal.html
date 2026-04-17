@@ -2515,6 +2515,7 @@
     let clientEmail = '';
     let clientHash = '';
     let clientData = null;
+    let _videoRegenSelectedByPost = {};
     const STRIPE_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
     function isPaid() { return clientData?.client?.is_paid !== false; }
     function isPreview() { return clientData?.client?.tier === 'Preview' || clientData?.client?.tier === 'Free'; }
@@ -2598,6 +2599,52 @@
       const ctypeRaw = (post.content_type || '').replace(/^(reel|static|carousel|story)_/, '');
       const ctypeLabel = ctypeRaw.replace(/_/g, ' ');
       const statusClass = status.toLowerCase().replace(/\s+/g, '-').replace('ready-for-review','pending');
+      const matchedRegenProduct = regenResolveProductFromCatalog(post);
+      const regenCatalogProducts = Array.isArray(_vcShopifyProducts) ? _vcShopifyProducts.slice(0, 250) : [];
+      const regenState = _videoRegenSelectedByPost[post.id] || null;
+      const regenDefaultImage = String(
+        regenState?.imageUrl ||
+        matchedRegenProduct?.primary_image ||
+        (matchedRegenProduct?.images?.[0]?.url || '') ||
+        imageUrl ||
+        ''
+      ).trim();
+      const regenDefaultTitle = String(
+        regenState?.title ||
+        matchedRegenProduct?.title ||
+        post.theme ||
+        ''
+      ).trim();
+      const regenSelectedId = String(
+        regenState?.id ||
+        matchedRegenProduct?.id ||
+        ''
+      );
+      const regenPicker = (!isPending || isRegenerating || !hasVideo) ? '' : (() => {
+        if (!regenCatalogProducts.length) {
+          return `<div style="margin-top:12px;padding:10px 12px;border:1px solid rgba(248,113,113,0.35);background:rgba(239,68,68,0.08);border-radius:8px;font-size:0.72rem;color:rgba(248,113,113,0.95);">
+            Shopify catalog not loaded yet for video regeneration. Open Marketing Studio once to load products, then retry.
+          </div>`;
+        }
+        const options = regenCatalogProducts.map((p) => {
+          const id = String(p.id || '');
+          const selectedAttr = id && id === regenSelectedId ? 'selected' : '';
+          const label = String(p.title || 'Product').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          return `<option value="${id}" ${selectedAttr}>${label}</option>`;
+        }).join('');
+        return `<div style="margin-top:12px;padding:10px 12px;border:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.08);border-radius:10px;">
+          <div style="font-size:0.7rem;font-weight:700;color:rgba(196,181,253,0.95);margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase;">Video regen product source</div>
+          <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+            <select id="video-regen-product-picker-${post.id}" onchange="regenUpdateProductSelection('${post.id}', this.value)" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.14);border-radius:8px;color:#fff;font-size:0.75rem;font-family:var(--font-body);outline:none;">
+              <option value="">Select Shopify product...</option>
+              ${options}
+            </select>
+            <input id="video-regen-image-${post.id}" value="${regenDefaultImage.replace(/"/g,'&quot;')}" placeholder="Product image URL (auto-filled)" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.92);font-size:0.72rem;font-family:var(--font-body);outline:none;">
+            <input id="video-regen-title-${post.id}" value="${regenDefaultTitle.replace(/"/g,'&quot;')}" placeholder="Product title" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.92);font-size:0.72rem;font-family:var(--font-body);outline:none;">
+          </div>
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.45);margin-top:7px;">Regeneration uses this selected Shopify product + image.</div>
+        </div>`;
+      })();
 
       // Preview (left side)
       let previewHTML = '';
@@ -2666,6 +2713,8 @@
             <div class="studio-modal__caption-hint">Edit caption above — changes save automatically</div>
             ${(() => { const ht = fullText.match(/#[\w]+/g) || []; return ht.length ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">' + ht.map(h => '<span style="font-size:0.65rem;padding:2px 8px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.12);border-radius:4px;color:rgba(124,58,237,0.7);">' + h + '</span>').join('') + '</div>' : ''; })()}
           </div>
+
+          ${regenPicker}
 
           ${hasVideoBrief ? `
           <div class="studio-modal__brief">
@@ -3584,11 +3633,140 @@
       submitBtn.disabled = false;
     });
 
+    function regenResolveProductFromCatalog(post) {
+      const explicitId = String(post?.shopify_product_id || '').trim();
+      if (explicitId && Array.isArray(_vcShopifyProducts)) {
+        const byId = _vcShopifyProducts.find(p => String(p.id || '') === explicitId);
+        if (byId) return byId;
+      }
+      const postUrl = String(post?.product_url || '').trim().toLowerCase();
+      if (postUrl && Array.isArray(_vcShopifyProducts)) {
+        const byUrl = _vcShopifyProducts.find(p => String(p.product_url || '').trim().toLowerCase() === postUrl);
+        if (byUrl) return byUrl;
+      }
+      const theme = String(post?.theme || '').trim().toLowerCase();
+      if (theme && Array.isArray(_vcShopifyProducts)) {
+        const byTitle = _vcShopifyProducts.find(p => String(p.title || '').trim().toLowerCase() === theme);
+        if (byTitle) return byTitle;
+      }
+      return null;
+    }
+
+    function regenEnsureProductSelection(post) {
+      if (!post?.id) return;
+      const postId = String(post.id);
+      const existing = _videoRegenSelectedByPost[postId];
+      if (existing && existing.imageUrl) return;
+      const matched = regenResolveProductFromCatalog(post);
+      if (matched) {
+        _videoRegenSelectedByPost[postId] = {
+          id: String(matched.id || ''),
+          title: matched.title || post.theme || '',
+          imageUrl: matched.primary_image || '',
+        };
+      } else {
+        _videoRegenSelectedByPost[postId] = {
+          id: '',
+          title: post.theme || '',
+          imageUrl: post.image_url || '',
+        };
+      }
+    }
+
+    function regenProductPickerHTML(post) {
+      if (!post || !Array.isArray(_vcShopifyProducts) || !_vcShopifyProducts.length) {
+        return `<div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(255,255,255,0.03);font-size:0.72rem;color:rgba(255,255,255,0.6);">Shopify products are still loading. Open Video Creator once to sync your full catalog.</div>`;
+      }
+
+      regenEnsureProductSelection(post);
+      const selected = _videoRegenSelectedByPost[String(post.id)] || { id: '', title: '', imageUrl: '' };
+      const selectedId = String(selected.id || '');
+      const options = _vcShopifyProducts.map((p) => {
+        const id = String(p.id || '');
+        const title = String(p.title || 'Product').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const priceRaw = String(p.price || '').trim();
+        const price = priceRaw && !Number.isNaN(Number(priceRaw)) ? ` • $${Number(priceRaw).toFixed(2)}` : '';
+        const isSelected = selectedId && selectedId === id;
+        return `<option value="${id}" ${isSelected ? 'selected' : ''}>${title}${price}</option>`;
+      }).join('');
+
+      const previewUrl = selected.imageUrl || '';
+      const previewHtml = previewUrl
+        ? `<img id="video-regen-preview-${post.id}" src="${previewUrl}" alt="Selected product" style="width:52px;height:52px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.15);">`
+        : `<div id="video-regen-preview-${post.id}" style="width:52px;height:52px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);font-size:1rem;color:rgba(255,255,255,0.5);">📦</div>`;
+
+      return `
+        <div style="margin-top:10px;padding:12px;border:1px solid rgba(139,92,246,0.3);border-radius:10px;background:rgba(139,92,246,0.07);">
+          <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:rgba(167,139,250,0.85);font-weight:700;margin-bottom:8px;">Video regeneration product source</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${previewHtml}
+            <div style="flex:1;min-width:0;">
+              <select id="video-regen-product-picker-${post.id}" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:rgba(10,10,14,0.85);color:#fff;font-size:0.76rem;font-family:var(--font-body);" onchange="regenChangeProduct('${post.id}', this.value)">
+                <option value="">Select Shopify product</option>
+                ${options}
+              </select>
+              <div style="margin-top:6px;font-size:0.66rem;color:rgba(255,255,255,0.45);">This image is used for the regenerated video render.</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    window.regenChangeProduct = function(postId, productId) {
+      const normalizedPostId = String(postId || '');
+      const normalizedProductId = String(productId || '');
+      if (!normalizedPostId) return;
+      if (!normalizedProductId) {
+        _videoRegenSelectedByPost[normalizedPostId] = { id: '', title: '', imageUrl: '' };
+        const preview = document.getElementById(`video-regen-preview-${normalizedPostId}`);
+        if (preview) preview.outerHTML = `<div id="video-regen-preview-${normalizedPostId}" style="width:52px;height:52px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);font-size:1rem;color:rgba(255,255,255,0.5);">📦</div>`;
+        return;
+      }
+      const catalogProduct = Array.isArray(_vcShopifyProducts)
+        ? _vcShopifyProducts.find(p => String(p.id || '') === normalizedProductId)
+        : null;
+      _videoRegenSelectedByPost[normalizedPostId] = {
+        id: normalizedProductId,
+        title: catalogProduct?.title || '',
+        imageUrl: catalogProduct?.primary_image || '',
+      };
+      const preview = document.getElementById(`video-regen-preview-${normalizedPostId}`);
+      if (preview && catalogProduct?.primary_image) {
+        if (preview.tagName.toLowerCase() === 'img') {
+          preview.src = catalogProduct.primary_image;
+        } else {
+          preview.outerHTML = `<img id="video-regen-preview-${normalizedPostId}" src="${catalogProduct.primary_image}" alt="Selected product" style="width:52px;height:52px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.15);">`;
+        }
+      }
+    };
+
+    function videoRegenSelectedProductFromUI(postId) {
+      const normalizedPostId = String(postId || '');
+      const selected = _videoRegenSelectedByPost[normalizedPostId] || { id: '', title: '', imageUrl: '' };
+      if (!selected.id && !selected.imageUrl) {
+        const post = studioPostsList.find(p => String(p.id || '') === normalizedPostId) || null;
+        if (post) {
+          regenEnsureProductSelection(post);
+        }
+      }
+      const latest = _videoRegenSelectedByPost[normalizedPostId] || { id: '', title: '', imageUrl: '' };
+      return {
+        productId: latest.id || '',
+        imageUrl: latest.imageUrl || '',
+        productTitle: latest.title || '',
+      };
+    }
+
     // ━━━ Video Regeneration ━━━
     window.regenVideo = async function(postId) {
       const btn = document.getElementById('video-regen-btn');
       const overlay = document.getElementById('video-regen-overlay');
       const player = document.getElementById('modal-video-player');
+      const selected = videoRegenSelectedProductFromUI(postId);
+      if (!selected.imageUrl) {
+        showToast('Pick a Shopify product/image in the regen panel first.');
+        return;
+      }
       if (btn) { btn.style.display = 'none'; }
       if (overlay) { overlay.style.display = 'flex'; }
       if (player) { player.pause(); }
@@ -3597,7 +3775,12 @@
         const res = await fetch(`${API}/api/studio/regenerate-video`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
-          body: JSON.stringify({ postId }),
+          body: JSON.stringify({
+            postId,
+            productId: selected.productId || undefined,
+            productTitle: selected.productTitle || undefined,
+            imageUrl: selected.imageUrl || undefined
+          }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -8689,6 +8872,9 @@
     let _adSelectedPlatform = 'meta';
     let _adSelectedProduct = null;
     let _adGenerating = false;
+    let _adUrlLookupBusy = false;
+    let _adUrlStatusMessage = '';
+    let _adUrlStatusError = false;
 
     const AD_FORMATS = [
       { id: 'feed-square', name: 'Feed Post', dims: '1080×1080', ratio: '1:1', icon: '⬜', desc: 'Square feed ad for Instagram & Facebook', platforms: ['meta', 'instagram'] },
@@ -8715,6 +8901,144 @@
       { id: 'emotional', label: '💝 Emotional', prompt: 'Emotional connection and storytelling' },
       { id: 'brand-voice', label: '🎤 Brand Voice', prompt: 'Match the client brand voice exactly' },
     ];
+
+    function adEscapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function adUrlStatusHTML() {
+      if (!_adUrlStatusMessage) return '';
+      const color = _adUrlStatusError ? 'rgba(248,113,113,0.95)' : 'rgba(125,211,252,0.95)';
+      const border = _adUrlStatusError ? 'rgba(248,113,113,0.35)' : 'rgba(125,211,252,0.35)';
+      const bg = _adUrlStatusError ? 'rgba(239,68,68,0.08)' : 'rgba(14,116,144,0.14)';
+      return `<div style="margin-top:10px;padding:9px 12px;border-radius:8px;border:1px solid ${border};background:${bg};font-size:0.72rem;color:${color};font-family:var(--font-body);line-height:1.45;">${adEscapeHtml(_adUrlStatusMessage)}</div>`;
+    }
+
+    function adSelectedSummaryHTML() {
+      if (!_adSelectedProduct) return '';
+      const title = adEscapeHtml(_adSelectedProduct.title || 'Selected product');
+      const image = adEscapeHtml(_adSelectedProduct.image || '');
+      const price = adEscapeHtml(_adSelectedProduct.price || '');
+      const productUrl = adEscapeHtml(_adSelectedProduct.product_url || '');
+      const priceHtml = price ? `<div style="font-size:0.72rem;color:rgba(139,92,246,0.85);font-weight:600;">${price}</div>` : '';
+      const urlHtml = productUrl ? `<a href="${productUrl}" target="_blank" rel="noopener noreferrer" style="font-size:0.68rem;color:rgba(125,211,252,0.9);text-decoration:none;word-break:break-all;">${productUrl}</a>` : '';
+      const imageHtml = image ? `<img src="${image}" alt="${title}" style="width:52px;height:52px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.1);">` : '<div style="width:52px;height:52px;border-radius:8px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.35);font-size:1rem;">📦</div>';
+      return `
+        <div style="margin:12px 0 14px;padding:12px;border:1px solid rgba(139,92,246,0.35);background:rgba(139,92,246,0.08);border-radius:10px;display:flex;align-items:flex-start;gap:10px;">
+          ${imageHtml}
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:0.76rem;font-weight:700;color:#fff;font-family:var(--font-display);line-height:1.35;">${title}</div>
+            ${priceHtml}
+            ${urlHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function adRenderUrlStatus() {
+      const wrap = document.getElementById('ad-url-status');
+      if (!wrap) return;
+      wrap.innerHTML = adUrlStatusHTML();
+    }
+
+    function adRenderSelectedSummary() {
+      const wrap = document.getElementById('ad-selected-product-summary');
+      if (!wrap) return;
+      wrap.innerHTML = adSelectedSummaryHTML();
+    }
+
+    function adSyncSelectedProductCard() {
+      const selectedId = _adSelectedProduct ? String(_adSelectedProduct.id || '') : '';
+      document.querySelectorAll('.ad-product-pick').forEach(card => {
+        const isSelected = selectedId && String(card.dataset.productId || '') === selectedId;
+        card.style.borderColor = isSelected ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.06)';
+        card.style.background = isSelected ? 'rgba(139,92,246,0.08)' : 'rgba(255,255,255,0.02)';
+      });
+    }
+
+    function adSetSelectedProduct(product) {
+      if (!product) {
+        _adSelectedProduct = null;
+      } else {
+        let formattedPrice = String(product.price || '').trim();
+        if (formattedPrice && !formattedPrice.startsWith('$') && /^\d+(\.\d+)?$/.test(formattedPrice)) {
+          formattedPrice = '$' + Number.parseFloat(formattedPrice).toFixed(2);
+        }
+        _adSelectedProduct = {
+          id: String(product.id || ''),
+          title: product.title || 'Product',
+          image: product.primary_image || product.image || '',
+          price: formattedPrice,
+          product_url: product.product_url || '',
+        };
+      }
+      const btn = document.getElementById('ad-generate-btn');
+      if (btn) btn.disabled = !_adSelectedProduct;
+      adSyncSelectedProductCard();
+      adRenderSelectedSummary();
+    }
+
+    window.adLookupProductUrl = async function() {
+      if (_adUrlLookupBusy) return;
+      const input = document.getElementById('ad-product-url');
+      const btn = document.getElementById('ad-url-lookup-btn');
+      const rawUrl = String(input?.value || '').trim();
+      if (!rawUrl) {
+        _adUrlStatusMessage = 'Paste a product URL first.';
+        _adUrlStatusError = true;
+        adRenderUrlStatus();
+        showToast('Please paste a product URL first');
+        return;
+      }
+
+      _adUrlLookupBusy = true;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+      }
+      _adUrlStatusMessage = 'Resolving product URL...';
+      _adUrlStatusError = false;
+      adRenderUrlStatus();
+
+      try {
+        const res = await fetch(`${API}/api/studio/product-from-url`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+          body: JSON.stringify({ url: rawUrl }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.success || !data?.product) {
+          _adUrlStatusMessage = data?.error || 'Could not resolve this URL into a product.';
+          _adUrlStatusError = true;
+          adRenderUrlStatus();
+          showToast(_adUrlStatusMessage);
+          return;
+        }
+
+        adSetSelectedProduct(data.product);
+        if (input && data.product.product_url) input.value = data.product.product_url;
+        _adUrlStatusMessage = `Product loaded via URL (${data.matched_by || 'catalog match'}, source: ${data.source || 'catalog'}).`;
+        _adUrlStatusError = false;
+        adRenderUrlStatus();
+        showToast('Product loaded from URL');
+      } catch (err) {
+        _adUrlStatusMessage = 'Network error while resolving product URL.';
+        _adUrlStatusError = true;
+        adRenderUrlStatus();
+        showToast('Network error while resolving URL');
+      } finally {
+        _adUrlLookupBusy = false;
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Load URL';
+        }
+      }
+    };
 
     function renderAdStudio() {
       const content = document.getElementById('dash-content');
