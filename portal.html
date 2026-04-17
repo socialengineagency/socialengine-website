@@ -3673,87 +3673,56 @@
       }
     }
 
-    function regenProductPickerHTML(post) {
-      if (!post || !Array.isArray(_vcShopifyProducts) || !_vcShopifyProducts.length) {
-        return `<div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(255,255,255,0.03);font-size:0.72rem;color:rgba(255,255,255,0.6);">Shopify products are still loading. Open Video Creator once to sync your full catalog.</div>`;
-      }
-
-      regenEnsureProductSelection(post);
-      const selected = _videoRegenSelectedByPost[String(post.id)] || { id: '', title: '', imageUrl: '' };
-      const selectedId = String(selected.id || '');
-      const options = _vcShopifyProducts.map((p) => {
-        const id = String(p.id || '');
-        const title = String(p.title || 'Product').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const priceRaw = String(p.price || '').trim();
-        const price = priceRaw && !Number.isNaN(Number(priceRaw)) ? ` • $${Number(priceRaw).toFixed(2)}` : '';
-        const isSelected = selectedId && selectedId === id;
-        return `<option value="${id}" ${isSelected ? 'selected' : ''}>${title}${price}</option>`;
-      }).join('');
-
-      const previewUrl = selected.imageUrl || '';
-      const previewHtml = previewUrl
-        ? `<img id="video-regen-preview-${post.id}" src="${previewUrl}" alt="Selected product" style="width:52px;height:52px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.15);">`
-        : `<div id="video-regen-preview-${post.id}" style="width:52px;height:52px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);font-size:1rem;color:rgba(255,255,255,0.5);">📦</div>`;
-
-      return `
-        <div style="margin-top:10px;padding:12px;border:1px solid rgba(139,92,246,0.3);border-radius:10px;background:rgba(139,92,246,0.07);">
-          <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:rgba(167,139,250,0.85);font-weight:700;margin-bottom:8px;">Video regeneration product source</div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            ${previewHtml}
-            <div style="flex:1;min-width:0;">
-              <select id="video-regen-product-picker-${post.id}" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:rgba(10,10,14,0.85);color:#fff;font-size:0.76rem;font-family:var(--font-body);" onchange="regenChangeProduct('${post.id}', this.value)">
-                <option value="">Select Shopify product</option>
-                ${options}
-              </select>
-              <div style="margin-top:6px;font-size:0.66rem;color:rgba(255,255,255,0.45);">This image is used for the regenerated video render.</div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    window.regenChangeProduct = function(postId, productId) {
+    window.regenUpdateProductSelection = function(postId, productId) {
       const normalizedPostId = String(postId || '');
       const normalizedProductId = String(productId || '');
       if (!normalizedPostId) return;
+      const imageInput = document.getElementById(`video-regen-image-${normalizedPostId}`);
+      const titleInput = document.getElementById(`video-regen-title-${normalizedPostId}`);
+      const manualImage = String(imageInput?.value || '').trim();
+      const manualTitle = String(titleInput?.value || '').trim();
       if (!normalizedProductId) {
-        _videoRegenSelectedByPost[normalizedPostId] = { id: '', title: '', imageUrl: '' };
-        const preview = document.getElementById(`video-regen-preview-${normalizedPostId}`);
-        if (preview) preview.outerHTML = `<div id="video-regen-preview-${normalizedPostId}" style="width:52px;height:52px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);font-size:1rem;color:rgba(255,255,255,0.5);">📦</div>`;
+        _videoRegenSelectedByPost[normalizedPostId] = {
+          id: '',
+          title: manualTitle,
+          imageUrl: manualImage,
+        };
         return;
       }
       const catalogProduct = Array.isArray(_vcShopifyProducts)
         ? _vcShopifyProducts.find(p => String(p.id || '') === normalizedProductId)
         : null;
+      const catalogImage = String(catalogProduct?.primary_image || '').trim();
+      const catalogTitle = String(catalogProduct?.title || '').trim();
       _videoRegenSelectedByPost[normalizedPostId] = {
         id: normalizedProductId,
-        title: catalogProduct?.title || '',
-        imageUrl: catalogProduct?.primary_image || '',
+        title: catalogTitle || manualTitle,
+        imageUrl: catalogImage || manualImage,
       };
-      const preview = document.getElementById(`video-regen-preview-${normalizedPostId}`);
-      if (preview && catalogProduct?.primary_image) {
-        if (preview.tagName.toLowerCase() === 'img') {
-          preview.src = catalogProduct.primary_image;
-        } else {
-          preview.outerHTML = `<img id="video-regen-preview-${normalizedPostId}" src="${catalogProduct.primary_image}" alt="Selected product" style="width:52px;height:52px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.15);">`;
-        }
-      }
+      if (imageInput && catalogImage) imageInput.value = catalogImage;
+      if (titleInput && catalogTitle) titleInput.value = catalogTitle;
     };
+
+    window.regenChangeProduct = window.regenUpdateProductSelection;
 
     function videoRegenSelectedProductFromUI(postId) {
       const normalizedPostId = String(postId || '');
-      const selected = _videoRegenSelectedByPost[normalizedPostId] || { id: '', title: '', imageUrl: '' };
-      if (!selected.id && !selected.imageUrl) {
-        const post = studioPostsList.find(p => String(p.id || '') === normalizedPostId) || null;
-        if (post) {
-          regenEnsureProductSelection(post);
-        }
+      const post = studioPostsList.find(p => String(p.id || '') === normalizedPostId) || null;
+      if (post) regenEnsureProductSelection(post);
+      const picker = document.getElementById(`video-regen-product-picker-${normalizedPostId}`);
+      const selectedId = String(picker?.value || '').trim();
+      if (selectedId) {
+        window.regenUpdateProductSelection(normalizedPostId, selectedId);
       }
       const latest = _videoRegenSelectedByPost[normalizedPostId] || { id: '', title: '', imageUrl: '' };
+      const imageInput = document.getElementById(`video-regen-image-${normalizedPostId}`);
+      const titleInput = document.getElementById(`video-regen-title-${normalizedPostId}`);
+      const imageUrl = String(imageInput?.value || latest.imageUrl || '').trim();
+      const productTitle = String(titleInput?.value || latest.title || '').trim();
       return {
-        productId: latest.id || '',
-        imageUrl: latest.imageUrl || '',
-        productTitle: latest.title || '',
+        productId: selectedId || latest.id || '',
+        imageUrl,
+        productTitle,
       };
     }
 
