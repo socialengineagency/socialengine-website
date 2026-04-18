@@ -2952,6 +2952,16 @@
           const urlParams = new URLSearchParams(window.location.search);
           if (urlParams.get('shopify_connected') === 'true') {
             const shopName = urlParams.get('shop_name') || 'your store';
+            const callbackEmail = (urlParams.get('client_email') || '').trim().toLowerCase();
+            if (callbackEmail && clientData?.client?.contact_email && String(clientData.client.contact_email).trim().toLowerCase() === callbackEmail) {
+              // Re-fetch immediately so Settings reflects Shopify callback write-through deterministically.
+              try {
+                const refreshed = await fetch(`${API}/api/client-data`, {
+                  headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+                });
+                if (refreshed.ok) clientData = await refreshed.json();
+              } catch {}
+            }
             // Navigate to settings and show success
             setTimeout(() => {
               document.querySelector('[data-nav=settings]')?.click();
@@ -5693,10 +5703,14 @@
     function renderSettingsPage(data) {
       const content = document.getElementById('dash-content');
       const c = data.client;
+      const socialPlatforms = Array.isArray(c.social_connected_platforms)
+        ? c.social_connected_platforms.map(p => String(p || '').trim().toLowerCase())
+        : [];
+      const socialSet = new Set(socialPlatforms);
       const isShopifyConnected = !!(c.shopify_domain && c.shopify_domain.length > 0);
-      const isIGConnected = !!(c.instagram_user_id);
-      const isTTConnected = !!(c.tiktok_access_token && c.tiktok_access_token !== '');
-      const isFBConnected = !!(c.meta_page_id && c.meta_page_token && c.facebook_connected === 'true');
+      const isIGConnected = socialSet.has('instagram') || !!(c.instagram_user_id);
+      const isTTConnected = socialSet.has('tiktok') || !!(c.tiktok_access_token && c.tiktok_access_token !== '');
+      const isFBConnected = socialSet.has('facebook') || !!(c.meta_page_id && c.meta_page_token && c.facebook_connected === 'true');
 
       const tierName = c.tier || 'Pro';
       const tierPrice = tierName === 'Annual' ? '$247' : '$297';
@@ -8895,6 +8909,14 @@
       if (!clientEmail || !clientHash) { showToast('Please log in first.'); return; }
       const w = 760, h = 780;
       const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
+      const target = String(platformLabel || '').trim().toLowerCase();
+      const checkTargetConnected = (snapshot) => {
+        const platforms = Array.isArray(snapshot?.connected_platforms) ? snapshot.connected_platforms : [];
+        const accounts = Array.isArray(snapshot?.accounts) ? snapshot.accounts : [];
+        const hasPlatform = platforms.some(p => String(p || '').toLowerCase() === target);
+        const hasAccount = accounts.some(acc => String(acc?.platform || '').toLowerCase() === target);
+        return hasPlatform || hasAccount;
+      };
       try {
         showToast(`Generating secure ${platformLabel} connection link...`);
         const r = await fetch(`${API}/api/social-connect`, {
@@ -8922,35 +8944,45 @@
           return;
         }
         showToast(`Connect ${platformLabel} in the popup, then close it.`);
-        const check = setInterval(() => {
+        const popupWatcher = setInterval(() => {
           try {
-            if (popup?.closed) {
-              clearInterval(check);
-              showToast('Checking social connection status...');
-              setTimeout(async () => {
-                try {
-                  const sr = await fetch(`${API}/api/social-accounts`, {
-                    headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
-                  });
-                  const sdata = await sr.json().catch(() => ({}));
-                  const accounts = Array.isArray(sdata?.accounts) ? sdata.accounts : [];
-                  const hasTarget = accounts.some(acc => {
-                    const p = String(acc?.platform || '').toLowerCase();
-                    return p.includes(platformLabel.toLowerCase());
-                  });
-                  if (hasTarget || accounts.length > 0) {
-                    showToast(`${platformLabel} connected successfully!`);
-                    setTimeout(() => location.reload(), 900);
-                  } else {
-                    showToast(`${platformLabel} connection not detected yet. Please reopen and complete login.`);
+            if (!popup?.closed) return;
+            clearInterval(popupWatcher);
+            showToast('Checking social connection status...');
+            let attempts = 0;
+            const maxAttempts = 16;
+            const poller = setInterval(async () => {
+              attempts += 1;
+              try {
+                const sr = await fetch(`${API}/api/social-accounts`, {
+                  headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+                });
+                const snapshot = await sr.json().catch(() => ({}));
+                if (checkTargetConnected(snapshot)) {
+                  clearInterval(poller);
+                  showToast(`${platformLabel} connected successfully!`);
+                  try {
+                    const fresh = await fetch(`${API}/api/client-data`, {
+                      headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+                    });
+                    if (fresh.ok) clientData = await fresh.json();
+                  } catch {}
+                  if (activeNav === 'settings') renderSettingsPage(clientData);
+                  else {
+                    document.querySelector('[data-nav=settings]')?.click();
                   }
-                } catch {
-                  showToast('Could not verify social connection — please refresh.');
+                  return;
                 }
-              }, 2200);
-            }
-          } catch { clearInterval(check); }
-        }, 900);
+              } catch {}
+              if (attempts >= maxAttempts) {
+                clearInterval(poller);
+                showToast(`${platformLabel} connection not detected yet. Re-open connect and finish OAuth.`);
+              }
+            }, 2500);
+          } catch {
+            clearInterval(popupWatcher);
+          }
+        }, 700);
       } catch (err) {
         showToast(err.message || `Could not start ${platformLabel} connection`);
       }
