@@ -2958,6 +2958,7 @@
 
           activeNav = 'dashboard';
           renderDashboard(data, true);
+          prefetchStudioCatalogSilently().catch(() => {});
           startTierPolling();
           updateSidebarCredits();
           setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
@@ -8007,6 +8008,28 @@
       if (searchQuery) params.set('search', String(searchQuery).trim());
       if (category) params.set('category', String(category).trim());
       return `${API}/api/studio/products?${params.toString()}`;
+    }
+
+    /** Load first page of studio catalog after login so Content Studio regen has products without opening Marketing Studio first. */
+    async function prefetchStudioCatalogSilently() {
+      if (!clientEmail || !clientHash) return;
+      if (_vcProductsLoaded && Array.isArray(_vcShopifyProducts) && _vcShopifyProducts.length) return;
+      try {
+        const res = await fetch(vcProductsApiUrl(1), {
+          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const firstPageProducts = data.products || [];
+        _vcShopifyProducts = firstPageProducts;
+        _vcAllShopifyProducts = firstPageProducts.slice();
+        _vcShopifyCategories = data.categories || [];
+        _vcCatalogTotal = Number(data.total || firstPageProducts.length);
+        _vcCatalogPage = Number(data.page || 1);
+        _vcCatalogPages = Number(data.pages || 1);
+        _vcCatalogSource = data.source || 'none';
+        _vcProductsLoaded = true;
+      } catch { /* silent — optional warm cache */ }
     }
 
     function vcProductKey(product) {
