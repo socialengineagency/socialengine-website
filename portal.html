@@ -6158,18 +6158,11 @@
         function startShopifyOAuth(inputId) {
           const domain = (document.getElementById(inputId)?.value || '').trim();
           if (!domain) { alert('Please enter your Shopify store domain.'); return; }
-          let clean = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
-          clean = clean.replace(/^www\./, '');
-          if (clean.endsWith('.myshopify.com')) {
-            // Keep as-is
-          } else if (clean.includes('.')) {
-            // If a full custom domain was entered (e.g. shopbunnyboiler.com),
-            // infer Shopify subdomain from the left-most label.
-            clean = clean.split('.')[0] + '.myshopify.com';
-          } else {
-            clean = clean + '.myshopify.com';
-          }
-          const authUrl = `${API}/api/shopify/auth?email=${encodeURIComponent(clientEmail)}&hash=${encodeURIComponent(clientHash)}&shop=${encodeURIComponent(clean)}`;
+          // Send the raw storefront domain (without protocol/path) to the backend.
+          // Backend canonicalizes to the true .myshopify.com handle via meta.json
+          // resolver so custom domains work reliably.
+          const raw = domain.replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
+          const authUrl = `${API}/api/shopify/auth?email=${encodeURIComponent(clientEmail)}&hash=${encodeURIComponent(clientHash)}&shop=${encodeURIComponent(raw)}`;
           window.location.href = authUrl;
         }
         document.getElementById('shopify-oauth-go')?.addEventListener('click', () => startShopifyOAuth('shopify-oauth-domain'));
