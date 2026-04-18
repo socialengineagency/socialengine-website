@@ -8885,7 +8885,7 @@
       if (!clientEmail) { showToast('Please log in first.'); return; }
       const w = 600, h = 700;
       const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-      const authUrl = `${API}/api/auth/instagram?client_email=${encodeURIComponent(clientEmail)}`;
+      const authUrl = `${API}/api/auth/instagram?client_email=${encodeURIComponent(clientEmail)}&client_hash=${encodeURIComponent(clientHash || '')}`;
       let popup;
       try { popup = window.open(authUrl, 'instagram_oauth', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`); }
       catch(e) { showToast('Could not open popup — please allow popups for this site.'); return; }
@@ -8917,7 +8917,7 @@
       if (!clientEmail) { showToast('Please log in first.'); return; }
       const w = 600, h = 700;
       const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-      const authUrl = `${API}/api/auth/tiktok?client_email=${encodeURIComponent(clientEmail)}`;
+      const authUrl = `${API}/api/auth/tiktok?client_email=${encodeURIComponent(clientEmail)}&client_hash=${encodeURIComponent(clientHash || '')}`;
       let popup;
       try { popup = window.open(authUrl, 'tiktok_oauth', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`); }
       catch(e) { showToast('Could not open popup — please allow popups for this site.'); return; }
@@ -8949,7 +8949,7 @@
       if (!clientEmail) { showToast('Please log in first.'); return; }
       const w = 600, h = 700;
       const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-      const authUrl = `${API}/api/auth/facebook?client_email=${encodeURIComponent(clientEmail)}`;
+      const authUrl = `${API}/api/auth/facebook?client_email=${encodeURIComponent(clientEmail)}&client_hash=${encodeURIComponent(clientHash || '')}`;
       let popup;
       try { popup = window.open(authUrl, 'facebook_oauth', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`); }
       catch(e) { showToast('Could not open popup — please allow popups for this site.'); return; }
