@@ -2516,6 +2516,21 @@
     let clientHash = '';
     let clientData = null;
     let _videoRegenSelectedByPost = {};
+
+    /** Authenticated fetch to Railway API (same headers as client-data). */
+    function apiFetch(path, init = {}) {
+      if (!clientEmail || !clientHash) {
+        return Promise.reject(new Error('Not authenticated'));
+      }
+      const rel = (path || '').startsWith('/') ? path : `/${path}`;
+      const url = `${API}${rel}`;
+      const headers = {
+        'x-client-email': clientEmail,
+        'x-client-hash': clientHash,
+        ...(init.headers || {}),
+      };
+      return fetch(url, { ...init, headers });
+    }
     const STRIPE_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
     function isPaid() { return clientData?.client?.is_paid !== false; }
     function isPreview() { return clientData?.client?.tier === 'Preview' || clientData?.client?.tier === 'Free'; }
