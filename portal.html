@@ -288,35 +288,7 @@
     .upgrade-fullpage__cta:hover { background: var(--color-accent-hover); transform: translateY(-1px); }
     .upgrade-fullpage__note { font-size: 0.75rem; color: var(--color-text-faint); margin-top: 12px; }
 
-    /* Onboarding flow */
-    .onboarding-overlay { position: fixed; inset: 0; z-index: 200; background: var(--color-bg); overflow-y: auto; display: none; }
-    .onboarding-overlay.active { display: block; }
-    .onboarding-container { max-width: 600px; margin: 0 auto; padding: var(--space-16) var(--space-6); }
-    .onboarding-header { text-align: center; margin-bottom: var(--space-12); }
-    .onboarding-header h2 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; color: var(--color-text); margin: 0 0 var(--space-3); }
-    .onboarding-header p { font-size: var(--text-base); color: var(--color-text-muted); line-height: 1.6; }
-    .onboarding-step { display: none; }
-    .onboarding-step.active { display: block; }
-    .onboarding-step__label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-primary); margin-bottom: var(--space-3); }
-    .onboarding-step__question { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600; color: var(--color-text); margin: 0 0 var(--space-2); }
-    .onboarding-step__hint { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0 0 var(--space-6); line-height: 1.5; }
-    .onboarding-step__textarea { width: 100%; min-height: 120px; padding: 1rem; font-size: var(--text-sm); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); color: var(--color-text); resize: vertical; outline: none; font-family: var(--font-body); line-height: 1.6; }
-    .onboarding-step__textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(124,58,237,0.08); }
-    .onboarding-options { display: grid; gap: var(--space-3); }
-    .onboarding-option { padding: var(--space-4); background: var(--color-surface); border: 2px solid var(--color-border); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.15s; text-align: left; }
-    .onboarding-option:hover { border-color: var(--color-primary); }
-    .onboarding-option.selected { border-color: #7C3AED; background: rgba(124,58,237,0.06); }
-    .onboarding-option__label { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); margin-bottom: 2px; }
-    .onboarding-option__desc { font-size: 0.8125rem; color: var(--color-text-muted); }
-    .onboarding-nav { display: flex; justify-content: space-between; margin-top: var(--space-8); }
-    .onboarding-nav__btn { padding: 0.75rem 1.5rem; font-size: var(--text-sm); font-weight: 600; border: none; border-radius: var(--radius-md); cursor: pointer; }
-    .onboarding-nav__btn--back { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
-    .onboarding-nav__btn--next { background: var(--color-primary); color: #fff; }
-    .onboarding-nav__btn--submit { background: var(--color-accent); color: #fff; }
-    .onboarding-progress { display: flex; gap: 4px; justify-content: center; margin-bottom: var(--space-8); }
-    .onboarding-progress__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-border); transition: background 0.2s; }
-    .onboarding-progress__dot.active { background: var(--color-primary); }
-    .onboarding-progress__dot.done { background: var(--color-accent); }
+    /* Onboarding flow removed (direct-access portal). */
 
     /* No content state */
     .empty-state { padding: var(--space-12); text-align: center; }
@@ -1351,36 +1323,7 @@
       letter-spacing: -0.02em;
     }
 
-    /* ── 21. ONBOARDING OVERLAY ── */
-    .onboarding-header h2 {
-      font-size: 1.75rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-    .onboarding-option {
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.06);
-      background: rgba(17,29,48,0.6);
-      padding: 18px;
-      transition: all 0.2s;
-    }
-    .onboarding-option:hover {
-      border-color: rgba(124,58,237,0.2);
-      background: rgba(255,255,255,0.03);
-    }
-    .onboarding-option.selected {
-      border-color: rgba(124,58,237,0.4);
-      background: rgba(124,58,237,0.04);
-    }
-    .onboarding-progress__dot.active { background: #7C3AED; }
-    .onboarding-progress__dot.done { background: #7C3AED; }
-    .onboarding-nav__btn--next,
-    .onboarding-nav__btn--submit {
-      background: linear-gradient(135deg, #7C3AED, #6D28D9);
-      border-radius: 10px;
-      padding: 12px 28px;
-      font-weight: 700;
-    }
+    /* ── 21. ONBOARDING OVERLAY REMOVED ── */
 
     /* ── 22. SCROLLBAR: Premium custom scrollbar ── */
     .dash-main::-webkit-scrollbar,
@@ -2470,72 +2413,6 @@
       </div>
     </div>
 
-    <!-- ONBOARDING OVERLAY -->
-    <div class="onboarding-overlay" id="onboarding-overlay">
-      <div class="onboarding-container">
-        <!-- Shopify Connect Step (shown before questions) -->
-        <div id="onboarding-shopify-step" style="display:none;">
-          <div class="onboarding-header">
-            <h2>Connect Your Store First</h2>
-            <p>Before we build your brand voice, let's connect your Shopify store for the deepest possible AI analysis of your products, inventory, and customers.</p>
-          </div>
-          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);margin-bottom:var(--space-6);">
-            <ul class="shopify-connect-steps" style="margin-bottom:var(--space-5);">
-              <li><span>Go to <strong>Shopify admin</strong> → <strong>Settings</strong> → <strong>Apps and sales channels</strong> → <strong>Develop apps</strong></span></li>
-              <li><span>Click <strong>"Create an app"</strong> → Name it <strong>SocialEngine</strong></span></li>
-              <li><span>Configure scopes: <strong>read_products</strong>, <strong>read_orders</strong>, <strong>read_inventory</strong>, <strong>read_customers</strong></span></li>
-              <li><span>Click <strong>"Install app"</strong> → Copy your <strong>Admin API access token</strong></span></li>
-              <li><span>Paste it below</span></li>
-            </ul>
-            <div id="onb-shopify-form">
-              <div class="connect-form-group">
-                <label class="connect-form-label">Shopify Store Domain</label>
-                <input type="text" class="connect-form-input" id="onb-shopify-domain" placeholder="mystore.myshopify.com">
-              </div>
-              <div class="connect-form-group">
-                <label class="connect-form-label">Admin API Access Token</label>
-                <input type="password" class="connect-form-input" id="onb-shopify-token" placeholder="shpat_xxxxx">
-              </div>
-              <div id="onb-shopify-msg" style="display:none;margin-bottom:var(--space-4);"></div>
-              <button class="connect-btn" id="onb-shopify-connect-btn">
-                <i data-lucide="link" style="width:16px;height:16px;"></i>
-                Connect Store
-              </button>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <button id="onb-shopify-skip" style="background:none;border:none;color:var(--color-text-muted);font-size:var(--text-sm);cursor:pointer;text-decoration:underline;">Skip — I'll connect later</button>
-            <button id="onb-shopify-continue" class="onboarding-nav__btn onboarding-nav__btn--next" style="display:none;">Continue to Questions</button>
-          </div>
-        </div>
-
-        <!-- Questions -->
-        <div id="onboarding-questions-section" style="display:none;">
-          <div class="onboarding-header">
-            <h2>Let's Build Your Brand Voice</h2>
-            <p>Answer 9 questions so our AI sounds like you, not a robot. This takes about 3 minutes.</p>
-            <button onclick="document.getElementById('onboarding-overlay').classList.remove('active')" style="margin-top:var(--space-4);background:none;border:none;color:var(--color-text-muted);font-size:var(--text-sm);cursor:pointer;text-decoration:underline;">Skip for now — I'll do this later</button>
-          </div>
-          <div class="onboarding-progress" id="onboarding-progress"></div>
-          <div id="onboarding-steps"></div>
-          <div id="onboarding-social-handles" style="display:none;margin-top:24px;">
-            <div class="onb-field" style="margin-top:16px;">
-              <label class="onb-label">Instagram Handle</label>
-              <input class="onb-input" id="onb-instagram" placeholder="@yourbrand">
-            </div>
-            <div class="onb-field" style="margin-top:12px;">
-              <label class="onb-label">TikTok Handle</label>
-              <input class="onb-input" id="onb-tiktok" placeholder="@yourbrand">
-            </div>
-            <div class="onb-field" style="margin-top:12px;">
-              <label class="onb-label">Facebook Page URL</label>
-              <input class="onb-input" id="onb-facebook" placeholder="facebook.com/yourbrand">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- REJECTION MODAL -->
     <div class="reject-modal" id="reject-modal">
       <div class="reject-modal__card">
@@ -2638,6 +2515,22 @@
     let clientEmail = '';
     let clientHash = '';
     let clientData = null;
+    let _videoRegenSelectedByPost = {};
+
+    /** Authenticated fetch to Railway API (same headers as client-data). */
+    function apiFetch(path, init = {}) {
+      if (!clientEmail || !clientHash) {
+        return Promise.reject(new Error('Not authenticated'));
+      }
+      const rel = (path || '').startsWith('/') ? path : `/${path}`;
+      const url = `${API}${rel}`;
+      const headers = {
+        'x-client-email': clientEmail,
+        'x-client-hash': clientHash,
+        ...(init.headers || {}),
+      };
+      return fetch(url, { ...init, headers });
+    }
     const STRIPE_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
     function isPaid() { return clientData?.client?.is_paid !== false; }
     function isPreview() { return clientData?.client?.tier === 'Preview' || clientData?.client?.tier === 'Free'; }
@@ -2721,6 +2614,52 @@
       const ctypeRaw = (post.content_type || '').replace(/^(reel|static|carousel|story)_/, '');
       const ctypeLabel = ctypeRaw.replace(/_/g, ' ');
       const statusClass = status.toLowerCase().replace(/\s+/g, '-').replace('ready-for-review','pending');
+      const matchedRegenProduct = regenResolveProductFromCatalog(post);
+      const regenCatalogProducts = Array.isArray(_vcShopifyProducts) ? _vcShopifyProducts.slice(0, 250) : [];
+      const regenState = _videoRegenSelectedByPost[post.id] || null;
+      const regenDefaultImage = String(
+        regenState?.imageUrl ||
+        matchedRegenProduct?.primary_image ||
+        (matchedRegenProduct?.images?.[0]?.url || '') ||
+        imageUrl ||
+        ''
+      ).trim();
+      const regenDefaultTitle = String(
+        regenState?.title ||
+        matchedRegenProduct?.title ||
+        post.theme ||
+        ''
+      ).trim();
+      const regenSelectedId = String(
+        regenState?.id ||
+        matchedRegenProduct?.id ||
+        ''
+      );
+      const regenPicker = (!isPending || isRegenerating || !hasVideo) ? '' : (() => {
+        if (!regenCatalogProducts.length) {
+          return `<div style="margin-top:12px;padding:10px 12px;border:1px solid rgba(248,113,113,0.35);background:rgba(239,68,68,0.08);border-radius:8px;font-size:0.72rem;color:rgba(248,113,113,0.95);">
+            Shopify catalog not loaded yet for video regeneration. Open Marketing Studio once to load products, then retry.
+          </div>`;
+        }
+        const options = regenCatalogProducts.map((p) => {
+          const id = String(p.id || '');
+          const selectedAttr = id && id === regenSelectedId ? 'selected' : '';
+          const label = String(p.title || 'Product').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          return `<option value="${id}" ${selectedAttr}>${label}</option>`;
+        }).join('');
+        return `<div style="margin-top:12px;padding:10px 12px;border:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.08);border-radius:10px;">
+          <div style="font-size:0.7rem;font-weight:700;color:rgba(196,181,253,0.95);margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase;">Video regen product source</div>
+          <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+            <select id="video-regen-product-picker-${post.id}" onchange="regenUpdateProductSelection('${post.id}', this.value)" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.14);border-radius:8px;color:#fff;font-size:0.75rem;font-family:var(--font-body);outline:none;">
+              <option value="">Select Shopify product...</option>
+              ${options}
+            </select>
+            <input id="video-regen-image-${post.id}" value="${regenDefaultImage.replace(/"/g,'&quot;')}" placeholder="Product image URL (auto-filled)" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.92);font-size:0.72rem;font-family:var(--font-body);outline:none;">
+            <input id="video-regen-title-${post.id}" value="${regenDefaultTitle.replace(/"/g,'&quot;')}" placeholder="Product title" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.92);font-size:0.72rem;font-family:var(--font-body);outline:none;">
+          </div>
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.45);margin-top:7px;">Regeneration uses this selected Shopify product + image.</div>
+        </div>`;
+      })();
 
       // Preview (left side)
       let previewHTML = '';
@@ -2789,6 +2728,8 @@
             <div class="studio-modal__caption-hint">Edit caption above — changes save automatically</div>
             ${(() => { const ht = fullText.match(/#[\w]+/g) || []; return ht.length ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">' + ht.map(h => '<span style="font-size:0.65rem;padding:2px 8px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.12);border-radius:4px;color:rgba(124,58,237,0.7);">' + h + '</span>').join('') + '</div>' : ''; })()}
           </div>
+
+          ${regenPicker}
 
           ${hasVideoBrief ? `
           <div class="studio-modal__brief">
@@ -3013,10 +2954,7 @@
           document.querySelector('.header')?.style.setProperty('display', 'none', 'important');
           document.getElementById('portal-footer').style.display = 'none';
 
-          // Check if onboarding needed
-          if (!data.client.has_onboarded || !data.profile) {
-            showOnboarding();
-          }
+          // Onboarding gates intentionally disabled for direct access flow.
 
           activeNav = 'dashboard';
           renderDashboard(data, true);
@@ -3029,6 +2967,16 @@
           const urlParams = new URLSearchParams(window.location.search);
           if (urlParams.get('shopify_connected') === 'true') {
             const shopName = urlParams.get('shop_name') || 'your store';
+            const callbackEmail = (urlParams.get('client_email') || '').trim().toLowerCase();
+            if (callbackEmail && clientData?.client?.contact_email && String(clientData.client.contact_email).trim().toLowerCase() === callbackEmail) {
+              // Re-fetch immediately so Settings reflects Shopify callback write-through deterministically.
+              try {
+                const refreshed = await fetch(`${API}/api/client-data`, {
+                  headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+                });
+                if (refreshed.ok) clientData = await refreshed.json();
+              } catch {}
+            }
             // Navigate to settings and show success
             setTimeout(() => {
               document.querySelector('[data-nav=settings]')?.click();
@@ -3710,11 +3658,109 @@
       submitBtn.disabled = false;
     });
 
+    function regenResolveProductFromCatalog(post) {
+      const explicitId = String(post?.shopify_product_id || '').trim();
+      if (explicitId && Array.isArray(_vcShopifyProducts)) {
+        const byId = _vcShopifyProducts.find(p => String(p.id || '') === explicitId);
+        if (byId) return byId;
+      }
+      const postUrl = String(post?.product_url || '').trim().toLowerCase();
+      if (postUrl && Array.isArray(_vcShopifyProducts)) {
+        const byUrl = _vcShopifyProducts.find(p => String(p.product_url || '').trim().toLowerCase() === postUrl);
+        if (byUrl) return byUrl;
+      }
+      const theme = String(post?.theme || '').trim().toLowerCase();
+      if (theme && Array.isArray(_vcShopifyProducts)) {
+        const byTitle = _vcShopifyProducts.find(p => String(p.title || '').trim().toLowerCase() === theme);
+        if (byTitle) return byTitle;
+      }
+      return null;
+    }
+
+    function regenEnsureProductSelection(post) {
+      if (!post?.id) return;
+      const postId = String(post.id);
+      const existing = _videoRegenSelectedByPost[postId];
+      if (existing && existing.imageUrl) return;
+      const matched = regenResolveProductFromCatalog(post);
+      if (matched) {
+        _videoRegenSelectedByPost[postId] = {
+          id: String(matched.id || ''),
+          title: matched.title || post.theme || '',
+          imageUrl: matched.primary_image || '',
+        };
+      } else {
+        _videoRegenSelectedByPost[postId] = {
+          id: '',
+          title: post.theme || '',
+          imageUrl: post.image_url || '',
+        };
+      }
+    }
+
+    window.regenUpdateProductSelection = function(postId, productId) {
+      const normalizedPostId = String(postId || '');
+      const normalizedProductId = String(productId || '');
+      if (!normalizedPostId) return;
+      const imageInput = document.getElementById(`video-regen-image-${normalizedPostId}`);
+      const titleInput = document.getElementById(`video-regen-title-${normalizedPostId}`);
+      const manualImage = String(imageInput?.value || '').trim();
+      const manualTitle = String(titleInput?.value || '').trim();
+      if (!normalizedProductId) {
+        _videoRegenSelectedByPost[normalizedPostId] = {
+          id: '',
+          title: manualTitle,
+          imageUrl: manualImage,
+        };
+        return;
+      }
+      const catalogProduct = Array.isArray(_vcShopifyProducts)
+        ? _vcShopifyProducts.find(p => String(p.id || '') === normalizedProductId)
+        : null;
+      const catalogImage = String(catalogProduct?.primary_image || '').trim();
+      const catalogTitle = String(catalogProduct?.title || '').trim();
+      _videoRegenSelectedByPost[normalizedPostId] = {
+        id: normalizedProductId,
+        title: catalogTitle || manualTitle,
+        imageUrl: catalogImage || manualImage,
+      };
+      if (imageInput && catalogImage) imageInput.value = catalogImage;
+      if (titleInput && catalogTitle) titleInput.value = catalogTitle;
+    };
+
+    window.regenChangeProduct = window.regenUpdateProductSelection;
+
+    function videoRegenSelectedProductFromUI(postId) {
+      const normalizedPostId = String(postId || '');
+      const post = studioPostsList.find(p => String(p.id || '') === normalizedPostId) || null;
+      if (post) regenEnsureProductSelection(post);
+      const picker = document.getElementById(`video-regen-product-picker-${normalizedPostId}`);
+      const selectedId = String(picker?.value || '').trim();
+      if (selectedId) {
+        window.regenUpdateProductSelection(normalizedPostId, selectedId);
+      }
+      const latest = _videoRegenSelectedByPost[normalizedPostId] || { id: '', title: '', imageUrl: '' };
+      const imageInput = document.getElementById(`video-regen-image-${normalizedPostId}`);
+      const titleInput = document.getElementById(`video-regen-title-${normalizedPostId}`);
+      const imageUrl = String(imageInput?.value || latest.imageUrl || '').trim();
+      const productTitle = String(titleInput?.value || latest.title || '').trim();
+      return {
+        productId: selectedId || latest.id || '',
+        imageUrl,
+        productTitle,
+      };
+    }
+
     // ━━━ Video Regeneration ━━━
     window.regenVideo = async function(postId) {
       const btn = document.getElementById('video-regen-btn');
       const overlay = document.getElementById('video-regen-overlay');
       const player = document.getElementById('modal-video-player');
+      const selected = videoRegenSelectedProductFromUI(postId);
+      if (!selected.imageUrl) {
+        showToast('Pick a Shopify product/image in the regen panel first.');
+        return;
+      }
       if (btn) { btn.style.display = 'none'; }
       if (overlay) { overlay.style.display = 'flex'; }
       if (player) { player.pause(); }
@@ -3723,7 +3769,12 @@
         const res = await fetch(`${API}/api/studio/regenerate-video`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
-          body: JSON.stringify({ postId }),
+          body: JSON.stringify({
+            postId,
+            productId: selected.productId || undefined,
+            productTitle: selected.productTitle || undefined,
+            imageUrl: selected.imageUrl || undefined
+          }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -3812,223 +3863,7 @@
       setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
     }
 
-    // ━━━ Onboarding Flow ━━━
-    const onboardingQuestions = [
-      { id: 'q1', label: 'Question 1 of 9', question: 'How did your business start?', hint: 'Tell us the origin story. What problem were you solving? What made you say "I need to build this"?', type: 'textarea' },
-      { id: 'q2', label: 'Question 2 of 9', question: 'Describe your dream customer.', hint: 'Not demographics — describe the person. What do they care about? What keeps them up at night? Where do they hang out online?', type: 'textarea' },
-      { id: 'q3', label: 'Question 3 of 9', question: 'What makes you different from competitors?', hint: 'Be specific. "Better quality" is not enough. What would a customer say if asked why they chose you over the alternative?', type: 'textarea' },
-      { id: 'q4', label: 'Question 4 of 9', question: 'Name 2-3 brands you admire (any industry).', hint: 'Not competitors — brands whose voice, vibe, or energy you wish yours had. What specifically do you like about them?', type: 'textarea' },
-      { id: 'q5', label: 'Question 5 of 9', question: 'What words should NEVER describe your brand?', hint: 'This is more revealing than what you want. "Cheap," "corporate," "boring" — what makes you cringe?', type: 'textarea' },
-      { id: 'q6', label: 'Question 6 of 9', question: 'What transformation does your customer experience?', hint: 'Before they find you, they feel ___. After, they feel ___. Paint the picture.', type: 'textarea' },
-      { id: 'q7', label: 'Question 7 of 9', question: 'What do you hate about social media?', hint: 'What makes you unfollow a brand? What feels fake, forced, or cringe to you? We will make sure your content never does this.', type: 'textarea' },
-      { id: 'q8', label: 'Question 8 of 9 — Brand Archetype', question: 'If your brand were a person at a party, which fits best?',
-        hint: 'Pick the one that feels most natural.',
-        type: 'options',
-        options: [
-          { value: 'The Outlaw', label: 'The Rebel', desc: 'Says what everyone is thinking but won\'t say. Provocative, unapologetic.' },
-          { value: 'The Sage', label: 'The Expert', desc: 'Everyone turns to them for advice. Authoritative, measured.' },
-          { value: 'The Jester', label: 'The Life of the Party', desc: 'Making everyone laugh. Irreverent, playful.' },
-          { value: 'The Lover', label: 'The Magnetic One', desc: 'Quietly draws everyone in. Sensual, intimate, passionate.' },
-          { value: 'The Caregiver', label: 'The Dependable Friend', desc: 'Always shows up. Warm, nurturing, selfless.' },
-          { value: 'The Hero', label: 'The Ambitious One', desc: 'Always working toward something big. Bold, motivating.' },
-        ],
-      },
-      { id: 'q9', label: 'Question 9 of 9 — Anti-Brand', question: 'Which of these would feel WRONG for your brand?',
-        hint: 'People know instantly what they are NOT. This is actually more revealing than Q8.',
-        type: 'options',
-        options: [
-          { value: 'Corporate/Stiff', label: 'Corporate & Stiff', desc: 'Formal, buttoned-up, no personality.' },
-          { value: 'Aggressive/Pushy', label: 'Aggressive & Pushy', desc: 'Hard sales, countdown timers, BUY NOW energy.' },
-          { value: 'Childish/Silly', label: 'Childish & Silly', desc: 'Too many emojis, try-hard humor, not serious.' },
-          { value: 'Cold/Clinical', label: 'Cold & Clinical', desc: 'Data-only, no warmth, feels like a textbook.' },
-          { value: 'Edgy/Provocative', label: 'Edgy & Provocative', desc: 'Controversial for attention, shock value.' },
-          { value: 'Basic/Generic', label: 'Basic & Generic', desc: '"Rise and grind" energy. Nothing original.' },
-        ],
-      },
-    ];
-
-    let currentStep = 0;
-    const onboardingAnswers = {};
-
-    function showOnboarding() {
-      const overlay = document.getElementById('onboarding-overlay');
-      overlay.classList.add('active');
-
-      // Check if Shopify already connected — skip that step if so
-      const shopifyAlreadyConnected = !!(clientData?.client?.shopify_domain);
-      if (shopifyAlreadyConnected) {
-        startOnboardingQuestions();
-      } else {
-        showOnboardingShopifyStep();
-      }
-    }
-
-    function showOnboardingShopifyStep() {
-      document.getElementById('onboarding-shopify-step').style.display = 'block';
-      document.getElementById('onboarding-questions-section').style.display = 'none';
-      if (typeof lucide !== 'undefined') lucide.createIcons();
-
-      const connectBtn = document.getElementById('onb-shopify-connect-btn');
-      const skipBtn = document.getElementById('onb-shopify-skip');
-      const continueBtn = document.getElementById('onb-shopify-continue');
-      const msgEl = document.getElementById('onb-shopify-msg');
-
-      connectBtn?.addEventListener('click', async () => {
-        const domain = (document.getElementById('onb-shopify-domain')?.value || '').trim();
-        const token = (document.getElementById('onb-shopify-token')?.value || '').trim();
-        if (!domain || !token) {
-          showShopifyMsg(msgEl, 'error', 'Please enter both your store domain and token.');
-          return;
-        }
-        connectBtn.disabled = true;
-        connectBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Connecting...';
-        try {
-          const res = await fetch(`${API}/api/connect-shopify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
-            body: JSON.stringify({ shopify_domain: domain, shopify_token: token })
-          });
-          const result = await res.json();
-          if (res.ok && result.success) {
-            showShopifyMsg(msgEl, 'success', `Connected: ${result.shop_name || domain} (${result.product_count != null ? result.product_count + ' products' : 'connected'})`);
-            if (clientData?.client) clientData.client.shopify_domain = domain;
-            connectBtn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Connected!';
-            if (continueBtn) continueBtn.style.display = 'inline-flex';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-          } else {
-            showShopifyMsg(msgEl, 'error', result.error || result.message || 'Connection failed.');
-            connectBtn.disabled = false;
-            connectBtn.innerHTML = '<i data-lucide="link" style="width:16px;height:16px;"></i> Connect Store';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-          }
-        } catch(e) {
-          showShopifyMsg(msgEl, 'error', 'Network error. Please try again.');
-          connectBtn.disabled = false;
-          connectBtn.innerHTML = '<i data-lucide="link" style="width:16px;height:16px;"></i> Connect Store';
-          if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-      });
-
-      skipBtn?.addEventListener('click', startOnboardingQuestions);
-      continueBtn?.addEventListener('click', startOnboardingQuestions);
-    }
-
-    function startOnboardingQuestions() {
-      document.getElementById('onboarding-shopify-step').style.display = 'none';
-      document.getElementById('onboarding-questions-section').style.display = 'block';
-
-      // Build progress dots
-      const progress = document.getElementById('onboarding-progress');
-      progress.innerHTML = onboardingQuestions.map((_, i) => `<div class="onboarding-progress__dot ${i === 0 ? 'active' : ''}" data-step="${i}"></div>`).join('');
-
-      renderOnboardingStep(0);
-    }
-
-    function renderOnboardingStep(step) {
-      currentStep = step;
-      const q = onboardingQuestions[step];
-      const stepsEl = document.getElementById('onboarding-steps');
-      const isLast = step === onboardingQuestions.length - 1;
-
-      let inputHtml = '';
-      if (q.type === 'textarea') {
-        inputHtml = `<textarea class="onboarding-step__textarea" id="ob-input" placeholder="Type your answer...">${onboardingAnswers[q.id] || ''}</textarea>`;
-      } else if (q.type === 'options') {
-        inputHtml = `<div class="onboarding-options">${q.options.map(o => `
-          <button class="onboarding-option ${onboardingAnswers[q.id] === o.value ? 'selected' : ''}" data-value="${o.value}">
-            <div class="onboarding-option__label">${o.label}</div>
-            <div class="onboarding-option__desc">${o.desc}</div>
-          </button>
-        `).join('')}</div>`;
-      }
-
-      stepsEl.innerHTML = `
-        <div class="onboarding-step active">
-          <div class="onboarding-step__label">${q.label}</div>
-          <h3 class="onboarding-step__question">${q.question}</h3>
-          <p class="onboarding-step__hint">${q.hint}</p>
-          ${inputHtml}
-          <div class="onboarding-nav">
-            ${step > 0 ? '<button class="onboarding-nav__btn onboarding-nav__btn--back" id="ob-back">Back</button>' : '<div></div>'}
-            ${isLast
-              ? '<button class="onboarding-nav__btn onboarding-nav__btn--submit" id="ob-submit">Finish &amp; Activate</button>'
-              : '<button class="onboarding-nav__btn onboarding-nav__btn--next" id="ob-next">Continue</button>'}
-          </div>
-        </div>
-      `;
-
-      // Show social handles section on last step
-      const socialHandlesEl = document.getElementById('onboarding-social-handles');
-      if (socialHandlesEl) socialHandlesEl.style.display = isLast ? 'block' : 'none';
-
-      // Update progress dots
-      document.querySelectorAll('.onboarding-progress__dot').forEach((dot, i) => {
-        dot.classList.toggle('active', i === step);
-        dot.classList.toggle('done', i < step);
-      });
-
-      // Option selection
-      stepsEl.querySelectorAll('.onboarding-option').forEach(opt => {
-        opt.addEventListener('click', () => {
-          stepsEl.querySelectorAll('.onboarding-option').forEach(o => o.classList.remove('selected'));
-          opt.classList.add('selected');
-          onboardingAnswers[q.id] = opt.dataset.value;
-        });
-      });
-
-      // Nav buttons
-      document.getElementById('ob-back')?.addEventListener('click', () => {
-        saveCurrentAnswer(q);
-        renderOnboardingStep(step - 1);
-      });
-
-      document.getElementById('ob-next')?.addEventListener('click', () => {
-        saveCurrentAnswer(q);
-        renderOnboardingStep(step + 1);
-      });
-
-      document.getElementById('ob-submit')?.addEventListener('click', submitOnboarding);
-    }
-
-    function saveCurrentAnswer(q) {
-      if (q.type === 'textarea') {
-        const input = document.getElementById('ob-input');
-        if (input) onboardingAnswers[q.id] = input.value;
-      }
-    }
-
-    async function submitOnboarding() {
-      const q = onboardingQuestions[currentStep];
-      saveCurrentAnswer(q);
-
-      const submitBtn = document.getElementById('ob-submit');
-      submitBtn.textContent = 'Building your profile...';
-      submitBtn.disabled = true;
-
-      try {
-        const res = await fetch(`${API}/api/onboarding`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientEmail, clientHash, answers: { ...onboardingAnswers, instagram_handle: document.getElementById('onb-instagram')?.value || '', tiktok_handle: document.getElementById('onb-tiktok')?.value || '', facebook_handle: document.getElementById('onb-facebook')?.value || '' } }),
-        });
-
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-
-        // Close onboarding and refresh dashboard
-        document.getElementById('onboarding-overlay').classList.remove('active');
-
-        if (data.profile) {
-          clientData.profile = data.profile;
-          activeNav = 'dashboard';
-          renderDashboard(clientData, true);
-        }
-      } catch (err) {
-        console.error('Onboarding error:', err);
-        submitBtn.textContent = 'Try Again';
-        submitBtn.disabled = false;
-      }
-    }
+    // Onboarding flow removed per direct-access requirement.
 
     // ━━━ Active Nav Tracking ━━━
     let activeNav = 'dashboard';
@@ -5485,7 +5320,7 @@
           <div style="text-align:center;padding:48px 24px;">
             <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(255,255,255,0.04));display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.5rem;">🎭</div>
             <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:8px;">Brand voice not configured yet</div>
-            <p style="font-size:0.875rem;color:var(--color-text-muted);line-height:1.6;margin:0 0 20px;max-width:420px;margin-left:auto;margin-right:auto;">Complete the onboarding questionnaire to activate your AI brand voice. Your AI will learn your tone, style, and audience from your answers.</p>
+            <p style="font-size:0.875rem;color:var(--color-text-muted);line-height:1.6;margin:0 0 20px;max-width:420px;margin-left:auto;margin-right:auto;">Brand voice setup is managed for you automatically in your account baseline.</p>
           </div>
         </div>` : ''}
 
@@ -5883,10 +5718,25 @@
     function renderSettingsPage(data) {
       const content = document.getElementById('dash-content');
       const c = data.client;
+      const socialPlatforms = Array.isArray(c.social_connected_platforms)
+        ? c.social_connected_platforms.map(p => String(p || '').trim().toLowerCase())
+        : [];
+      const socialSet = new Set(socialPlatforms);
       const isShopifyConnected = !!(c.shopify_domain && c.shopify_domain.length > 0);
-      const isIGConnected = !!(c.instagram_user_id);
-      const isTTConnected = !!(c.tiktok_access_token && c.tiktok_access_token !== '');
-      const isFBConnected = !!(c.meta_page_id && c.meta_page_token && c.facebook_connected === 'true');
+      const isIGConnected = socialSet.has('instagram') || !!(c.instagram_user_id);
+      const isTTConnected = socialSet.has('tiktok') || !!(c.tiktok_access_token && c.tiktok_access_token !== '');
+      const isFBConnected = socialSet.has('facebook') || !!(c.meta_page_id && c.meta_page_token && c.facebook_connected === 'true');
+
+      const upAccounts = (data.upload_post_connection && Array.isArray(data.upload_post_connection.accounts))
+        ? data.upload_post_connection.accounts
+        : [];
+      const _handleFor = (platform) => {
+        const match = upAccounts.find(a => String(a?.platform || '').toLowerCase() === platform);
+        return match && match.name ? String(match.name) : '';
+      };
+      const igHandle = _handleFor('instagram') || c.instagram_handle || '';
+      const ttHandle = _handleFor('tiktok') || c.tiktok_display_name || '';
+      const fbHandle = _handleFor('facebook') || c.meta_page_name || '';
 
       const tierName = c.tier || 'Pro';
       const tierPrice = tierName === 'Annual' ? '$247' : '$297';
@@ -6053,7 +5903,7 @@
                   <i data-lucide="palette" style="width:24px;height:24px;color:var(--color-primary);opacity:0.6;"></i>
                 </div>
                 <div style="font-size:var(--text-sm);font-weight:500;color:var(--color-text);margin-bottom:var(--space-2);">No brand style configured yet</div>
-                <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.5;margin:0 0 var(--space-4);max-width:400px;margin-left:auto;margin-right:auto;">Complete onboarding and connect your Shopify store. SocialEngine will analyze your products and extract your visual DNA — colors, photography style, and aesthetic direction.</p>
+                <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.5;margin:0 0 var(--space-4);max-width:400px;margin-left:auto;margin-right:auto;">SocialEngine will continuously analyze your catalog and activity to refine your visual DNA — colors, photography style, and aesthetic direction.</p>
                 <button class="btn btn--primary btn--sm" onclick="document.querySelector('[data-nav=brand-voice]').click();">Set Up Brand Voice</button>
               </div>
             `}
@@ -6131,7 +5981,7 @@
                 ${isIGConnected ? `
                   <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;margin-bottom:10px;">
                     <span style="width:6px;height:6px;border-radius:50%;background:#7C3AED;box-shadow:0 0 5px #7C3AED;"></span>
-                    Connected as @${c.instagram_handle || 'your account'}
+                    ${igHandle ? `Connected as @${igHandle}` : 'Connected'}
                   </div>
                   <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">Instagram is connected. SocialEngine can schedule content directly to your feed and read profile analytics.</p>
                 ` : `
@@ -6170,7 +6020,7 @@
                 ${isTTConnected ? `
                   <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;margin-bottom:10px;">
                     <span style="width:6px;height:6px;border-radius:50%;background:#7C3AED;"></span>
-                    Connected${c.tiktok_display_name ? ` as @${c.tiktok_display_name}` : ''}
+                    ${ttHandle ? `Connected as @${ttHandle}` : 'Connected'}
                   </div>
                   <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">TikTok is connected. SocialEngine can publish videos directly to your TikTok account.</p>
                 ` : `
@@ -6208,7 +6058,7 @@
                 ${isFBConnected ? `
                   <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;margin-bottom:10px;">
                     <span style="width:6px;height:6px;border-radius:50%;background:#7C3AED;"></span>
-                    Connected${c.meta_page_name ? ` — ${c.meta_page_name}` : ''}
+                    ${fbHandle ? `Connected — ${fbHandle}` : 'Connected'}
                   </div>
                   <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">Facebook is connected. SocialEngine can publish content directly to your Facebook Page.</p>
                 ` : `
@@ -6334,9 +6184,11 @@
         function startShopifyOAuth(inputId) {
           const domain = (document.getElementById(inputId)?.value || '').trim();
           if (!domain) { alert('Please enter your Shopify store domain.'); return; }
-          let clean = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
-          if (!clean.includes('.myshopify.com')) clean = clean.split('.')[0] + '.myshopify.com';
-          const authUrl = `${API}/api/shopify/auth?email=${encodeURIComponent(clientEmail)}&hash=${encodeURIComponent(clientHash)}&shop=${encodeURIComponent(clean)}`;
+          // Send the raw storefront domain (without protocol/path) to the backend.
+          // Backend canonicalizes to the true .myshopify.com handle via meta.json
+          // resolver so custom domains work reliably.
+          const raw = domain.replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
+          const authUrl = `${API}/api/shopify/auth?email=${encodeURIComponent(clientEmail)}&hash=${encodeURIComponent(clientHash)}&shop=${encodeURIComponent(raw)}`;
           window.location.href = authUrl;
         }
         document.getElementById('shopify-oauth-go')?.addEventListener('click', () => startShopifyOAuth('shopify-oauth-domain'));
@@ -7846,7 +7698,7 @@
               <div class="vc-product-controls">
                 <div class="vc-product-search-wrap">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <input type="text" class="vc-product-search" id="vc-product-search" placeholder="Search products..." oninput="vcSearchProducts()">
+                  <input type="text" class="vc-product-search" id="vc-product-search" placeholder="Search by color, type, season (e.g. pink lingerie, purple ravewear, summer swimwear)..." oninput="vcSearchProducts()">
                 </div>
                 <select class="vc-category-select" id="vc-category-filter" onchange="vcFilterCategory()">
                   <option value="">All categories</option>
@@ -7868,6 +7720,7 @@
                   <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);font-family:var(--font-body,'Satoshi',sans-serif);">Loading your Shopify products...</div>
                 </div>
               </div>
+              <div id="vc-product-pagination"></div>
             </div>
 
             <!-- Upload tab (hidden by default) -->
@@ -8059,39 +7912,260 @@
     let _vcShopifyCategories = [];
     let _vcProductsLoaded = false;
     let _vcSearchTimeout = null;
+    let _vcCatalogTotal = 0;
+    let _vcCatalogPage = 1;
+    let _vcCatalogPages = 1;
+    let _vcCatalogSource = 'none';
+    let _vcCatalogLoadLimit = 250;
+    let _vcCatalogLoadingMore = false;
+    let _vcActiveSmartFilter = 'all';
+    let _vcAllShopifyProducts = [];
+    let _vcServerSearchActive = false;
+    let _vcServerSearchQuery = '';
+    let _vcServerSearchCategory = '';
+
+    const VC_PRODUCT_SEARCH_STOPWORDS = new Set(['a', 'an', 'and', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'with']);
+    const VC_PRODUCT_SEARCH_SYNONYMS = {
+      pink: ['fuchsia', 'magenta', 'rose', 'blush', 'hot pink'],
+      purple: ['violet', 'lavender', 'lilac', 'plum', 'mauve'],
+      red: ['crimson', 'scarlet', 'burgundy', 'wine'],
+      blue: ['navy', 'cobalt', 'azure', 'teal', 'turquoise'],
+      black: ['onyx', 'charcoal', 'jet black'],
+      white: ['ivory', 'cream', 'off white'],
+      green: ['emerald', 'olive', 'sage', 'mint'],
+      yellow: ['gold', 'mustard', 'lemon'],
+      lingerie: ['intimates', 'intimate', 'bra', 'panty', 'lace', 'teddy', 'corset', 'babydoll', 'bodysuit'],
+      ravewear: ['rave', 'festival', 'clubwear', 'edm', 'neon', 'holographic', 'sequin'],
+      clubwear: ['ravewear', 'festival', 'partywear', 'night out'],
+      swimwear: ['swim', 'swimsuit', 'bikini', 'beachwear'],
+      activewear: ['athleisure', 'gym', 'fitness', 'workout'],
+      festival: ['rave', 'coachella', 'edm', 'burning man', 'concert'],
+      spring: ['easter', 'pastel', 'floral'],
+      summer: ['beach', 'vacation', 'pool', 'sun', 'resort'],
+      fall: ['autumn', 'halloween', 'cozy', 'layer'],
+      autumn: ['fall', 'harvest', 'halloween', 'cozy'],
+      winter: ['holiday', 'christmas', 'new year', 'cold', 'cozy', 'velvet'],
+      seasonal: ['spring', 'summer', 'fall', 'autumn', 'winter', 'holiday'],
+    };
+
+    function vcNormalizeProductSearchText(value) {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/[^a-z0-9\s-]/g, ' ')
+        .replace(/[\s_-]+/g, ' ')
+        .trim();
+    }
+
+    function vcTokenizeProductSearch(query) {
+      const normalized = vcNormalizeProductSearchText(query || '');
+      if (!normalized) return [];
+      return normalized
+        .split(' ')
+        .map(t => t.trim())
+        .filter(t => t && !VC_PRODUCT_SEARCH_STOPWORDS.has(t));
+    }
+
+    function vcProductSearchVariants(token) {
+      const key = vcNormalizeProductSearchText(token || '');
+      if (!key) return [];
+      const synonyms = VC_PRODUCT_SEARCH_SYNONYMS[key] || [];
+      return [...new Set([key, ...synonyms.map(vcNormalizeProductSearchText).filter(Boolean)])];
+    }
+
+    function vcProductSearchText(product) {
+      const tags = Array.isArray(product?.tags) ? product.tags : String(product?.tags || '').split(',');
+      const variants = Array.isArray(product?.variants) ? product.variants : [];
+      const variantTitles = variants.map(v => v?.title || '');
+      const raw = [
+        product?.title || '',
+        product?.product_type || '',
+        product?.description || '',
+        product?.vendor || '',
+        product?.handle || '',
+        tags.join(' '),
+        variantTitles.join(' '),
+      ].join(' ');
+      return vcNormalizeProductSearchText(raw);
+    }
+
+    function vcProductMatchesQuery(product, query) {
+      const tokens = vcTokenizeProductSearch(query);
+      if (!tokens.length) return true;
+      const haystack = vcProductSearchText(product);
+      if (!haystack) return false;
+      return tokens.every(token => {
+        const variants = vcProductSearchVariants(token);
+        return variants.some(term => haystack.includes(term));
+      });
+    }
+
+    function vcProductsApiUrl(page, searchQuery, category) {
+      const params = new URLSearchParams();
+      params.set('limit', String(_vcCatalogLoadLimit));
+      params.set('page', String(page || 1));
+      if (searchQuery) params.set('search', String(searchQuery).trim());
+      if (category) params.set('category', String(category).trim());
+      return `${API}/api/studio/products?${params.toString()}`;
+    }
+
+    function vcProductKey(product) {
+      if (product && product.id != null && product.id !== '') return `id:${product.id}`;
+      const handle = product && product.handle ? product.handle : '';
+      const title = product && product.title ? product.title : '';
+      const image = product && product.primary_image ? product.primary_image : '';
+      return `fallback:${handle}|${title}|${image}`;
+    }
+
+    function vcRenderCategoryFilterOptions() {
+      const select = document.getElementById('vc-category-filter');
+      if (!select) return;
+      const currentValue = select.value || '';
+      select.innerHTML = '<option value="">All categories</option>' +
+        _vcShopifyCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+      if (currentValue && _vcShopifyCategories.includes(currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
+    function vcProductPaginationHTML() {
+      const total = Number(_vcCatalogTotal || 0);
+      if (!total) return '';
+      const loaded = Math.min(_vcShopifyProducts.length, total);
+      if (_vcCatalogPage < _vcCatalogPages && loaded < total) {
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;">
+          <span style="font-size:0.72rem;color:rgba(255,255,255,0.45);font-family:var(--font-body,'Satoshi',sans-serif);">Showing ${loaded} of ${total} products</span>
+          <button onclick="vcLoadMoreProducts()" ${_vcCatalogLoadingMore ? 'disabled' : ''} style="padding:7px 12px;border-radius:8px;border:1px solid rgba(139,92,246,0.35);background:${_vcCatalogLoadingMore ? 'rgba(139,92,246,0.08)' : 'rgba(139,92,246,0.15)'};color:${_vcCatalogLoadingMore ? 'rgba(255,255,255,0.35)' : 'rgba(139,92,246,0.95)'};font-size:0.72rem;font-weight:600;cursor:${_vcCatalogLoadingMore ? 'default' : 'pointer'};font-family:var(--font-body,'Satoshi',sans-serif);">
+            ${_vcCatalogLoadingMore ? 'Loading more...' : 'Load more products'}
+          </button>
+        </div>`;
+      }
+      return `<div style="margin-top:10px;font-size:0.72rem;color:rgba(255,255,255,0.45);font-family:var(--font-body,'Satoshi',sans-serif);">Showing all ${total} products</div>`;
+    }
+
+    function vcRenderProductPagination() {
+      const pagination = document.getElementById('vc-product-pagination');
+      if (!pagination) return;
+      pagination.innerHTML = vcProductPaginationHTML();
+    }
+
+    function vcRenderCurrentProductView() {
+      const searchValue = (document.getElementById('vc-product-search')?.value || '').trim();
+      const categoryValue = (document.getElementById('vc-category-filter')?.value || '').trim();
+      if ((searchValue || categoryValue) && typeof window.vcSearchProducts === 'function') {
+        window.vcSearchProducts();
+        return;
+      }
+      if (_vcActiveSmartFilter && _vcActiveSmartFilter !== 'all' && typeof window.vcSmartFilter === 'function') {
+        const activeChip = document.querySelector('.vc-cat-chip.active');
+        window.vcSmartFilter(_vcActiveSmartFilter, activeChip || null);
+        return;
+      }
+      vcRenderProducts(_vcShopifyProducts);
+    }
 
     async function vcLoadShopifyProducts() {
       const grid = document.getElementById('vc-product-grid');
       if (!grid) return;
       grid.innerHTML = '<div class="vc-product-loading"><div class="vc-product-loading__spinner"></div><div style="font-size:0.75rem;color:rgba(255,255,255,0.3);font-family:var(--font-body,\'Satoshi\',sans-serif);">Loading your Shopify products...</div></div>';
       try {
-        const res = await fetch(`${API}/api/studio/products?limit=100`, {
+        const res = await fetch(vcProductsApiUrl(1), {
           headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
         });
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
-        _vcShopifyProducts = data.products || [];
+        const firstPageProducts = data.products || [];
+        _vcShopifyProducts = firstPageProducts;
+        _vcAllShopifyProducts = firstPageProducts.slice();
         _vcShopifyCategories = data.categories || [];
+        _vcCatalogTotal = Number(data.total || firstPageProducts.length);
+        _vcCatalogPage = Number(data.page || 1);
+        _vcCatalogPages = Number(data.pages || 1);
+        _vcCatalogSource = data.source || 'none';
+        _vcCatalogLoadingMore = false;
+        _vcServerSearchActive = false;
+        _vcServerSearchQuery = '';
+        _vcServerSearchCategory = '';
         _vcProductsLoaded = true;
-        // Populate category filter
-        const select = document.getElementById('vc-category-filter');
-        if (select) {
-          select.innerHTML = '<option value="">All categories</option>' +
-            _vcShopifyCategories.map(c => `<option value="${c}">${c}</option>`).join('');
-        }
+        vcRenderCategoryFilterOptions();
         vcRenderProducts(_vcShopifyProducts);
       } catch (err) {
         console.warn('Shopify products load failed:', err);
+        _vcCatalogTotal = 0;
+        _vcCatalogPage = 1;
+        _vcCatalogPages = 1;
+        _vcCatalogLoadingMore = false;
         // Fall back to content post images
         vcRenderProductsFallback();
+        vcRenderProductPagination();
       }
     }
+
+    window.vcLoadMoreProducts = async function() {
+      if (_vcCatalogLoadingMore) return;
+      if (_vcCatalogPage >= _vcCatalogPages) return;
+      _vcCatalogLoadingMore = true;
+      vcRenderProductPagination();
+      const nextPage = _vcCatalogPage + 1;
+      try {
+        const res = await fetch(
+          vcProductsApiUrl(
+            nextPage,
+            _vcServerSearchActive ? _vcServerSearchQuery : '',
+            _vcServerSearchActive ? _vcServerSearchCategory : ''
+          ),
+          {
+          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+          }
+        );
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        const chunk = data.products || [];
+        const seen = new Set(_vcShopifyProducts.map(vcProductKey));
+        const toAppend = [];
+        for (const product of chunk) {
+          const key = vcProductKey(product);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          toAppend.push(product);
+        }
+        if (toAppend.length) _vcShopifyProducts = _vcShopifyProducts.concat(toAppend);
+        if (!_vcServerSearchActive && toAppend.length) {
+          _vcAllShopifyProducts = _vcAllShopifyProducts.concat(toAppend);
+        }
+        if (Array.isArray(data.categories) && data.categories.length) {
+          _vcShopifyCategories = data.categories;
+          vcRenderCategoryFilterOptions();
+        }
+        _vcCatalogTotal = Number(data.total || _vcCatalogTotal || _vcShopifyProducts.length);
+        _vcCatalogPage = Number(data.page || nextPage);
+        _vcCatalogPages = Number(data.pages || _vcCatalogPages || 1);
+        if (data.source) _vcCatalogSource = data.source;
+        vcRenderCurrentProductView();
+      } catch (err) {
+        console.warn('Shopify load more failed:', err);
+      } finally {
+        _vcCatalogLoadingMore = false;
+        vcRenderProductPagination();
+      }
+    };
 
     function vcRenderProducts(products) {
       const grid = document.getElementById('vc-product-grid');
       if (!grid) return;
       const countEl = document.getElementById('vc-product-count');
-      if (countEl) countEl.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+      if (countEl) {
+        const loadedCount = Math.min(_vcShopifyProducts.length, _vcCatalogTotal || _vcShopifyProducts.length);
+        if (_vcCatalogTotal > 0) {
+          if (products.length !== _vcShopifyProducts.length) {
+            countEl.textContent = `${products.length} shown • ${loadedCount} of ${_vcCatalogTotal} loaded`;
+          } else {
+            countEl.textContent = `${loadedCount} of ${_vcCatalogTotal} loaded`;
+          }
+        } else {
+          countEl.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+        }
+      }
 
       if (!products.length) {
         grid.innerHTML = `<div class="vc-product-empty">
@@ -8099,6 +8173,7 @@
           <div class="vc-product-empty__title">No products found</div>
           <div class="vc-product-empty__sub">Try adjusting your search or category filter,<br>or switch to the Upload tab to use a custom image.</div>
         </div>`;
+        vcRenderProductPagination();
         return;
       }
 
@@ -8128,12 +8203,15 @@
           ${allImgs.length > 1 ? `<div class="vc-image-variants">${allImgs.map((img, idx) => `<img class="vc-image-variant${idx===0?' active':''}" src="${img.url}" alt="Variant ${idx+1}" onclick="event.stopPropagation();vcSelectVariantImage(this,'${img.url}')" loading="lazy">`).join('')}</div>` : ''}
         </div>`;
       }).join('');
+      vcRenderProductPagination();
     }
 
     // Fallback: use content post images if Shopify products unavailable
     function vcRenderProductsFallback() {
       const grid = document.getElementById('vc-product-grid');
       if (!grid) return;
+      const pagination = document.getElementById('vc-product-pagination');
+      if (pagination) pagination.innerHTML = '';
       // Hide search controls since we're in fallback mode
       const controls = document.querySelector('.vc-product-controls');
       if (controls) controls.style.display = 'none';
@@ -8208,16 +8286,55 @@
 
         window.vcSearchProducts = function() {
       clearTimeout(_vcSearchTimeout);
-      _vcSearchTimeout = setTimeout(() => {
-        const q = (document.getElementById('vc-product-search')?.value || '').toLowerCase();
-        const cat = document.getElementById('vc-category-filter')?.value || '';
-        let filtered = _vcShopifyProducts;
-        if (q) filtered = filtered.filter(p =>
-          (p.title || '').toLowerCase().includes(q) ||
-          (p.product_type || '').toLowerCase().includes(q) ||
-          (p.tags || []).some(t => t.toLowerCase().includes(q))
-        );
-        if (cat) filtered = filtered.filter(p => p.product_type === cat);
+      _vcSearchTimeout = setTimeout(async () => {
+        const qRaw = (document.getElementById('vc-product-search')?.value || '').trim();
+        const q = vcNormalizeProductSearchText(qRaw);
+        const cat = (document.getElementById('vc-category-filter')?.value || '').trim();
+        const hasQuery = !!q;
+        const hasCategory = !!cat;
+
+        if (!hasQuery && !hasCategory) {
+          _vcServerSearchActive = false;
+          _vcServerSearchQuery = '';
+          _vcServerSearchCategory = '';
+          _vcShopifyProducts = _vcAllShopifyProducts.slice();
+          _vcCatalogTotal = _vcShopifyProducts.length;
+          _vcCatalogPage = 1;
+          _vcCatalogPages = 1;
+          vcRenderProducts(_vcShopifyProducts);
+          return;
+        }
+
+        _vcServerSearchActive = true;
+        _vcServerSearchQuery = qRaw;
+        _vcServerSearchCategory = cat;
+
+        try {
+          const res = await fetch(vcProductsApiUrl(1, qRaw, cat), {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+          });
+          if (!res.ok) throw new Error('search-api-error');
+          const data = await res.json();
+          _vcShopifyProducts = data.products || [];
+          _vcShopifyCategories = data.categories || _vcShopifyCategories;
+          _vcCatalogTotal = Number(data.total || _vcShopifyProducts.length);
+          _vcCatalogPage = Number(data.page || 1);
+          _vcCatalogPages = Number(data.pages || 1);
+          _vcCatalogSource = data.source || _vcCatalogSource || 'none';
+          _vcCatalogLoadingMore = false;
+          vcRenderCategoryFilterOptions();
+          vcRenderProducts(_vcShopifyProducts);
+          return;
+        } catch (_) {
+          // Fallback to local fuzzy filtering on already loaded products.
+        }
+
+        let filtered = _vcAllShopifyProducts.slice();
+        if (hasQuery) filtered = filtered.filter(p => vcProductMatchesQuery(p, qRaw));
+        if (hasCategory) filtered = filtered.filter(p => String(p.product_type || '') === cat);
+        _vcCatalogTotal = filtered.length;
+        _vcCatalogPage = 1;
+        _vcCatalogPages = 1;
         vcRenderProducts(filtered);
       }, 250);
     };
@@ -8228,6 +8345,7 @@
 
     // ━━━ Smart Category Chips Filter ━━━
     window.vcSmartFilter = function(category, btn) {
+      _vcActiveSmartFilter = category || 'all';
       // Update active state
       document.querySelectorAll('.vc-cat-chip').forEach(c => {
         c.style.background = 'rgba(255,255,255,0.04)';
@@ -8789,6 +8907,7 @@
   window.connectInstagramOAuth = connectInstagramOAuth;
   window.connectTikTokOAuth = connectTikTokOAuth;
   window.connectFacebookOAuth = connectFacebookOAuth;
+  window.connectSocialsViaUploadPost = connectViaUploadPost;
   window.showCancelGuide = showCancelGuide;
   window.hfSetCategory = hfSetCategory;
   window.hfOpenModal = hfOpenModal;
@@ -8805,100 +8924,99 @@
   window.renderAdStudio = renderAdStudio;
 
     // ━━━ Direct OAuth Connect Functions ━━━
-    function connectInstagramOAuth() {
-      if (!clientEmail) { showToast('Please log in first.'); return; }
-      const w = 600, h = 700;
+    async function connectViaUploadPost(platformLabel) {
+      if (!clientEmail || !clientHash) { showToast('Please log in first.'); return; }
+      const w = 760, h = 780;
       const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-      const authUrl = `${API}/api/auth/instagram?client_email=${encodeURIComponent(clientEmail)}`;
-      let popup;
-      try { popup = window.open(authUrl, 'instagram_oauth', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`); }
-      catch(e) { showToast('Could not open popup — please allow popups for this site.'); return; }
-      if (!popup) { showToast('Popup blocked — please allow popups and try again.'); return; }
-      showToast('Connecting to Instagram — complete the login in the popup window.');
-      const check = setInterval(() => {
+      const target = String(platformLabel || '').trim().toLowerCase();
+      const checkTargetConnected = (snapshot) => {
+        const platforms = Array.isArray(snapshot?.connected_platforms) ? snapshot.connected_platforms : [];
+        const accounts = Array.isArray(snapshot?.accounts) ? snapshot.accounts : [];
+        const hasPlatform = platforms.some(p => String(p || '').toLowerCase() === target);
+        const hasAccount = accounts.some(acc => String(acc?.platform || '').toLowerCase() === target);
+        return hasPlatform || hasAccount;
+      };
+      try {
+        showToast(`Generating secure ${platformLabel} connection link...`);
+        const r = await fetch(`${API}/api/social-connect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientEmail,
+            clientHash,
+            platforms: ['instagram', 'facebook', 'tiktok']
+          })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data?.success || !data?.connect_url) {
+          throw new Error(data?.error || 'Could not generate social connection link');
+        }
+        let popup;
         try {
-          if (popup?.closed) {
-            clearInterval(check);
-            showToast('Checking connection status...');
-            setTimeout(async () => {
+          popup = window.open(data.connect_url, 'uploadpost_connect', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`);
+        } catch (e) {
+          showToast('Could not open popup — please allow popups for this site.');
+          return;
+        }
+        if (!popup) {
+          showToast('Popup blocked — please allow popups and try again.');
+          return;
+        }
+        showToast(`Connect ${platformLabel} in the popup, then close it.`);
+        const popupWatcher = setInterval(() => {
+          try {
+            if (!popup?.closed) return;
+            clearInterval(popupWatcher);
+            showToast('Checking social connection status...');
+            let attempts = 0;
+            const maxAttempts = 16;
+            const poller = setInterval(async () => {
+              attempts += 1;
               try {
-                const r = await fetch(`${API}/api/client-data`, { headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash } });
-                const data = await r.json();
-                if (data?.client?.instagram_user_id) {
-                  showToast('Instagram connected successfully!');
-                  setTimeout(() => location.reload(), 1000);
-                } else {
-                  showToast('Instagram connection was not completed. You can try again anytime.');
+                const sr = await fetch(`${API}/api/social-accounts`, {
+                  headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+                });
+                const snapshot = await sr.json().catch(() => ({}));
+                if (checkTargetConnected(snapshot)) {
+                  clearInterval(poller);
+                  showToast(`${platformLabel} connected successfully!`);
+                  try {
+                    const fresh = await fetch(`${API}/api/client-data`, {
+                      headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+                    });
+                    if (fresh.ok) clientData = await fresh.json();
+                  } catch {}
+                  if (activeNav === 'settings') renderSettingsPage(clientData);
+                  else {
+                    document.querySelector('[data-nav=settings]')?.click();
+                  }
+                  return;
                 }
-              } catch { showToast('Could not verify connection — please refresh the page.'); }
-            }, 2000);
+              } catch {}
+              if (attempts >= maxAttempts) {
+                clearInterval(poller);
+                showToast(`${platformLabel} connection not detected yet. Re-open connect and finish OAuth.`);
+              }
+            }, 2500);
+          } catch {
+            clearInterval(popupWatcher);
           }
-        } catch { clearInterval(check); }
-      }, 1000);
+        }, 700);
+      } catch (err) {
+        showToast(err.message || `Could not start ${platformLabel} connection`);
+      }
+    }
+
+    function connectInstagramOAuth() {
+      connectViaUploadPost('instagram');
     }
 
     function connectTikTokOAuth() {
-      if (!clientEmail) { showToast('Please log in first.'); return; }
-      const w = 600, h = 700;
-      const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-      const authUrl = `${API}/api/auth/tiktok?client_email=${encodeURIComponent(clientEmail)}`;
-      let popup;
-      try { popup = window.open(authUrl, 'tiktok_oauth', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`); }
-      catch(e) { showToast('Could not open popup — please allow popups for this site.'); return; }
-      if (!popup) { showToast('Popup blocked — please allow popups and try again.'); return; }
-      showToast('Connecting to TikTok — complete the login in the popup window.');
-      const check = setInterval(() => {
-        try {
-          if (popup?.closed) {
-            clearInterval(check);
-            showToast('Checking connection status...');
-            setTimeout(async () => {
-              try {
-                const r = await fetch(`${API}/api/client-data`, { headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash } });
-                const data = await r.json();
-                if (data?.client?.tiktok_access_token) {
-                  showToast('TikTok connected successfully!');
-                  setTimeout(() => location.reload(), 1000);
-                } else {
-                  showToast('TikTok connection was not completed. You can try again anytime.');
-                }
-              } catch { showToast('Could not verify connection — please refresh the page.'); }
-            }, 2000);
-          }
-        } catch { clearInterval(check); }
-      }, 1000);
+      connectViaUploadPost('tiktok');
     }
 
     function connectFacebookOAuth() {
-      if (!clientEmail) { showToast('Please log in first.'); return; }
-      const w = 600, h = 700;
-      const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-      const authUrl = `${API}/api/auth/facebook?client_email=${encodeURIComponent(clientEmail)}`;
-      let popup;
-      try { popup = window.open(authUrl, 'facebook_oauth', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`); }
-      catch(e) { showToast('Could not open popup — please allow popups for this site.'); return; }
-      if (!popup) { showToast('Popup blocked — please allow popups and try again.'); return; }
-      showToast('Connecting to Facebook — complete the login in the popup window.');
-      const check = setInterval(() => {
-        try {
-          if (popup?.closed) {
-            clearInterval(check);
-            showToast('Checking connection status...');
-            setTimeout(async () => {
-              try {
-                const r = await fetch(`${API}/api/client-data`, { headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash } });
-                const data = await r.json();
-                if (data?.client?.meta_page_id) {
-                  showToast('Facebook connected successfully!');
-                  setTimeout(() => location.reload(), 1000);
-                } else {
-                  showToast('Facebook connection was not completed. You can try again anytime.');
-                }
-              } catch { showToast('Could not verify connection — please refresh the page.'); }
-            }, 2000);
-          }
-        } catch { clearInterval(check); }
-      }, 1000);
+      connectViaUploadPost('facebook');
     }
 
 
@@ -8907,6 +9025,12 @@
     let _adSelectedPlatform = 'meta';
     let _adSelectedProduct = null;
     let _adGenerating = false;
+    let _adUrlLookupBusy = false;
+    let _adUrlStatusMessage = '';
+    let _adUrlStatusError = false;
+    let _adProductSearchTimeout = null;
+    let _adProductSearchQuery = '';
+    let _adSearchProducts = null;
 
     const AD_FORMATS = [
       { id: 'feed-square', name: 'Feed Post', dims: '1080×1080', ratio: '1:1', icon: '⬜', desc: 'Square feed ad for Instagram & Facebook', platforms: ['meta', 'instagram'] },
@@ -8934,6 +9058,179 @@
       { id: 'brand-voice', label: '🎤 Brand Voice', prompt: 'Match the client brand voice exactly' },
     ];
 
+    function adEscapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function adUrlStatusHTML() {
+      if (!_adUrlStatusMessage) return '';
+      const color = _adUrlStatusError ? 'rgba(248,113,113,0.95)' : 'rgba(125,211,252,0.95)';
+      const border = _adUrlStatusError ? 'rgba(248,113,113,0.35)' : 'rgba(125,211,252,0.35)';
+      const bg = _adUrlStatusError ? 'rgba(239,68,68,0.08)' : 'rgba(14,116,144,0.14)';
+      return `<div style="margin-top:10px;padding:9px 12px;border-radius:8px;border:1px solid ${border};background:${bg};font-size:0.72rem;color:${color};font-family:var(--font-body);line-height:1.45;">${adEscapeHtml(_adUrlStatusMessage)}</div>`;
+    }
+
+    function adSelectedSummaryHTML() {
+      if (!_adSelectedProduct) return '';
+      const title = adEscapeHtml(_adSelectedProduct.title || 'Selected product');
+      const image = adEscapeHtml(_adSelectedProduct.image || '');
+      const price = adEscapeHtml(_adSelectedProduct.price || '');
+      const productUrl = adEscapeHtml(_adSelectedProduct.product_url || '');
+      const priceHtml = price ? `<div style="font-size:0.72rem;color:rgba(139,92,246,0.85);font-weight:600;">${price}</div>` : '';
+      const urlHtml = productUrl ? `<a href="${productUrl}" target="_blank" rel="noopener noreferrer" style="font-size:0.68rem;color:rgba(125,211,252,0.9);text-decoration:none;word-break:break-all;">${productUrl}</a>` : '';
+      const imageHtml = image ? `<img src="${image}" alt="${title}" style="width:52px;height:52px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.1);">` : '<div style="width:52px;height:52px;border-radius:8px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.35);font-size:1rem;">📦</div>';
+      return `
+        <div style="margin:12px 0 14px;padding:12px;border:1px solid rgba(139,92,246,0.35);background:rgba(139,92,246,0.08);border-radius:10px;display:flex;align-items:flex-start;gap:10px;">
+          ${imageHtml}
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:0.76rem;font-weight:700;color:#fff;font-family:var(--font-display);line-height:1.35;">${title}</div>
+            ${priceHtml}
+            ${urlHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function adRenderUrlStatus() {
+      const wrap = document.getElementById('ad-url-status');
+      if (!wrap) return;
+      wrap.innerHTML = adUrlStatusHTML();
+    }
+
+    function adRenderSelectedSummary() {
+      const wrap = document.getElementById('ad-selected-product-summary');
+      if (!wrap) return;
+      wrap.innerHTML = adSelectedSummaryHTML();
+    }
+
+    function adSyncSelectedProductCard() {
+      const selectedId = _adSelectedProduct ? String(_adSelectedProduct.id || '') : '';
+      document.querySelectorAll('.ad-product-pick').forEach(card => {
+        const isSelected = selectedId && String(card.dataset.productId || '') === selectedId;
+        card.style.borderColor = isSelected ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.06)';
+        card.style.background = isSelected ? 'rgba(139,92,246,0.08)' : 'rgba(255,255,255,0.02)';
+      });
+    }
+
+    function adSetSelectedProduct(product) {
+      if (!product) {
+        _adSelectedProduct = null;
+      } else {
+        let formattedPrice = String(product.price || '').trim();
+        if (formattedPrice && !formattedPrice.startsWith('$') && /^\d+(\.\d+)?$/.test(formattedPrice)) {
+          formattedPrice = '$' + Number.parseFloat(formattedPrice).toFixed(2);
+        }
+        _adSelectedProduct = {
+          id: String(product.id || ''),
+          title: product.title || 'Product',
+          image: product.primary_image || product.image || '',
+          price: formattedPrice,
+          product_url: product.product_url || '',
+        };
+      }
+      const btn = document.getElementById('ad-generate-btn');
+      if (btn) btn.disabled = !_adSelectedProduct;
+      adSyncSelectedProductCard();
+      adRenderSelectedSummary();
+    }
+
+    function adProductsForRender(products) {
+      const pool = Array.isArray(_adSearchProducts) ? _adSearchProducts : products;
+      const q = String(_adProductSearchQuery || '').trim();
+      if (!q) return pool;
+      return pool.filter(p => vcProductMatchesQuery(p, q));
+    }
+
+    window.adSearchProducts = function() {
+      clearTimeout(_adProductSearchTimeout);
+      _adProductSearchTimeout = setTimeout(async () => {
+        const input = document.getElementById('ad-product-search');
+        const query = String(input?.value || '').trim();
+        _adProductSearchQuery = query;
+
+        if (!query) {
+          _adSearchProducts = null;
+          renderAdStudio();
+          return;
+        }
+
+        try {
+          const res = await fetch(vcProductsApiUrl(1, query, ''), {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+          });
+          if (!res.ok) throw new Error('ad-search-api-error');
+          const data = await res.json();
+          _adSearchProducts = data.products || [];
+          renderAdStudio();
+        } catch (_) {
+          _adSearchProducts = null;
+          renderAdStudio();
+        }
+      }, 220);
+    };
+
+    window.adLookupProductUrl = async function() {
+      if (_adUrlLookupBusy) return;
+      const input = document.getElementById('ad-product-url');
+      const btn = document.getElementById('ad-url-lookup-btn');
+      const rawUrl = String(input?.value || '').trim();
+      if (!rawUrl) {
+        _adUrlStatusMessage = 'Paste a product URL first.';
+        _adUrlStatusError = true;
+        adRenderUrlStatus();
+        showToast('Please paste a product URL first');
+        return;
+      }
+
+      _adUrlLookupBusy = true;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+      }
+      _adUrlStatusMessage = 'Resolving product URL...';
+      _adUrlStatusError = false;
+      adRenderUrlStatus();
+
+      try {
+        const res = await fetch(`${API}/api/studio/product-from-url`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+          body: JSON.stringify({ url: rawUrl }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.success || !data?.product) {
+          _adUrlStatusMessage = data?.error || 'Could not resolve this URL into a product.';
+          _adUrlStatusError = true;
+          adRenderUrlStatus();
+          showToast(_adUrlStatusMessage);
+          return;
+        }
+
+        adSetSelectedProduct(data.product);
+        if (input && data.product.product_url) input.value = data.product.product_url;
+        _adUrlStatusMessage = `Product loaded via URL (${data.matched_by || 'catalog match'}, source: ${data.source || 'catalog'}).`;
+        _adUrlStatusError = false;
+        adRenderUrlStatus();
+        showToast('Product loaded from URL');
+      } catch (err) {
+        _adUrlStatusMessage = 'Network error while resolving product URL.';
+        _adUrlStatusError = true;
+        adRenderUrlStatus();
+        showToast('Network error while resolving URL');
+      } finally {
+        _adUrlLookupBusy = false;
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Load URL';
+        }
+      }
+    };
+
     function renderAdStudio() {
       const content = document.getElementById('dash-content');
       if (!content) return;
@@ -8945,11 +9242,16 @@
       if (typeof _vcShopifyProducts === 'undefined' || !_vcShopifyProducts.length) {
         if (!window._adProductsLoading) {
           window._adProductsLoading = true;
-          fetch(`${_adAPI}/api/studio/products?limit=100`, {
+          fetch(`${_adAPI}/api/studio/products?limit=250&page=1`, {
             headers: { 'x-client-email': _adEmail, 'x-client-hash': _adHash }
           }).then(r => r.json()).then(data => {
             _vcShopifyProducts = data.products || [];
             _vcShopifyCategories = data.categories || [];
+            _vcCatalogTotal = Number(data.total || _vcShopifyProducts.length);
+            _vcCatalogPage = Number(data.page || 1);
+            _vcCatalogPages = Number(data.pages || 1);
+            _vcCatalogSource = data.source || _vcCatalogSource || 'none';
+            _vcCatalogLoadingMore = false;
             _vcProductsLoaded = true;
             window._adProductsLoading = false;
             // Re-render Ad Studio with products
@@ -8957,8 +9259,11 @@
           }).catch(() => { window._adProductsLoading = false; });
         }
       }
-      const products = (typeof _vcShopifyProducts !== 'undefined' && _vcShopifyProducts.length) ? _vcShopifyProducts : [];
-      const hasProducts = products.length > 0;
+      const products = (Array.isArray(_vcAllShopifyProducts) && _vcAllShopifyProducts.length)
+        ? _vcAllShopifyProducts
+        : ((typeof _vcShopifyProducts !== 'undefined' && _vcShopifyProducts.length) ? _vcShopifyProducts : []);
+      const productsToRender = adProductsForRender(products);
+      const hasProducts = productsToRender.length > 0;
       content.innerHTML = `
         <div style="max-width:1100px;margin:0 auto;">
           <!-- Header -->
@@ -8985,17 +9290,25 @@
                 Select Product
               </h3>
               <p style="font-size:0.78rem;color:var(--color-text-muted);margin:0 0 16px;">Choose which product to create ads for</p>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                <div style="position:relative;flex:1;min-width:220px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input id="ad-product-search" type="text" value="${adEscapeHtml(_adProductSearchQuery)}" oninput="adSearchProducts()" placeholder="Search by color, type, season (e.g. pink lingerie, purple ravewear)" style="width:100%;padding:9px 12px 9px 32px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#fff;font-size:0.76rem;font-family:var(--font-body);outline:none;box-sizing:border-box;">
+                </div>
+                <div style="font-size:0.68rem;color:rgba(255,255,255,0.45);font-family:var(--font-body);">${productsToRender.length} shown</div>
+              </div>
               <div id="ad-product-selector" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;max-height:300px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(139,92,246,0.3) transparent;padding:2px;">
-                ${hasProducts ? products.map(p => {
+                ${hasProducts ? productsToRender.map(p => {
                   const img = p.primary_image || '';
                   const title = (p.title || 'Product').replace(/"/g, '&quot;');
                   const price = p.price && p.price !== '0.00' ? '$' + parseFloat(p.price).toFixed(2) : '';
-                  return '<div class="ad-product-pick" data-product-id="' + (p.id||'') + '" data-title="' + title + '" data-image="' + img + '" data-price="' + price + '" onclick="adSelectProduct(this)" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;cursor:pointer;overflow:hidden;transition:all 0.15s;">' +
+                  const purl = (p.product_url || '').replace(/"/g, '&quot;');
+                  return '<div class="ad-product-pick" data-product-id="' + (p.id||'') + '" data-title="' + title + '" data-image="' + img + '" data-price="' + price + '" data-product-url="' + purl + '" onclick="adSelectProduct(this)" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;cursor:pointer;overflow:hidden;transition:all 0.15s;">' +
                     (img ? '<img src="' + img + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" loading="lazy">' : '<div style="width:100%;aspect-ratio:1;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;"><span style="font-size:1.5rem;opacity:0.15;">📦</span></div>') +
                     '<div style="padding:8px;"><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-body);">' + title + '</div>' +
                     (price ? '<div style="font-size:0.65rem;color:rgba(139,92,246,0.7);font-weight:600;margin-top:2px;">' + price + '</div>' : '') +
                     '</div></div>';
-                }).join('') : '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-size:0.82rem;font-family:var(--font-body);"><div style="width:24px;height:24px;border:2px solid rgba(139,92,246,0.2);border-top-color:rgba(139,92,246,0.7);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div><p>Loading products...</p></div>'}
+                }).join('') : '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-size:0.82rem;font-family:var(--font-body);"><div style="width:24px;height:24px;border:2px solid rgba(139,92,246,0.2);border-top-color:rgba(139,92,246,0.7);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div><p>' + (_adProductSearchQuery ? 'No products matched that search.' : 'Loading products...') + '</p></div>'}
               </div>
             </div>
           </div>
@@ -9076,6 +9389,9 @@
       // Products are loaded independently at top of renderAdStudio via fetch
 
       if (typeof lucide !== 'undefined') lucide.createIcons();
+      adSyncSelectedProductCard();
+      adRenderSelectedSummary();
+      adRenderUrlStatus();
       } catch(adErr) {
         console.warn('Ad Studio render error:', adErr);
         content.innerHTML = '<div style="padding:40px;text-align:center;"><h2 style="color:#fff;font-family:var(--font-display);margin-bottom:12px;">Ad Creative Studio</h2><p style="color:rgba(255,255,255,0.4);">Something went wrong. Please refresh the page.</p></div>';
@@ -9085,20 +9401,13 @@
     let _adSelectedTone = 'brand-voice';
 
     window.adSelectProduct = function(el) {
-      document.querySelectorAll('.ad-product-pick').forEach(p => {
-        p.style.borderColor = 'rgba(255,255,255,0.06)';
-        p.style.background = 'rgba(255,255,255,0.02)';
-      });
-      el.style.borderColor = 'rgba(139,92,246,0.5)';
-      el.style.background = 'rgba(139,92,246,0.08)';
-      _adSelectedProduct = {
+      adSetSelectedProduct({
         id: el.dataset.productId,
         title: el.dataset.title,
         image: el.dataset.image,
-        price: el.dataset.price
-      };
-      const btn = document.getElementById('ad-generate-btn');
-      if (btn) btn.disabled = false;
+        price: el.dataset.price,
+        product_url: el.dataset.productUrl || ''
+      });
     };
 
     window.adSelectPlatform = function(platformId, btn) {
@@ -9502,42 +9811,232 @@
       { id: 'matilda', label: 'Matilda — Australian Female' }, { id: 'will', label: 'Will — American Male' }
     ];
 
-    let _hfRecommended = [];
-
-    // Features not yet available — coming soon to SocialEngine AI Studio
-    // Video generation is live via Marketing Studio; other features rolling out soon
-    const HF_UNAVAILABLE = new Set([
-      'cinema', 'popcorn', 'shots-9', 'transitions', 'motion-control', 'draw-to-video',
-      'whats-next', 'upscale', 'moodboard',
-      'generate-image', 'angles', 'skin-enhance', 'outfit-swap', 'virtual-tryon', 'recast',
-      'face-swap', 'lipsync', 'soul-id', 'translate', 'voice-swap', 'face-swap-video',
-      'character-clone', 'scene-director', 'brand-avatar', 'product-showcase', 'ugc-creator',
-      'ad-video', 'testimonial-creator', 'social-shorts', 'background-swap', 'style-transfer',
-      'batch-generator', 'color-grade',
-      'voiceover', 'voice-clone', 'voice-swap-audio', 'translate-audio'
-    ]);
+    let _hfRecommended = new Set();
+    let _hfAvailable = new Set();
+    let _hfImageProductSelected = null;
+    let _hfImageProducts = [];
+    let _hfImageProductSearchQuery = '';
+    let _hfImageProductSearchTimeout = null;
+    let _hfImageProductLookupBusy = false;
+    const HF_FEATURE_ID_MAP = {
+      'generate-video': ['kling-3.0-pro', 'kling-2.6-pro', 'kling-2.1-pro', 'wan-2.5', 'seedance-1-pro', 'dop-preview', 'dop-turbo', 'minimax-01', 'sora-2', 'veo-3.1'],
+      'cinema': ['cinema_studio'],
+      'popcorn': ['popcorn'],
+      'shots-9': ['shots_9'],
+      'transitions': ['transitions'],
+      'motion-control': ['motion_control'],
+      'draw-to-video': ['draw_to_video'],
+      'whats-next': ['whats_next'],
+      'upscale': ['upscale'],
+      'moodboard': ['moodboard'],
+      'generate-image': ['nano-banana-pro', 'nano-banana-2', 'soul', 'seedream-4', 'seedream-5-lite', 'reve'],
+      'angles': ['angles'],
+      'skin-enhance': ['skin_enhancer'],
+      'outfit-swap': ['outfit_swap'],
+      'virtual-tryon': ['virtual_tryon'],
+      'recast': ['recast'],
+      'face-swap': ['face_swap_image'],
+      'lipsync': ['lipsync'],
+      'soul-id': ['soul_id'],
+      'translate': ['translate'],
+      'voice-swap': ['voice_swap'],
+      'face-swap-video': ['face_swap_video'],
+      'character-clone': ['soul_id'],
+      'scene-director': ['cinema_studio'],
+      'brand-avatar': ['soul_id'],
+      'product-showcase': ['dop-preview'],
+      'ugc-creator': ['minimax-01'],
+      'ad-video': ['kling-2.1-pro'],
+      'testimonial-creator': ['lipsync'],
+      'social-shorts': ['minimax-01'],
+      'background-swap': ['recast'],
+      'style-transfer': ['draw_to_video'],
+      'batch-generator': ['shots_9'],
+      'color-grade': ['upscale'],
+      'voiceover': ['voiceover'],
+      'voice-clone': ['voice_clone'],
+      'voice-swap-audio': ['voice_swap'],
+      'translate-audio': ['translate']
+    };
     let _hfActiveCategory = 'all';
     let _hfSearchQuery = '';
+    function hfBackendIdsFor(featureId) {
+      const mapped = HF_FEATURE_ID_MAP[featureId];
+      if (mapped && mapped.length) return mapped;
+      return [featureId.replace(/-/g, '_')];
+    }
+    function hfIsFeatureRecommended(featureId) {
+      if (!_hfRecommended.size) return false;
+      return hfBackendIdsFor(featureId).some(id => _hfRecommended.has(id));
+    }
+    function hfIsFeatureAvailable(featureId) {
+      if (!_hfAvailable.size) return true;
+      return hfBackendIdsFor(featureId).some(id => _hfAvailable.has(id));
+    }
 
-    function renderAIStudio() {
+    function hfImageProductApiUrl(searchQuery = '') {
+      const params = new URLSearchParams();
+      params.set('limit', '24');
+      params.set('page', '1');
+      if (searchQuery) params.set('search', String(searchQuery).trim());
+      return `${API}/api/studio/products?${params.toString()}`;
+    }
+
+    function hfImageProductEscape(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function hfImageProductSelectionSummaryHTML() {
+      const product = _hfImageProductSelected;
+      if (!product) return '';
+      const title = hfImageProductEscape(product.title || 'Selected product');
+      const image = hfImageProductEscape(product.primary_image || '');
+      const priceRaw = String(product.price || '').trim();
+      const price = priceRaw
+        ? (priceRaw.startsWith('$') ? priceRaw : (/^\d+(\.\d+)?$/.test(priceRaw) ? `$${Number.parseFloat(priceRaw).toFixed(2)}` : priceRaw))
+        : '';
+      const url = hfImageProductEscape(product.product_url || '');
+      return `
+        <div style="margin:10px 0 14px;padding:10px;border:1px solid rgba(124,58,237,0.25);background:rgba(124,58,237,0.08);border-radius:10px;display:flex;align-items:flex-start;gap:10px;">
+          ${image ? `<img src="${image}" alt="${title}" style="width:46px;height:46px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.1);">` : '<div style="width:46px;height:46px;border-radius:8px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.35);font-size:1rem;">📦</div>'}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.76rem;font-weight:700;color:#fff;line-height:1.35;">${title}</div>
+            ${price ? `<div style="font-size:0.7rem;color:rgba(124,58,237,0.92);font-weight:600;">${hfImageProductEscape(price)}</div>` : ''}
+            ${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="font-size:0.67rem;color:rgba(125,211,252,0.9);text-decoration:none;word-break:break-all;">${url}</a>` : ''}
+          </div>
+          <button type="button" onclick="hfClearImageProductSelection()" style="padding:5px 8px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.45);font-size:0.66rem;font-weight:600;cursor:pointer;">Clear</button>
+        </div>
+      `;
+    }
+
+    function hfRenderImageProductSelectionSummary() {
+      const wrap = document.getElementById('hf-image-product-selected');
+      if (!wrap) return;
+      wrap.innerHTML = hfImageProductSelectionSummaryHTML();
+    }
+
+    function hfImageProductCardHTML(product) {
+      const id = hfImageProductEscape(product.id || '');
+      const title = hfImageProductEscape(product.title || 'Product');
+      const img = hfImageProductEscape(product.primary_image || '');
+      const type = hfImageProductEscape(product.product_type || 'Uncategorized');
+      const selected = _hfImageProductSelected && String(_hfImageProductSelected.id || '') === String(product.id || '');
+      const priceRaw = String(product.price || '').trim();
+      const price = priceRaw
+        ? (priceRaw.startsWith('$') ? priceRaw : (/^\d+(\.\d+)?$/.test(priceRaw) ? `$${Number.parseFloat(priceRaw).toFixed(2)}` : priceRaw))
+        : '';
+      return `
+        <button type="button" onclick="hfSelectImageProduct('${id}')" style="text-align:left;background:${selected ? 'rgba(124,58,237,0.14)' : 'rgba(255,255,255,0.03)'};border:1px solid ${selected ? 'rgba(124,58,237,0.38)' : 'rgba(255,255,255,0.07)'};border-radius:10px;overflow:hidden;padding:0;cursor:pointer;transition:all 0.15s;">
+          ${img ? `<img src="${img}" alt="${title}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;">` : `<div style="width:100%;aspect-ratio:1;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.3);font-size:1rem;">📦</div>`}
+          <div style="padding:8px 9px;">
+            <div style="font-size:0.67rem;font-weight:700;color:rgba(255,255,255,0.82);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:2px;">
+              <span style="font-size:0.62rem;color:rgba(255,255,255,0.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${type}</span>
+              ${price ? `<span style="font-size:0.63rem;color:rgba(124,58,237,0.9);font-weight:700;white-space:nowrap;">${hfImageProductEscape(price)}</span>` : ''}
+            </div>
+          </div>
+        </button>
+      `;
+    }
+
+    function hfRenderImageProductResults(products, source = '', total = 0) {
+      const grid = document.getElementById('hf-image-product-results');
+      const meta = document.getElementById('hf-image-product-meta');
+      if (!grid) return;
+      const list = Array.isArray(products) ? products : [];
+      if (meta) {
+        const shown = list.length;
+        const totalText = total ? `${shown} of ${total}` : `${shown}`;
+        meta.textContent = `${totalText} products${source ? ` • ${source}` : ''}`;
+      }
+      if (!list.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;padding:18px 10px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.72rem;">No products found. Try another search term (e.g. pink lingerie, ravewear, summer).</div>`;
+        return;
+      }
+      grid.innerHTML = list.map(hfImageProductCardHTML).join('');
+    }
+
+    async function hfLoadImageProducts(searchQuery = '') {
+      const grid = document.getElementById('hf-image-product-results');
+      if (!grid) return;
+      if (_hfImageProductLookupBusy) return;
+      _hfImageProductLookupBusy = true;
+      grid.innerHTML = `<div style="grid-column:1/-1;padding:18px 10px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.72rem;">Loading product catalog…</div>`;
+      try {
+        const res = await fetch(hfImageProductApiUrl(searchQuery), {
+          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+        });
+        if (!res.ok) throw new Error(`catalog-${res.status}`);
+        const data = await res.json();
+        _hfImageProducts = Array.isArray(data.products) ? data.products : [];
+        hfRenderImageProductResults(_hfImageProducts, data.source || '', Number(data.total || 0));
+      } catch (_) {
+        _hfImageProducts = [];
+        hfRenderImageProductResults([], '', 0);
+      } finally {
+        _hfImageProductLookupBusy = false;
+      }
+    }
+
+    async function hfInitImageProductSelector() {
+      _hfImageProductSelected = null;
+      _hfImageProducts = [];
+      _hfImageProductSearchQuery = '';
+      hfRenderImageProductSelectionSummary();
+      const search = document.getElementById('hf-image-product-search');
+      if (search) search.value = '';
+      await hfLoadImageProducts('');
+    }
+
+    window.hfSearchImageProducts = function() {
+      const input = document.getElementById('hf-image-product-search');
+      const query = String(input?.value || '').trim();
+      _hfImageProductSearchQuery = query;
+      clearTimeout(_hfImageProductSearchTimeout);
+      _hfImageProductSearchTimeout = setTimeout(() => {
+        hfLoadImageProducts(_hfImageProductSearchQuery);
+      }, 220);
+    };
+
+    window.hfSelectImageProduct = function(productId) {
+      const id = String(productId || '').trim();
+      if (!id) return;
+      const found = _hfImageProducts.find(p => String(p.id || '') === id);
+      if (!found) return;
+      _hfImageProductSelected = found;
+      hfRenderImageProductSelectionSummary();
+      hfRenderImageProductResults(_hfImageProducts);
+    };
+
+    window.hfClearImageProductSelection = function() {
+      _hfImageProductSelected = null;
+      hfRenderImageProductSelectionSummary();
+      hfRenderImageProductResults(_hfImageProducts);
+    };
+
+    async function renderAIStudio() {
       console.log('[SE] renderAIStudio called, activeNav:', activeNav);
       const content = document.getElementById('dash-content');
       if (!content) { console.log('[SE] dash-content not found!'); return; }
       try {
-
-      // Fetch personalized features in background
+      _hfRecommended = new Set();
+      _hfAvailable = new Set();
       if (clientEmail) {
-        fetch(`${API}/api/studio/features?email=${encodeURIComponent(clientEmail)}`, {
-          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
-        }).then(r => r.json()).then(data => {
-          _hfRecommended = data.recommended_ids || data.features?.map(f => f.id) || [];
-          // Re-render cards with recommended badges
-          document.querySelectorAll('.hf-feature-card').forEach(card => {
-            const fid = card.dataset.featureId;
-            const badge = card.querySelector('.hf-rec-badge');
-            if (badge) badge.style.display = _hfRecommended.includes(fid) ? 'inline-flex' : 'none';
+        try {
+          const resp = await fetch(`${API}/api/studio/features?clientEmail=${encodeURIComponent(clientEmail)}`, {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
           });
-        }).catch(() => {});
+          const data = await resp.json();
+          const featured = data?.features?.featured_tools || [];
+          const available = data?.features?.available_tools || [];
+          _hfRecommended = new Set(featured.map(f => f.id).filter(Boolean));
+          _hfAvailable = new Set(available.map(f => f.id).filter(Boolean));
+        } catch (_) {}
       }
 
       const allFeatures = [
@@ -9546,6 +10045,8 @@
         ...HF_CATALOG.apps,
         ...HF_CATALOG.audio
       ];
+      const matchedFeatures = allFeatures.filter(f => hfIsFeatureAvailable(f.id));
+      const matchedCount = matchedFeatures.length;
 
       content.innerHTML = `
         <div style="max-width:1200px;margin:0 auto;">
@@ -9558,15 +10059,15 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
                   </span>
                   AI Studio
-                  <span style="font-size:0.6rem;font-weight:700;padding:3px 8px;background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(139,92,246,0.15));border:1px solid rgba(124,58,237,0.25);border-radius:6px;color:#7C3AED;letter-spacing:0.04em;">38 TOOLS</span>
-                  <span style="font-size:0.55rem;font-weight:600;padding:3px 8px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.15);border-radius:6px;color:rgba(249,115,22,0.7);letter-spacing:0.04em;">VIDEO GEN ACTIVE · MORE COMING SOON</span>
+                  <span style="font-size:0.6rem;font-weight:700;padding:3px 8px;background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(139,92,246,0.15));border:1px solid rgba(124,58,237,0.25);border-radius:6px;color:#7C3AED;letter-spacing:0.04em;">${matchedCount} MATCHED TOOLS</span>
+                  <span style="font-size:0.55rem;font-weight:600;padding:3px 8px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.15);border-radius:6px;color:rgba(249,115,22,0.7);letter-spacing:0.04em;">BRAND-DNA MATCHED ACCESS</span>
                 </h2>
-                <p style="font-size:0.875rem;color:var(--color-text-muted);margin:0;">SocialEngine AI — 4 video generation models active now. Image, audio, and advanced features rolling out soon.</p>
+                <p style="font-size:0.875rem;color:var(--color-text-muted);margin:0;">SocialEngine AI studio tools are now shown from your live Brand DNA matching profile.</p>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span style="font-size:0.75rem;color:rgba(124,58,237,0.7);background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.12);border-radius:8px;padding:5px 12px;font-weight:600;display:flex;align-items:center;gap:5px;">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="#7C3AED"><circle cx="12" cy="12" r="12"/></svg>
-                  SocialEngine AI (Video Models Active)
+                  SocialEngine AI (Personalized by Brand DNA)
                 </span>
               </div>
             </div>
@@ -9605,7 +10106,7 @@
 
           <!-- Feature Cards Grid -->
           <div id="hf-features-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
-            ${allFeatures.map(f => hfRenderFeatureCard(f)).join('')}
+            ${matchedFeatures.map(f => hfRenderFeatureCard(f)).join('')}
           </div>
 
           <!-- Empty state -->
@@ -9680,10 +10181,9 @@
     }
 
     function hfRenderFeatureCard(f) {
-      const isRec = _hfRecommended.includes(f.id);
+      const isRec = hfIsFeatureRecommended(f.id);
       return `
-        <div class="hf-feature-card dash-card" data-feature-id="${f.id}" data-category="${f.category}" data-label="${f.label.toLowerCase()}" style="padding:20px;border-radius:14px;position:relative;overflow:hidden;transition:all 0.2s;${HF_UNAVAILABLE.has(f.id) ? 'opacity:0.28;filter:grayscale(1) brightness(0.6);cursor:not-allowed;pointer-events:none;' : 'cursor:pointer;'}">
-          ${HF_UNAVAILABLE.has(f.id) ? '<div style="position:absolute;top:10px;right:10px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:0.55rem;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:0.06em;text-transform:uppercase;z-index:2;">COMING SOON</div>' : ''}
+        <div class="hf-feature-card dash-card" data-feature-id="${f.id}" data-category="${f.category}" data-label="${f.label.toLowerCase()}" style="padding:20px;border-radius:14px;position:relative;overflow:hidden;transition:all 0.2s;cursor:pointer;">
           <!-- Subtle top gradient bar -->
           <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,${f.badgeColor.replace('0.9','0.3')},transparent);"></div>
 
@@ -9705,8 +10205,8 @@
 
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <span style="font-size:0.6rem;font-weight:700;padding:3px 8px;background:${f.badgeBg};border:1px solid ${f.badgeColor.replace('0.9','0.25')};border-radius:6px;color:${f.badgeColor};letter-spacing:0.05em;">${f.badge}</span>
-            <button onclick="${HF_UNAVAILABLE.has(f.id) ? 'showToast(\'This feature is coming soon — currently in development\')' : 'hfOpenModal(\'' + f.id + '\')'}" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:${HF_UNAVAILABLE.has(f.id) ? 'rgba(255,255,255,0.03)' : 'rgba(124,58,237,0.1)'};border:1px solid ${HF_UNAVAILABLE.has(f.id) ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.2)'};border-radius:8px;color:${HF_UNAVAILABLE.has(f.id) ? 'rgba(255,255,255,0.3)' : '#7C3AED'};font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:all 0.15s;">
-              ${HF_UNAVAILABLE.has(f.id) ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Locked' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Use'}
+            <button onclick="hfOpenModal('${f.id}')" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);border-radius:8px;color:#7C3AED;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:all 0.15s;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Use
             </button>
           </div>
         </div>
@@ -9764,6 +10264,9 @@
       const inner = document.getElementById('hf-modal-inner');
       if (!modal || !inner) return;
       inner.innerHTML = hfBuildModalForm(feature);
+      if (feature.formType === 'image-gen') {
+        setTimeout(() => { hfInitImageProductSelector(); }, 0);
+      }
       backdrop.style.display = 'block';
       modal.style.display = 'block';
       // Re-init lucide icons in modal
@@ -9851,6 +10354,16 @@
               <option value="product">Product Photography</option>
               <option value="editorial">Editorial</option>
             </select>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em;">Shopify Product (optional)</label>
+            <div style="position:relative;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="hf-image-product-search" type="text" oninput="hfSearchImageProducts()" placeholder="Search products by color, type, season (e.g. pink lingerie)" style="width:100%;padding:9px 11px 9px 31px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#fff;font-size:0.78rem;font-family:var(--font-body);outline:none;box-sizing:border-box;">
+            </div>
+            <div id="hf-image-product-meta" style="font-size:0.66rem;color:rgba(255,255,255,0.35);margin-top:6px;"></div>
+            <div id="hf-image-product-selected"></div>
+            <div id="hf-image-product-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;max-height:220px;overflow-y:auto;padding:2px;border-radius:10px;"></div>
           </div>` + aspectRatio('hf-ratio');
       } else if (ft === 'face-swap') {
         formHTML = imageUpload('hf-source-img', 'Source (Face to Use)') + imageUpload('hf-target-img', 'Target (Image or Video)');
@@ -9998,30 +10511,71 @@
       }, 1200);
 
       try {
-        // Build FormData
-        const fd = new FormData();
-        fd.append('email', clientEmail || '');
+        const prompt = (document.getElementById('hf-prompt')?.value || '').trim();
+        const text = (document.getElementById('hf-text-input')?.value || '').trim();
+        const ratio = (document.getElementById('hf-ratio')?.value || '').trim();
+        const voice = (document.getElementById('hf-voice-select')?.value || '').trim();
+        const lang = (document.getElementById('hf-lang-select')?.value || '').trim();
+        const model = (document.getElementById('hf-model-select')?.value || '').trim();
+        const style = (document.getElementById('hf-style-select')?.value || '').trim();
+        const charName = (document.getElementById('hf-char-name')?.value || '').trim();
 
-        // Collect file inputs
-        const fileInputs = document.querySelectorAll('#hf-modal input[type=file]');
-        fileInputs.forEach(inp => {
-          if (inp.files && inp.files[0]) fd.append(inp.id.replace('hf-', ''), inp.files[0]);
-        });
-        // Collect text inputs
-        const prompt = document.getElementById('hf-prompt')?.value; if (prompt) fd.append('prompt', prompt);
-        const text = document.getElementById('hf-text-input')?.value; if (text) fd.append('text', text);
-        const ratio = document.getElementById('hf-ratio')?.value; if (ratio) fd.append('aspect_ratio', ratio);
-        const voice = document.getElementById('hf-voice-select')?.value; if (voice) fd.append('voice_id', voice);
-        const lang = document.getElementById('hf-lang-select')?.value; if (lang) fd.append('target_language', lang);
-        const model = document.getElementById('hf-model-select')?.value; if (model) fd.append('model', model);
-        const style = document.getElementById('hf-style-select')?.value; if (style) fd.append('style', style);
-        const charName = document.getElementById('hf-char-name')?.value; if (charName) fd.append('character_name', charName);
+        const selectedProduct = _hfImageProductSelected && String(_hfImageProductSelected.id || '').trim()
+          ? _hfImageProductSelected
+          : null;
+        const fallbackPrompt = selectedProduct
+          ? `Create a premium product image for ${selectedProduct.title}. Keep the exact product identity, colors, and materials intact.`
+          : '';
 
-        const resp = await fetch(`${API}/api/studio/${endpoint}`, {
-          method: 'POST',
-          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
-          body: fd
-        });
+        let resp;
+        if (endpoint === 'generate-image') {
+          const payload = {
+            prompt: prompt || fallbackPrompt,
+            aspect_ratio: ratio || '1:1',
+            model: model || 'nano-banana-pro',
+            style
+          };
+          if (selectedProduct) {
+            payload.productId = selectedProduct.id;
+            payload.productTitle = selectedProduct.title;
+            payload.productImageUrl = selectedProduct.primary_image || '';
+          }
+          resp = await fetch(`${API}/api/studio/${endpoint}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-client-email': clientEmail,
+              'x-client-hash': clientHash
+            },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          // Build FormData for endpoints that require file uploads
+          const fd = new FormData();
+          fd.append('email', clientEmail || '');
+
+          // Collect file inputs
+          const fileInputs = document.querySelectorAll('#hf-modal input[type=file]');
+          fileInputs.forEach(inp => {
+            if (inp.files && inp.files[0]) fd.append(inp.id.replace('hf-', ''), inp.files[0]);
+          });
+
+          // Collect text inputs
+          if (prompt) fd.append('prompt', prompt);
+          if (text) fd.append('text', text);
+          if (ratio) fd.append('aspect_ratio', ratio);
+          if (voice) fd.append('voice_id', voice);
+          if (lang) fd.append('target_language', lang);
+          if (model) fd.append('model', model);
+          if (style) fd.append('style', style);
+          if (charName) fd.append('character_name', charName);
+
+          resp = await fetch(`${API}/api/studio/${endpoint}`, {
+            method: 'POST',
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+            body: fd
+          });
+        }
 
         clearInterval(progInterval);
         if (bar) bar.style.width = '100%';
