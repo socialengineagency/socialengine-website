@@ -5712,6 +5712,17 @@
       const isTTConnected = socialSet.has('tiktok') || !!(c.tiktok_access_token && c.tiktok_access_token !== '');
       const isFBConnected = socialSet.has('facebook') || !!(c.meta_page_id && c.meta_page_token && c.facebook_connected === 'true');
 
+      const upAccounts = (data.upload_post_connection && Array.isArray(data.upload_post_connection.accounts))
+        ? data.upload_post_connection.accounts
+        : [];
+      const _handleFor = (platform) => {
+        const match = upAccounts.find(a => String(a?.platform || '').toLowerCase() === platform);
+        return match && match.name ? String(match.name) : '';
+      };
+      const igHandle = _handleFor('instagram') || c.instagram_handle || '';
+      const ttHandle = _handleFor('tiktok') || c.tiktok_display_name || '';
+      const fbHandle = _handleFor('facebook') || c.meta_page_name || '';
+
       const tierName = c.tier || 'Pro';
       const tierPrice = tierName === 'Annual' ? '$247' : '$297';
       content.innerHTML = `
@@ -5955,7 +5966,7 @@
                 ${isIGConnected ? `
                   <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;margin-bottom:10px;">
                     <span style="width:6px;height:6px;border-radius:50%;background:#7C3AED;box-shadow:0 0 5px #7C3AED;"></span>
-                    Connected as @${c.instagram_handle || 'your account'}
+                    ${igHandle ? `Connected as @${igHandle}` : 'Connected'}
                   </div>
                   <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">Instagram is connected. SocialEngine can schedule content directly to your feed and read profile analytics.</p>
                 ` : `
@@ -5994,7 +6005,7 @@
                 ${isTTConnected ? `
                   <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;margin-bottom:10px;">
                     <span style="width:6px;height:6px;border-radius:50%;background:#7C3AED;"></span>
-                    Connected${c.tiktok_display_name ? ` as @${c.tiktok_display_name}` : ''}
+                    ${ttHandle ? `Connected as @${ttHandle}` : 'Connected'}
                   </div>
                   <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">TikTok is connected. SocialEngine can publish videos directly to your TikTok account.</p>
                 ` : `
@@ -6032,7 +6043,7 @@
                 ${isFBConnected ? `
                   <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;margin-bottom:10px;">
                     <span style="width:6px;height:6px;border-radius:50%;background:#7C3AED;"></span>
-                    Connected${c.meta_page_name ? ` — ${c.meta_page_name}` : ''}
+                    ${fbHandle ? `Connected — ${fbHandle}` : 'Connected'}
                   </div>
                   <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">Facebook is connected. SocialEngine can publish content directly to your Facebook Page.</p>
                 ` : `
