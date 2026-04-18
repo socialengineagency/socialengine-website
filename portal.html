@@ -8865,6 +8865,7 @@
   window.connectInstagramOAuth = connectInstagramOAuth;
   window.connectTikTokOAuth = connectTikTokOAuth;
   window.connectFacebookOAuth = connectFacebookOAuth;
+  window.connectSocialsViaUploadPost = connectViaUploadPost;
   window.showCancelGuide = showCancelGuide;
   window.hfSetCategory = hfSetCategory;
   window.hfOpenModal = hfOpenModal;
@@ -8881,100 +8882,81 @@
   window.renderAdStudio = renderAdStudio;
 
     // ━━━ Direct OAuth Connect Functions ━━━
-    function connectInstagramOAuth() {
-      if (!clientEmail) { showToast('Please log in first.'); return; }
-      const w = 600, h = 700;
+    async function connectViaUploadPost(platformLabel) {
+      if (!clientEmail || !clientHash) { showToast('Please log in first.'); return; }
+      const w = 760, h = 780;
       const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-      const authUrl = `${API}/api/auth/instagram?client_email=${encodeURIComponent(clientEmail)}&client_hash=${encodeURIComponent(clientHash || '')}`;
-      let popup;
-      try { popup = window.open(authUrl, 'instagram_oauth', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`); }
-      catch(e) { showToast('Could not open popup — please allow popups for this site.'); return; }
-      if (!popup) { showToast('Popup blocked — please allow popups and try again.'); return; }
-      showToast('Connecting to Instagram — complete the login in the popup window.');
-      const check = setInterval(() => {
+      try {
+        showToast(`Generating secure ${platformLabel} connection link...`);
+        const r = await fetch(`${API}/api/social-connect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientEmail,
+            clientHash,
+            platforms: ['instagram', 'facebook', 'tiktok']
+          })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data?.success || !data?.connect_url) {
+          throw new Error(data?.error || 'Could not generate social connection link');
+        }
+        let popup;
         try {
-          if (popup?.closed) {
-            clearInterval(check);
-            showToast('Checking connection status...');
-            setTimeout(async () => {
-              try {
-                const r = await fetch(`${API}/api/client-data`, { headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash } });
-                const data = await r.json();
-                if (data?.client?.instagram_user_id) {
-                  showToast('Instagram connected successfully!');
-                  setTimeout(() => location.reload(), 1000);
-                } else {
-                  showToast('Instagram connection was not completed. You can try again anytime.');
+          popup = window.open(data.connect_url, 'uploadpost_connect', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`);
+        } catch (e) {
+          showToast('Could not open popup — please allow popups for this site.');
+          return;
+        }
+        if (!popup) {
+          showToast('Popup blocked — please allow popups and try again.');
+          return;
+        }
+        showToast(`Connect ${platformLabel} in the popup, then close it.`);
+        const check = setInterval(() => {
+          try {
+            if (popup?.closed) {
+              clearInterval(check);
+              showToast('Checking social connection status...');
+              setTimeout(async () => {
+                try {
+                  const sr = await fetch(`${API}/api/social-accounts`, {
+                    headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+                  });
+                  const sdata = await sr.json().catch(() => ({}));
+                  const accounts = Array.isArray(sdata?.accounts) ? sdata.accounts : [];
+                  const hasTarget = accounts.some(acc => {
+                    const p = String(acc?.platform || '').toLowerCase();
+                    return p.includes(platformLabel.toLowerCase());
+                  });
+                  if (hasTarget || accounts.length > 0) {
+                    showToast(`${platformLabel} connected successfully!`);
+                    setTimeout(() => location.reload(), 900);
+                  } else {
+                    showToast(`${platformLabel} connection not detected yet. Please reopen and complete login.`);
+                  }
+                } catch {
+                  showToast('Could not verify social connection — please refresh.');
                 }
-              } catch { showToast('Could not verify connection — please refresh the page.'); }
-            }, 2000);
-          }
-        } catch { clearInterval(check); }
-      }, 1000);
+              }, 2200);
+            }
+          } catch { clearInterval(check); }
+        }, 900);
+      } catch (err) {
+        showToast(err.message || `Could not start ${platformLabel} connection`);
+      }
+    }
+
+    function connectInstagramOAuth() {
+      connectViaUploadPost('instagram');
     }
 
     function connectTikTokOAuth() {
-      if (!clientEmail) { showToast('Please log in first.'); return; }
-      const w = 600, h = 700;
-      const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-      const authUrl = `${API}/api/auth/tiktok?client_email=${encodeURIComponent(clientEmail)}&client_hash=${encodeURIComponent(clientHash || '')}`;
-      let popup;
-      try { popup = window.open(authUrl, 'tiktok_oauth', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`); }
-      catch(e) { showToast('Could not open popup — please allow popups for this site.'); return; }
-      if (!popup) { showToast('Popup blocked — please allow popups and try again.'); return; }
-      showToast('Connecting to TikTok — complete the login in the popup window.');
-      const check = setInterval(() => {
-        try {
-          if (popup?.closed) {
-            clearInterval(check);
-            showToast('Checking connection status...');
-            setTimeout(async () => {
-              try {
-                const r = await fetch(`${API}/api/client-data`, { headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash } });
-                const data = await r.json();
-                if (data?.client?.tiktok_access_token) {
-                  showToast('TikTok connected successfully!');
-                  setTimeout(() => location.reload(), 1000);
-                } else {
-                  showToast('TikTok connection was not completed. You can try again anytime.');
-                }
-              } catch { showToast('Could not verify connection — please refresh the page.'); }
-            }, 2000);
-          }
-        } catch { clearInterval(check); }
-      }, 1000);
+      connectViaUploadPost('tiktok');
     }
 
     function connectFacebookOAuth() {
-      if (!clientEmail) { showToast('Please log in first.'); return; }
-      const w = 600, h = 700;
-      const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-      const authUrl = `${API}/api/auth/facebook?client_email=${encodeURIComponent(clientEmail)}&client_hash=${encodeURIComponent(clientHash || '')}`;
-      let popup;
-      try { popup = window.open(authUrl, 'facebook_oauth', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`); }
-      catch(e) { showToast('Could not open popup — please allow popups for this site.'); return; }
-      if (!popup) { showToast('Popup blocked — please allow popups and try again.'); return; }
-      showToast('Connecting to Facebook — complete the login in the popup window.');
-      const check = setInterval(() => {
-        try {
-          if (popup?.closed) {
-            clearInterval(check);
-            showToast('Checking connection status...');
-            setTimeout(async () => {
-              try {
-                const r = await fetch(`${API}/api/client-data`, { headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash } });
-                const data = await r.json();
-                if (data?.client?.meta_page_id) {
-                  showToast('Facebook connected successfully!');
-                  setTimeout(() => location.reload(), 1000);
-                } else {
-                  showToast('Facebook connection was not completed. You can try again anytime.');
-                }
-              } catch { showToast('Could not verify connection — please refresh the page.'); }
-            }, 2000);
-          }
-        } catch { clearInterval(check); }
-      }, 1000);
+      connectViaUploadPost('facebook');
     }
 
 
