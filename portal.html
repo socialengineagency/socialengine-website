@@ -3012,6 +3012,7 @@
     // ━━━ Logout ━━━
     document.getElementById('dash-logout')?.addEventListener('click', () => {
       stopTierPolling();
+      stopInboxPolling();
       clientEmail = ''; clientHash = ''; clientData = null;
       document.getElementById('portal-login-view').classList.remove('hidden');
       document.getElementById('dashboard-view').classList.remove('active');
@@ -3887,6 +3888,7 @@
     // ━━━ Tier Upgrade Polling (30s) ━━━
     // Silently re-fetches client data; if tier flips Free→paid, re-renders current page instantly
     let tierPollInterval = null;
+    let inboxPollInterval = null;
     function startTierPolling() {
       if (tierPollInterval) return;
       tierPollInterval = setInterval(async () => {
@@ -3916,6 +3918,9 @@
     }
     function stopTierPolling() {
       if (tierPollInterval) { clearInterval(tierPollInterval); tierPollInterval = null; }
+    }
+    function stopInboxPolling() {
+      if (inboxPollInterval) { clearInterval(inboxPollInterval); inboxPollInterval = null; }
     }
 
     // ━━━ Page-aware greeting ━━━
@@ -3977,6 +3982,7 @@
         const nav = item.dataset.nav;
         activeNav = nav;
         _navGeneration++;
+        stopInboxPolling();
         updateBreadcrumb(nav);
         updateGreetingForPage(nav);
         // Scroll to top of content area on nav
@@ -5959,6 +5965,7 @@
                   </div>
                   <p style="font-size:0.78rem;color:var(--color-text-faint);line-height:1.5;margin:0;">You'll be redirected to Shopify to authorize access. We only request read permissions — we never modify your store.</p>
                 `}
+                ${c.shopify_app_url ? `<p style="font-size:0.78rem;color:var(--color-text-muted);margin:14px 0 0;line-height:1.5;">Optional: install the <a href="${c.shopify_app_url}" target="_blank" rel="noopener noreferrer" style="color:#A78BFA;font-weight:600;">Shopify app</a> for embedded admin (set <code style="font-size:0.72rem;">SHOPIFY_APP_URL</code> in Railway if this link is wrong).</p>` : ''}
               </div>
             </div>
           </div>
@@ -6622,7 +6629,12 @@
       const content = document.getElementById('dash-content');
       const c = clientData?.client || {};
       const bv = clientData?.brand_voice || {};
-      const isConnected = !!(c.instagram_token || c.facebook_token);
+      const plats = Array.isArray(c.social_connected_platforms)
+        ? c.social_connected_platforms.map(p => String(p || '').trim().toLowerCase())
+        : String(c.social_connected_platforms || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      const upSnap = clientData?.upload_post_connection;
+      const upIg = plats.includes('instagram') || (Array.isArray(upSnap?.accounts) && upSnap.accounts.some(a => String(a.platform || '').toLowerCase() === 'instagram'));
+      const isConnected = !!(c.instagram_token || c.facebook_token || upIg);
 
       // Preview tier gate for Inbox
       if (isPreview()) {
@@ -6771,6 +6783,12 @@
           }
 
           renderInboxItems(data);
+          if (!inboxPollInterval && data.connected) {
+            inboxPollInterval = setInterval(() => {
+              if (activeNav !== 'inbox' || !clientEmail || !clientHash) return;
+              loadInboxData().catch(() => {});
+            }, 120000);
+          }
         } catch (e) {
           renderInboxConnect();
         }
@@ -6799,12 +6817,22 @@
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
             </div>
             <h3 style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:#fff;margin:0 0 8px;">Connect Your Social Accounts</h3>
-            <p style="font-size:0.875rem;color:var(--color-text-muted);max-width:480px;margin:0 auto 12px;line-height:1.6;">Link your Instagram Business account to pull in DMs, comments, and mentions. SocialEngine generates brand-voice replies for every message — you just hit send.</p>
+                <p style="font-size:0.875rem;color:var(--color-text-muted);max-width:480px;margin:0 auto 12px;line-height:1.6;">Link your Instagram Business account to pull in DMs, comments, and mentions. SocialEngine generates brand-voice replies for every message — you just hit send.</p>
             <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px;">
               <button onclick="connectInstagramOAuth()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.875rem;cursor:pointer;font-family:var(--font-body);box-shadow:0 4px 20px rgba(225,48,108,0.25);transition:all 0.15s;" onmouseenter="this.style.transform='translateY(-1px)'" onmouseleave="this.style.transform=''">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                 Connect Instagram
               </button>
+              ${(() => {
+                const cc = clientData?.client || {};
+                const plats = Array.isArray(cc.social_connected_platforms)
+                  ? cc.social_connected_platforms.map(p => String(p || '').trim().toLowerCase())
+                  : String(cc.social_connected_platforms || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                const upSnap = clientData?.upload_post_connection;
+                const upIg = plats.includes('instagram') || (Array.isArray(upSnap?.accounts) && upSnap.accounts.some(a => String(a.platform || '').toLowerCase() === 'instagram'));
+                if (!upIg) return '';
+                return `<button type="button" onclick="connectViaUploadPost('instagram')" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(124,58,237,0.12);color:#E9D5FF;border:1px solid rgba(124,58,237,0.35);border-radius:10px;font-weight:700;font-size:0.875rem;cursor:pointer;font-family:var(--font-body);">Refresh inbox connection</button>`;
+              })()}
               <button onclick="connectTikTokOAuth()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-weight:600;font-size:0.875rem;cursor:pointer;font-family:var(--font-body);transition:all 0.15s;" onmouseenter="this.style.borderColor='rgba(105,201,208,0.4)'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.1)'">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#69C9D0" stroke-width="2" stroke-linecap="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
                 Connect TikTok
@@ -6840,6 +6868,8 @@
               <div style="font-family:var(--font-display);font-size:1.75rem;font-weight:800;color:#7C3AED;letter-spacing:-0.02em;"><2m</div>
             </div>
           </div>
+
+          ${data.source === 'upload-post' ? `<div style="margin-bottom:16px;padding:12px 14px;border-radius:10px;border:1px solid rgba(124,58,237,0.2);background:rgba(124,58,237,0.06);font-size:0.78rem;color:rgba(226,232,240,0.85);line-height:1.5;">Inbox is synced via your <strong style="color:#E9D5FF;">Upload-Post</strong> Instagram connection (same as publishing). Replies use Upload-Post when Meta tokens are not stored on this account.</div>` : ''}
 
           <!-- Filter tabs -->
           <div style="display:flex;gap:4px;margin-bottom:16px;padding:3px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);width:fit-content;">
@@ -7046,7 +7076,7 @@
               const res = await fetch(`${API}/api/inbox/reply`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
-                body: JSON.stringify({ itemId: item.id, itemType: item.type, reply })
+                body: JSON.stringify({ itemId: item.id, itemType: item.type, reply, recipient_id: item.recipient_id || '' })
               });
               const result = await res.json();
               if (result.success) {
