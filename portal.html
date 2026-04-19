@@ -3225,13 +3225,11 @@
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);">
-          <div class="dash-card upgrade-gate">
-            <div class="dash-card__header"><h3 class="dash-card__title">Analytics</h3></div>
-            <div style="padding:var(--space-8);text-align:center;color:var(--color-text-muted);font-size:var(--text-sm);">
-              <i data-lucide="bar-chart-3" style="width:32px;height:32px;margin-bottom:var(--space-3);opacity:0.4;"></i>
-              <p>Analytics data populates after your first week of published content.</p>
+          <div class="dash-card" id="attributed-revenue-card">
+            <div class="dash-card__header"><h3 class="dash-card__title">Attributed Revenue</h3></div>
+            <div style="padding:var(--space-5) var(--space-6);" id="attributed-revenue-body">
+              <div style="display:flex;align-items:center;gap:8px;color:var(--color-text-muted);font-size:var(--text-sm);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Loading...</div>
             </div>
-            ${!isPaid() ? upgradeGateHTML('Analytics Dashboard', 'Track engagement rates, follower growth, best-performing content, and revenue attribution — all in real time.') : ''}
           </div>
           <div class="dash-card" id="ai-intelligence-card">
             <div class="dash-card__header"><h3 class="dash-card__title">AI Intelligence</h3></div>
@@ -3242,9 +3240,39 @@
         </div>
       `;
       setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
-      // Fetch and render AI Intelligence widget asynchronously
+      // Fetch and render widgets asynchronously
       loadAIIntelligenceWidget();
+      loadAttributedRevenueWidget();
     }
+
+    async function loadAttributedRevenueWidget() {
+      const el = document.getElementById('attributed-revenue-body');
+      if (!el) return;
+      try {
+        const res = await apiFetch('/api/attribution-summary?days=30');
+        const d = await res.json();
+        if (!d || !d.success) throw new Error('Attribution load failed');
+        const revenue = Number(d.total_attributed_revenue || 0);
+        const orders  = Number(d.total_attributed_orders || 0);
+        const usd = revenue.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+        const sourceLabel = d.source === 'shopify_private' ? 'Shopify orders' : 'Pending Shopify connect';
+        const topByPost = (d.by_post || []).slice().sort((a,b) => (b.revenue||0) - (a.revenue||0)).slice(0, 3);
+        const topRowsHtml = topByPost.length
+          ? topByPost.map(p => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,0.05);font-size:0.78rem;"><span style="color:rgba(255,255,255,0.7);">${escapeHtml(p.platform || 'post')} · ${escapeHtml(p.template || 'template')}</span><span style="color:#7C3AED;font-weight:700;">${Number(p.revenue||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}</span></div>`).join('')
+          : '<div style="font-size:0.72rem;color:rgba(148,163,184,0.55);margin-top:8px;">Attribution fills in as orders arrive with UTM links from SocialEngine posts.</div>';
+        el.innerHTML = `
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <span style="font-family:var(--font-display);font-size:1.9rem;font-weight:800;color:#fff;">${usd}</span>
+            <span style="font-size:0.72rem;color:rgba(148,163,184,0.55);">last 30d</span>
+          </div>
+          <div style="font-size:0.72rem;color:rgba(148,163,184,0.55);margin-top:4px;">${orders} order${orders===1?'':'s'} · ${sourceLabel}</div>
+          <div style="margin-top:12px;">${topRowsHtml}</div>
+        `;
+      } catch (e) {
+        el.innerHTML = '<div style="font-size:0.72rem;color:rgba(148,163,184,0.55);">Attribution data will populate once Shopify is connected and SocialEngine posts have been published.</div>';
+      }
+    }
+    function escapeHtml(s){ const d=document.createElement('div'); d.textContent=String(s||''); return d.innerHTML; }
 
     async function loadAIIntelligenceWidget() {
       const el = document.getElementById('ai-intelligence-body');
