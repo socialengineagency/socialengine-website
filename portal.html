@@ -2345,16 +2345,16 @@
           SocialEngine
         </a>
         <nav class="dash-sidebar__nav" aria-label="Dashboard navigation">
-          <button class="dash-nav-item active" data-nav="dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</button>
-          <button class="dash-nav-item" data-nav="content"><i data-lucide="clapperboard"></i> Content Studio</button>
-          <button class="dash-nav-item" data-nav="analytics"><i data-lucide="bar-chart-3"></i> Analytics</button>
-          <button class="dash-nav-item" data-nav="inbox"><i data-lucide="inbox"></i> Engagement Inbox</button>
-          <button class="dash-nav-item" data-nav="brand-voice"><i data-lucide="message-square"></i> Brand Voice</button>
-          <button class="dash-nav-item" data-nav="ai-coach"><i data-lucide="sparkles"></i> AI Coach</button>
-          <button class="dash-nav-item" data-nav="competitor-intel"><i data-lucide="search"></i> Competitor Intel</button>
-          <button class="dash-nav-item" data-nav="video-studio"><i data-lucide="video"></i> Marketing Studio</button>
-          <button class="dash-nav-item" data-nav="ad-studio"><i data-lucide="megaphone"></i> Ad Studio</button>
-          <button class="dash-nav-item" data-nav="ai-studio"><i data-lucide="cpu"></i> AI Studio</button>
+          <button class="dash-nav-item active" data-nav="dashboard"><i data-lucide="layout-dashboard"></i> Home</button>
+          <button class="dash-nav-item" data-nav="content"><i data-lucide="clapperboard"></i> Content</button>
+          <button class="dash-nav-item" data-nav="video-studio"><i data-lucide="video"></i> Create</button>
+          <button class="dash-nav-item" data-nav="ad-studio"><i data-lucide="megaphone"></i> Ads</button>
+          <button class="dash-nav-item" data-nav="ai-studio"><i data-lucide="cpu"></i> AI Tools</button>
+          <button class="dash-nav-item" data-nav="inbox"><i data-lucide="inbox"></i> Engage</button>
+          <button class="dash-nav-item" data-nav="analytics"><i data-lucide="bar-chart-3"></i> Grow</button>
+          <button class="dash-nav-item" data-nav="competitor-intel"><i data-lucide="search"></i> Intel</button>
+          <button class="dash-nav-item" data-nav="ai-coach"><i data-lucide="sparkles"></i> Coach</button>
+          <button class="dash-nav-item" data-nav="brand-voice"><i data-lucide="message-square"></i> Brand</button>
           <button class="dash-nav-item" data-nav="settings"><i data-lucide="settings"></i> Settings</button>
         </nav>
         <!-- Fix 5: Credits display -->
@@ -3972,16 +3972,16 @@
 
     // ━━━ Sidebar Nav ━━━
     const NAV_LABELS = {
-      'dashboard': 'Dashboard',
-      'content': 'Content Studio',
-      'analytics': 'Analytics',
-      'brand-voice': 'Brand Voice',
-      'ai-coach': 'AI Coach',
-      'competitor-intel': 'Competitor Intel',
-      'video-studio': 'Marketing Studio',
-      'inbox': 'Engagement Inbox',
-      'ad-studio': 'Ad Studio',
-      'ai-studio': 'AI Studio',
+      'dashboard': 'Home',
+      'content': 'Content',
+      'analytics': 'Grow',
+      'brand-voice': 'Brand',
+      'ai-coach': 'Coach',
+      'competitor-intel': 'Intel',
+      'video-studio': 'Create',
+      'inbox': 'Engage',
+      'ad-studio': 'Ads',
+      'ai-studio': 'AI Tools',
       'settings': 'Settings'
     };
     function updateBreadcrumb(nav) {
@@ -7862,12 +7862,12 @@
                 <span class="vc-adv-label" style="display:block;margin-bottom:6px;">Scene Description</span>
                 <input type="text" id="vc-scene-desc" placeholder="e.g. Golden hour rooftop, neon city lights, foggy warehouse..." style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#fff;font-size:0.75rem;font-family:var(--font-body,'Satoshi',sans-serif);outline:none;box-sizing:border-box;transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(139,92,246,0.45)'" onblur="this.style.borderColor='rgba(255,255,255,0.08)'">
                 <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
-                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Golden hour rooftop with city skyline')">🌆 Rooftop</button>
-                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Neon-lit downtown street at night')">🌃 Neon Night</button>
-                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Coachella festival crowd, golden dust')">🎪 Festival</button>
-                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Clean white studio, soft diffused lighting')">📸 Studio</button>
-                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Tropical beach sunset, warm tones')">🏖️ Beach</button>
-                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Dark moody club, purple neon glow')">🪩 Club</button>
+                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Golden hour rooftop with city skyline')">Rooftop</button>
+                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Neon-lit downtown street at night')">Neon Night</button>
+                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Coachella festival crowd, golden dust')">Festival</button>
+                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Clean white studio, soft diffused lighting')">Studio</button>
+                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Tropical beach sunset, warm tones')">Beach</button>
+                  <button class="vc-adv-pill" style="font-size:0.62rem;padding:3px 8px;" onclick="setScenePreset('Dark moody club, purple neon glow')">Club</button>
                 </div>
               </div>
             </div>
@@ -7915,40 +7915,40 @@
     `;
     document.body.appendChild(videoModal);
 
-    // ━━━ VIBES — The heart of the foolproof UX ━━━
+    // ━━━ VIBES — premium icon set (lucide SVG, no emoji) ━━━
     const VIDEO_VIBES = [
-      { id:'spotlight_reveal', icon:'💎', name:'Spotlight Reveal', desc:'Dramatic product reveal with cinematic lighting — luxury feel', badges:['Premium','High-Convert'] },
-      { id:'street_editorial', icon:'✨', name:'Street Editorial', desc:'Magazine-quality look, model walking in real-world setting', badges:['Brand-Matched','Cinematic'] },
-      { id:'creator_authentic', icon:'📱', name:'Creator Authentic', desc:'UGC-style casual handheld energy that feels real', badges:['Trending','Trust'] },
-      { id:'first_look', icon:'📦', name:'First Look Unbox', desc:'Unboxing reveal, packaging close-up, first impression', badges:['Engagement','Hook'] },
-      { id:'day_in_life', icon:'🌿', name:'Day in the Life', desc:'Natural lifestyle setting, the product in real moments', badges:['Relatable','Warm'] },
-      { id:'slow_luxe', icon:'🎬', name:'Slow Luxe', desc:'Slow-motion luxury shots, fabric textures, dramatic angles', badges:['Premium','Stunning'] },
-      { id:'get_ready', icon:'💄', name:'Get Ready With Me', desc:'GRWM morning routine — casual, fun, trending format', badges:['Viral','Engaging'] },
-      { id:'detail_zoom', icon:'🔍', name:'Detail Zoom', desc:'Extreme close-up on textures, stitching, hardware details', badges:['Detail','Professional'] },
-      { id:'festival_energy', icon:'🎪', name:'Festival Energy', desc:'Coachella/festival vibes — dancing, golden hour, crowd energy', badges:['Seasonal','Dynamic'] },
-      { id:'runway_walk', icon:'👠', name:'Runway Walk', desc:'Model walk with confidence — structured, high-fashion energy', badges:['Fashion','Premium'] },
-      { id:'before_after', icon:'🔄', name:'Before & After', desc:'Transformation reveal — plain to stunning with your product', badges:['Hook','Conversion'] },
-      { id:'custom', icon:'🎨', name:'Your Vision', desc:'Describe anything — our AI brings your creative brief to life', badges:['Unlimited','Creative'] },
+      { id:'spotlight_reveal', icon:'gem', name:'Spotlight Reveal', desc:'Cinematic product reveal with dramatic lighting — luxury feel', badges:['Premium','High-Convert'] },
+      { id:'street_editorial', icon:'aperture', name:'Street Editorial', desc:'Magazine-grade look, model walking in a real-world setting', badges:['Brand-Matched','Cinematic'] },
+      { id:'creator_authentic', icon:'smartphone', name:'Creator Authentic', desc:'UGC-style handheld energy that feels genuine', badges:['Trending','Trust'] },
+      { id:'first_look', icon:'package', name:'First Look Unbox', desc:'Unboxing reveal, packaging close-up, first impression', badges:['Engagement','Hook'] },
+      { id:'day_in_life', icon:'sun', name:'Day in the Life', desc:'Natural lifestyle, the product in real moments', badges:['Relatable','Warm'] },
+      { id:'slow_luxe', icon:'film', name:'Slow Luxe', desc:'Slow-motion luxury shots, fabric textures, considered angles', badges:['Premium','Stunning'] },
+      { id:'get_ready', icon:'sparkles', name:'Get Ready With Me', desc:'GRWM format — natural, conversational, trending', badges:['Viral','Engaging'] },
+      { id:'detail_zoom', icon:'zoom-in', name:'Detail Zoom', desc:'Close-up on textures, stitching, hardware, craftsmanship', badges:['Detail','Professional'] },
+      { id:'festival_energy', icon:'music', name:'Festival Energy', desc:'Festival vibes — golden-hour crowd energy', badges:['Seasonal','Dynamic'] },
+      { id:'runway_walk', icon:'shirt', name:'Runway Walk', desc:'Confident walk with structured high-fashion framing', badges:['Fashion','Premium'] },
+      { id:'before_after', icon:'refresh-cw', name:'Before & After', desc:'Transformation reveal — plain to elevated with your product', badges:['Hook','Conversion'] },
+      { id:'custom', icon:'palette', name:'Your Vision', desc:'Describe anything — our AI brings your creative brief to life', badges:['Unlimited','Creative'] },
     ];
 
-    // ━━━ LOCATIONS ━━━
+    // ━━━ LOCATIONS — premium icon set (lucide SVG, no emoji) ━━━
     const VIDEO_LOCATIONS = [
-      { id:'original', icon:'🖼️', name:'Keep Original' },
-      { id:'studio', icon:'📸', name:'Studio' },
-      { id:'beach', icon:'🏖️', name:'Beach' },
-      { id:'city', icon:'🏙️', name:'City Street' },
-      { id:'coachella', icon:'🎪', name:'Festival' },
-      { id:'club', icon:'🪩', name:'Nightclub' },
-      { id:'rooftop', icon:'🌆', name:'Rooftop' },
-      { id:'bedroom', icon:'🛏️', name:'Bedroom' },
-      { id:'tropical', icon:'🌴', name:'Tropical' },
-      { id:'runway', icon:'👠', name:'Runway' },
-      { id:'gym', icon:'💪', name:'Gym' },
-      { id:'cafe', icon:'☕', name:'Café' },
-      { id:'neon', icon:'💜', name:'Neon Alley' },
-      { id:'garden', icon:'🌸', name:'Garden' },
-      { id:'pool', icon:'🏊', name:'Pool Party' },
-      { id:'penthouse', icon:'🏢', name:'Penthouse' },
+      { id:'original',   icon:'image',        name:'Keep Original' },
+      { id:'studio',     icon:'camera',       name:'Studio' },
+      { id:'beach',      icon:'waves',        name:'Beach' },
+      { id:'city',       icon:'building-2',   name:'City Street' },
+      { id:'coachella',  icon:'music',        name:'Festival' },
+      { id:'club',       icon:'disc-3',       name:'Nightclub' },
+      { id:'rooftop',    icon:'building',     name:'Rooftop' },
+      { id:'bedroom',    icon:'bed',          name:'Bedroom' },
+      { id:'tropical',   icon:'palmtree',     name:'Tropical' },
+      { id:'runway',     icon:'shirt',        name:'Runway' },
+      { id:'gym',        icon:'dumbbell',     name:'Gym' },
+      { id:'cafe',       icon:'coffee',       name:'Café' },
+      { id:'neon',       icon:'zap',          name:'Neon Alley' },
+      { id:'garden',     icon:'flower-2',     name:'Garden' },
+      { id:'pool',       icon:'waves',        name:'Pool' },
+      { id:'penthouse',  icon:'landmark',     name:'Penthouse' },
     ];
 
     // ━━━ STATE ━━━
@@ -8530,12 +8530,13 @@
       grid.innerHTML = VIDEO_VIBES.map(v => {
         const badges = v.badges.map(b => `<span class="vc-vibe-badge">${b}</span>`).join('');
         return `<div class="vc-vibe-card" data-vibe="${v.id}" onclick="vcSelectVibe('${v.id}', this)">
-          <div class="vc-vibe-icon">${v.icon}</div>
+          <div class="vc-vibe-icon"><i data-lucide="${v.icon}" style="width:22px;height:22px;stroke-width:1.5;"></i></div>
           <div class="vc-vibe-name">${v.name}</div>
           <div class="vc-vibe-desc">${v.desc}</div>
           <div class="vc-vibe-badges">${badges}</div>
         </div>`;
       }).join('');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function vcRenderLocations() {
@@ -8543,11 +8544,12 @@
       if (!grid) return;
       grid.innerHTML = VIDEO_LOCATIONS.map(l => {
         return `<div class="vc-loc-card${l.id==='original'?' selected':''}" data-loc="${l.id}" onclick="vcSelectLocation('${l.id}', this)">
-          <div class="vc-loc-icon">${l.icon}</div>
+          <div class="vc-loc-icon"><i data-lucide="${l.icon}" style="width:18px;height:18px;stroke-width:1.5;"></i></div>
           <div class="vc-loc-name">${l.name}</div>
         </div>`;
       }).join('');
       _vcSelectedLocation = 'original'; // default
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // ━━━ SELECTION HANDLERS ━━━
