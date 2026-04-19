@@ -2,7 +2,7 @@
    SocialEngine — App JavaScript
    ============================================ */
 
-const API_BASE = 'https://app-production-55ba.up.railway.app';
+const API_BASE = 'https://socialengine-api-production-18e0.up.railway.app';
 const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
 
 (function () {
