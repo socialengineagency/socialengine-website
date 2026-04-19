@@ -2481,7 +2481,7 @@
   (function() {
     'use strict';
 
-    const API = 'https://app-production-55ba.up.railway.app';  // Railway backend
+    const API = 'https://socialengine-api-production-18e0.up.railway.app';  // Railway backend (production)
 
     // ━━━ Theme Toggle ━━━
     const themeToggle = document.querySelector('[data-theme-toggle]');
@@ -9289,7 +9289,7 @@
       if (!content) return;
       try {
       // Load products independently if not already loaded
-      const _adAPI = window._seAPI || 'https://app-production-55ba.up.railway.app';
+      const _adAPI = window._seAPI || 'https://socialengine-api-production-18e0.up.railway.app';
       const _adEmail = window._seEmail || '';
       const _adHash = window._seHash || '';
       if (typeof _vcShopifyProducts === 'undefined' || !_vcShopifyProducts.length) {
