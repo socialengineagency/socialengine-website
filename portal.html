@@ -3001,6 +3001,28 @@
             }, 300);
             window.history.replaceState({}, '', window.location.pathname);
           }
+          // Merchant launched the app from Shopify admin (?shop=...&shopify_prompt=1):
+          // jump to Settings and prefill the store domain so they only click Connect once.
+          const shopifyPrompt = urlParams.get('shopify_prompt') === '1' || urlParams.has('shop');
+          const shopHint = urlParams.get('shop') || '';
+          if (shopifyPrompt) {
+            setTimeout(() => {
+              document.querySelector('[data-nav=settings]')?.click();
+              setTimeout(() => {
+                const input = document.getElementById('shopify-oauth-domain');
+                if (input && shopHint) input.value = shopHint;
+                const card = document.getElementById('settings-shopify-card');
+                if (card) {
+                  const notice = document.createElement('div');
+                  notice.style.cssText = 'padding:12px 16px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;margin-bottom:16px;font-size:0.875rem;color:#E9D5FF;font-weight:500;line-height:1.5;';
+                  notice.textContent = 'You launched SocialEngine from Shopify admin. Click Connect Store below to authorize your shop.';
+                  card.parentElement.insertBefore(notice, card);
+                  setTimeout(() => notice.remove(), 12000);
+                }
+              }, 250);
+            }, 300);
+            window.history.replaceState({}, '', window.location.pathname);
+          }
         } catch (err) {
           console.error('Login error:', err);
           loginBtn.classList.remove('loading');
