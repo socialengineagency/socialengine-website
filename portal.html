@@ -4599,18 +4599,18 @@
           <div style="height:20px;width:1px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
           <select id="studio-type-filter" onchange="studioFilterByType()" style="padding:4px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:rgba(255,255,255,0.5);font-size:0.68rem;cursor:pointer;font-family:var(--font-body);outline:none;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22rgba(255,255,255,0.3)%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
             <option value="">All Types</option>
-            <option value="image">📷 Images</option>
-            <option value="video">🎬 Videos</option>
-            <option value="carousel">📸 Carousels</option>
-            <option value="reel">🎵 Reels</option>
+            <option value="image">Images</option>
+            <option value="video">Videos</option>
+            <option value="carousel">Carousels</option>
+            <option value="reel">Reels</option>
           </select>
           <select id="studio-group-filter" onchange="studioFilterByGroup()" style="padding:4px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:rgba(255,255,255,0.5);font-size:0.68rem;cursor:pointer;font-family:var(--font-body);outline:none;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22rgba(255,255,255,0.3)%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
             <option value="">All Groups</option>
-            <option value="lingerie">🩱 Lingerie</option>
-            <option value="swimwear">👙 Swimwear</option>
-            <option value="cosplay">🎭 Cosplay</option>
-            <option value="festival">🎪 Festival</option>
-            <option value="sets">🎀 Sets</option>
+            <option value="lingerie">Lingerie</option>
+            <option value="swimwear">Swimwear</option>
+            <option value="cosplay">Cosplay</option>
+            <option value="festival">Festival</option>
+            <option value="sets">Sets</option>
           </select>
           <div style="height:20px;width:1px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
           <select id="studio-sort" style="padding:4px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:rgba(255,255,255,0.5);font-size:0.68rem;cursor:pointer;font-family:var(--font-body);outline:none;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22rgba(255,255,255,0.3)%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
@@ -9203,29 +9203,29 @@
     let _adSearchProducts = null;
 
     const AD_FORMATS = [
-      { id: 'feed-square', name: 'Feed Post', dims: '1080×1080', ratio: '1:1', icon: '⬜', desc: 'Square feed ad for Instagram & Facebook', platforms: ['meta', 'instagram'] },
-      { id: 'feed-portrait', name: 'Feed Portrait', dims: '1080×1350', ratio: '4:5', icon: '📱', desc: 'Taller format, more screen real estate on mobile', platforms: ['meta', 'instagram'] },
-      { id: 'story', name: 'Story / Reel', dims: '1080×1920', ratio: '9:16', icon: '📲', desc: 'Full-screen vertical for Stories, Reels, TikTok', platforms: ['meta', 'instagram', 'tiktok'] },
-      { id: 'landscape', name: 'Landscape', dims: '1200×628', ratio: '1.91:1', icon: '🖥️', desc: 'Standard landscape for Facebook feed + link ads', platforms: ['meta'] },
-      { id: 'carousel', name: 'Carousel Set', dims: '1080×1080', ratio: '1:1', icon: '🎠', desc: 'Generate 3-5 carousel slides with cohesive story', platforms: ['meta', 'instagram'] },
-      { id: 'pinterest', name: 'Pinterest Pin', dims: '1000×1500', ratio: '2:3', icon: '📌', desc: 'Optimized tall format for Pinterest ads', platforms: ['pinterest'] },
+      { id: 'feed-square', name: 'Feed Post', dims: '1080×1080', ratio: '1:1', icon: 'square', desc: 'Square feed ad for Instagram & Facebook', platforms: ['meta', 'instagram'] },
+      { id: 'feed-portrait', name: 'Feed Portrait', dims: '1080×1350', ratio: '4:5', icon: 'smartphone', desc: 'Taller format, more screen real estate on mobile', platforms: ['meta', 'instagram'] },
+      { id: 'story', name: 'Story / Reel', dims: '1080×1920', ratio: '9:16', icon: 'rectangle-vertical', desc: 'Full-screen vertical for Stories, Reels, TikTok', platforms: ['meta', 'instagram', 'tiktok'] },
+      { id: 'landscape', name: 'Landscape', dims: '1200×628', ratio: '1.91:1', icon: 'monitor', desc: 'Standard landscape for Facebook feed + link ads', platforms: ['meta'] },
+      { id: 'carousel', name: 'Carousel Set', dims: '1080×1080', ratio: '1:1', icon: 'layers', desc: 'Generate 3-5 carousel slides with cohesive story', platforms: ['meta', 'instagram'] },
+      { id: 'pinterest', name: 'Pinterest Pin', dims: '1000×1500', ratio: '2:3', icon: 'image', desc: 'Optimized tall format for Pinterest ads', platforms: ['pinterest'] },
     ];
 
     const AD_PLATFORMS = [
-      { id: 'meta', name: 'Meta / Facebook', icon: '📘' },
-      { id: 'instagram', name: 'Instagram', icon: '📸' },
-      { id: 'tiktok', name: 'TikTok', icon: '🎵' },
-      { id: 'pinterest', name: 'Pinterest', icon: '📌' },
-      { id: 'google', name: 'Google Display', icon: '🔍' },
+      { id: 'meta', name: 'Meta / Facebook', icon: 'facebook' },
+      { id: 'instagram', name: 'Instagram', icon: 'instagram' },
+      { id: 'tiktok', name: 'TikTok', icon: 'music' },
+      { id: 'pinterest', name: 'Pinterest', icon: 'image' },
+      { id: 'google', name: 'Google Display', icon: 'search' },
     ];
 
     const AD_TONES = [
-      { id: 'urgency', label: '🔥 Urgency', prompt: 'Create urgency with limited-time language' },
-      { id: 'aspirational', label: '✨ Aspirational', prompt: 'Aspirational lifestyle messaging' },
-      { id: 'social-proof', label: '👥 Social Proof', prompt: 'Leverage social proof and popularity' },
-      { id: 'benefit-driven', label: '🎯 Benefit-Driven', prompt: 'Focus on key product benefits' },
-      { id: 'emotional', label: '💝 Emotional', prompt: 'Emotional connection and storytelling' },
-      { id: 'brand-voice', label: '🎤 Brand Voice', prompt: 'Match the client brand voice exactly' },
+      { id: 'urgency', label: 'Urgency', prompt: 'Create urgency with limited-time language' },
+      { id: 'aspirational', label: 'Aspirational', prompt: 'Aspirational lifestyle messaging' },
+      { id: 'social-proof', label: 'Social Proof', prompt: 'Leverage social proof and popularity' },
+      { id: 'benefit-driven', label: 'Benefit-Driven', prompt: 'Focus on key product benefits' },
+      { id: 'emotional', label: 'Emotional', prompt: 'Emotional connection and storytelling' },
+      { id: 'brand-voice', label: 'Brand Voice', prompt: 'Match the client brand voice exactly' },
     ];
 
     function adEscapeHtml(value) {
@@ -9494,12 +9494,12 @@
 
               <!-- Platform chips -->
               <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-                ${AD_PLATFORMS.map(p => '<button class="ad-platform-chip' + (p.id === 'meta' ? ' active' : '') + '" data-platform="' + p.id + '" onclick="adSelectPlatform(\'' + p.id + '\',this)">' + p.icon + ' ' + p.name + '</button>').join('')}
+                ${AD_PLATFORMS.map(p => '<button class="ad-platform-chip' + (p.id === 'meta' ? ' active' : '') + '" data-platform="' + p.id + '" onclick="adSelectPlatform(\'' + p.id + '\',this)"><i data-lucide="' + p.icon + '" style="width:13px;height:13px;stroke-width:1.75;vertical-align:-2px;margin-right:5px;"></i>' + p.name + '</button>').join('')}
               </div>
 
               <!-- Format grid -->
               <div class="ad-format-grid" id="ad-format-grid">
-                ${AD_FORMATS.map(f => '<div class="ad-format-card' + (f.id === 'feed-square' ? ' selected' : '') + '" data-format="' + f.id + '" onclick="adSelectFormat(\'' + f.id + '\',this)"><div style="font-size:1.5rem;margin-bottom:8px;">' + f.icon + '</div><div style="font-size:0.82rem;font-weight:700;color:#fff;font-family:var(--font-display);margin-bottom:4px;">' + f.name + '</div><div style="font-size:0.68rem;color:rgba(139,92,246,0.7);font-weight:600;margin-bottom:6px;">' + f.dims + '</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.35);line-height:1.4;font-family:var(--font-body);">' + f.desc + '</div></div>').join('')}
+                ${AD_FORMATS.map(f => '<div class="ad-format-card' + (f.id === 'feed-square' ? ' selected' : '') + '" data-format="' + f.id + '" onclick="adSelectFormat(\'' + f.id + '\',this)"><div style="margin-bottom:8px;color:rgba(139,92,246,0.85);"><i data-lucide="' + f.icon + '" style="width:22px;height:22px;stroke-width:1.5;"></i></div><div style="font-size:0.82rem;font-weight:700;color:#fff;font-family:var(--font-display);margin-bottom:4px;">' + f.name + '</div><div style="font-size:0.68rem;color:rgba(139,92,246,0.7);font-weight:600;margin-bottom:6px;">' + f.dims + '</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.35);line-height:1.4;font-family:var(--font-body);">' + f.desc + '</div></div>').join('')}
               </div>
             </div>
           </div>
