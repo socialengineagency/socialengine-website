@@ -8999,6 +8999,19 @@
   window.renderAdStudio = renderAdStudio;
 
     // ━━━ Direct OAuth Connect Functions ━━━
+    function _seRemoveConnectBanner() {
+      const el = document.getElementById('se-connect-banner');
+      if (el) el.remove();
+    }
+    function _seShowConnectBanner(msg) {
+      _seRemoveConnectBanner();
+      const el = document.createElement('div');
+      el.id = 'se-connect-banner';
+      el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);max-width:480px;background:linear-gradient(135deg,#1f1247,#2a1a5a);color:#fff;padding:14px 22px;border-radius:12px;font-size:0.85rem;z-index:9999;box-shadow:0 8px 40px rgba(124,58,237,0.3);border:1px solid rgba(139,92,246,0.35);display:flex;align-items:center;gap:12px;';
+      el.innerHTML = `<span class="se-spinner" style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.2);border-top-color:#E9D5FF;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;"></span><span style="flex:1;line-height:1.4;">${msg}</span><button onclick="_seRemoveConnectBanner()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:0.78rem;cursor:pointer;">Hide</button>`;
+      document.body.appendChild(el);
+    }
+
     async function connectViaUploadPost(platformLabel) {
       if (!clientEmail || !clientHash) { showToast('Please log in first.'); return; }
       const w = 760, h = 780;
@@ -9011,15 +9024,33 @@
         const hasAccount = accounts.some(acc => String(acc?.platform || '').toLowerCase() === target);
         return hasPlatform || hasAccount;
       };
+
+      // Cross-window success signal (Upload-Post or our redirect page can postMessage).
+      let messageConnected = false;
+      const messageListener = (ev) => {
+        try {
+          const d = ev.data || {};
+          const src = String(d.source || d.origin || '').toLowerCase();
+          const eventName = String(d.event || d.type || '').toLowerCase();
+          const plat = String(d.platform || target || '').toLowerCase();
+          const isUpOrigin = src.includes('upload') || src.includes('upload-post') || src.includes('social_connected') || src.includes('social-engine') || d.social_connected === true;
+          const isConnected = eventName.includes('connected') || eventName.includes('success') || d.connected === true;
+          if ((isUpOrigin || isConnected) && (!plat || plat === target)) {
+            messageConnected = true;
+          }
+        } catch { /* ignore */ }
+      };
+      window.addEventListener('message', messageListener);
+
       try {
-        showToast(`Generating secure ${platformLabel} connection link...`);
+        _seShowConnectBanner(`Generating secure ${platformLabel} connection link…`);
         const r = await fetch(`${API}/api/social-connect`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             clientEmail,
             clientHash,
-            platforms: ['instagram', 'facebook', 'tiktok']
+            platforms: target ? [target] : ['instagram', 'facebook', 'tiktok'],
           })
         });
         const data = await r.json().catch(() => ({}));
@@ -9028,56 +9059,118 @@
         }
         let popup;
         try {
-          popup = window.open(data.connect_url, 'uploadpost_connect', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`);
+          popup = window.open(data.connect_url, `uploadpost_connect_${target || 'any'}`, `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`);
         } catch (e) {
+          _seRemoveConnectBanner();
+          window.removeEventListener('message', messageListener);
           showToast('Could not open popup — please allow popups for this site.');
           return;
         }
         if (!popup) {
+          _seRemoveConnectBanner();
+          window.removeEventListener('message', messageListener);
           showToast('Popup blocked — please allow popups and try again.');
           return;
         }
-        showToast(`Connect ${platformLabel} in the popup, then close it.`);
-        const popupWatcher = setInterval(() => {
+        _seShowConnectBanner(`Connect ${platformLabel} in the popup that opened, then return here. We'll detect it automatically.`);
+
+        let finished = false;
+        const finish = (ok, reason) => {
+          if (finished) return;
+          finished = true;
+          window.removeEventListener('message', messageListener);
+          _seRemoveConnectBanner();
+          if (ok) {
+            showToast(`${platformLabel} connected successfully!`);
+          } else if (reason) {
+            showToast(reason);
+          }
+        };
+
+        // Refresh client-data and re-render settings.
+        const refreshAfterConnect = async () => {
+          try {
+            const fresh = await fetch(`${API}/api/client-data`, {
+              headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+            });
+            if (fresh.ok) clientData = await fresh.json();
+          } catch { /* ignore */ }
+          if (activeNav === 'settings') renderSettingsPage(clientData);
+          else document.querySelector('[data-nav=settings]')?.click();
+        };
+
+        // Unified poller: checks every 4s for up to ~4 minutes (60 attempts),
+        // and also reacts to postMessage or popup close.
+        let attempts = 0;
+        const maxAttempts = 60;
+        const intervalMs = 4000;
+        const poller = setInterval(async () => {
+          attempts += 1;
+          try {
+            const sr = await fetch(`${API}/api/social-accounts`, {
+              headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+            });
+            if (!sr.ok) {
+              // log but don't kill the poller on transient errors
+              console.warn('[SE] social-accounts poll HTTP', sr.status);
+            } else {
+              const snapshot = await sr.json().catch(() => ({}));
+              if (checkTargetConnected(snapshot) || messageConnected) {
+                clearInterval(poller);
+                await refreshAfterConnect();
+                finish(true);
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('[SE] social-accounts poll error', e?.message || e);
+          }
+          // Encourage merchant halfway through.
+          if (attempts === 15) {
+            _seShowConnectBanner(`Still waiting for ${platformLabel} to confirm... keep the popup open until you finish login.`);
+          }
+          if (attempts >= maxAttempts) {
+            clearInterval(poller);
+            if (!finished) {
+              await refreshAfterConnect();
+              // Re-check after refresh in case snapshot lagged.
+              const stillNotConnected = !checkTargetConnected({
+                connected_platforms: clientData?.client?.social_connected_platforms || [],
+                accounts: clientData?.upload_post_connection?.accounts || [],
+              }) && !messageConnected;
+              finish(!stillNotConnected, stillNotConnected ? `${platformLabel} connection not detected yet. You can re-open connect and finish OAuth.` : '');
+            }
+          }
+        }, intervalMs);
+
+        // If the popup closes we also do one immediate check.
+        const popupWatcher = setInterval(async () => {
           try {
             if (!popup?.closed) return;
             clearInterval(popupWatcher);
-            showToast('Checking social connection status...');
-            let attempts = 0;
-            const maxAttempts = 16;
-            const poller = setInterval(async () => {
-              attempts += 1;
-              try {
-                const sr = await fetch(`${API}/api/social-accounts`, {
-                  headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
-                });
+            if (finished) return;
+            _seShowConnectBanner(`Checking ${platformLabel} connection status…`);
+            // One quick probe now.
+            try {
+              const sr = await fetch(`${API}/api/social-accounts`, {
+                headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+              });
+              if (sr.ok) {
                 const snapshot = await sr.json().catch(() => ({}));
-                if (checkTargetConnected(snapshot)) {
+                if (checkTargetConnected(snapshot) || messageConnected) {
                   clearInterval(poller);
-                  showToast(`${platformLabel} connected successfully!`);
-                  try {
-                    const fresh = await fetch(`${API}/api/client-data`, {
-                      headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
-                    });
-                    if (fresh.ok) clientData = await fresh.json();
-                  } catch {}
-                  if (activeNav === 'settings') renderSettingsPage(clientData);
-                  else {
-                    document.querySelector('[data-nav=settings]')?.click();
-                  }
-                  return;
+                  await refreshAfterConnect();
+                  finish(true);
                 }
-              } catch {}
-              if (attempts >= maxAttempts) {
-                clearInterval(poller);
-                showToast(`${platformLabel} connection not detected yet. Re-open connect and finish OAuth.`);
               }
-            }, 2500);
+            } catch { /* keep polling */ }
           } catch {
             clearInterval(popupWatcher);
           }
-        }, 700);
+        }, 1000);
       } catch (err) {
+        window.removeEventListener('message', messageListener);
+        _seRemoveConnectBanner();
         showToast(err.message || `Could not start ${platformLabel} connection`);
       }
     }
