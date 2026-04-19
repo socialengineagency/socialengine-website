@@ -8567,16 +8567,101 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    function vcRenderLocations() {
-      const grid = document.getElementById('vc-location-grid');
-      if (!grid) return;
-      grid.innerHTML = VIDEO_LOCATIONS.map(l => {
-        return `<div class="vc-loc-card${l.id==='original'?' selected':''}" data-loc="${l.id}" onclick="vcSelectLocation('${l.id}', this)">
-          <div class="vc-loc-icon"><i data-lucide="${l.icon}" style="width:18px;height:18px;stroke-width:1.5;"></i></div>
-          <div class="vc-loc-name">${l.name}</div>
+    // Brand-matched recommendations cache so we only fetch once per modal open.
+    let _vcSceneRecommendations = null;
+
+    async function vcFetchRecommendedScenes() {
+      if (_vcSceneRecommendations) return _vcSceneRecommendations;
+      try {
+        const res = await apiFetch('/api/video/recommended-scenes');
+        if (!res.ok) return null;
+        const d = await res.json();
+        if (!d || !d.success) return null;
+        _vcSceneRecommendations = d;
+        return d;
+      } catch { return null; }
+    }
+
+    function _vcEscapeAttr(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function vcRenderSceneRow(rowId, title, subtitle, scenes) {
+      if (!scenes || scenes.length === 0) return '';
+      const cards = scenes.map(s => {
+        const icon = s.icon || 'sparkles';
+        const safeName = _vcEscapeAttr(s.name || s.id || '');
+        const safePrompt = _vcEscapeAttr(s.prompt || s.name || '');
+        const safeId = _vcEscapeAttr(s.id || '');
+        return `<div class="vc-loc-card" data-loc="${safeId}" data-prompt="${safePrompt}" title="${safePrompt}" onclick="vcSelectLocationFromEl(this)">
+          <div class="vc-loc-icon"><i data-lucide="${icon}" style="width:18px;height:18px;stroke-width:1.5;"></i></div>
+          <div class="vc-loc-name">${safeName}</div>
         </div>`;
       }).join('');
-      _vcSelectedLocation = 'original'; // default
+      return `<div class="vc-scene-row" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin:0 0 8px 2px;">
+          <span style="font-family:var(--font-display);font-size:0.78rem;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:0.02em;">${title}</span>
+          ${subtitle ? `<span style="font-size:0.66rem;color:rgba(148,163,184,0.55);">${subtitle}</span>` : ''}
+        </div>
+        <div class="vc-location-grid" id="${rowId}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;">${cards}</div>
+      </div>`;
+    }
+
+    // Click handler for recommended-scene cards — pulls the rich prompt off data-attr.
+    window.vcSelectLocationFromEl = function(el) {
+      if (!el) return;
+      document.querySelectorAll('.vc-loc-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      _vcSelectedLocation = el.dataset.loc || '';
+      // Stash the full prompt so the generate step can enrich the final Higgsfield prompt.
+      _vcSelectedScenePrompt = el.dataset.prompt || '';
+    };
+    let _vcSelectedScenePrompt = '';
+
+    async function vcRenderLocations() {
+      const grid = document.getElementById('vc-location-grid');
+      if (!grid) return;
+      // Render immediate shell; replace when recommendations load.
+      grid.outerHTML = `<div id="vc-scene-shell"><div style="font-size:0.72rem;color:rgba(148,163,184,0.55);padding:8px 4px;">Loading scene recommendations…</div></div>`;
+      _vcSelectedLocation = 'original';
+
+      const recs = await vcFetchRecommendedScenes();
+      const shell = document.getElementById('vc-scene-shell');
+      if (!shell) return;
+
+      const rows = [];
+
+      // Row 1 — brand-matched (primary)
+      if (recs?.brand_matched?.length) {
+        rows.push(vcRenderSceneRow('vc-scene-brand', 'Recommended for your brand', recs.niche ? `Niche: ${recs.niche}` : '', recs.brand_matched));
+      }
+      // Row 2 — current events
+      if (recs?.events_now?.length) {
+        rows.push(vcRenderSceneRow('vc-scene-events', 'Live events you can ride', 'This month', recs.events_now));
+      }
+      // Row 3 — trending
+      if (recs?.trending_now?.length) {
+        rows.push(vcRenderSceneRow('vc-scene-trending', 'Trending in your niche', 'This week', recs.trending_now));
+      }
+
+      // Fallback / "More" — the old generic list, collapsed.
+      const moreCards = VIDEO_LOCATIONS.map(l =>
+        `<div class="vc-loc-card${l.id==='original'?' selected':''}" data-loc="${l.id}" onclick="vcSelectLocation('${l.id}', this)">
+          <div class="vc-loc-icon"><i data-lucide="${l.icon}" style="width:18px;height:18px;stroke-width:1.5;"></i></div>
+          <div class="vc-loc-name">${l.name}</div>
+        </div>`
+      ).join('');
+      rows.push(`<details style="margin-top:6px;">
+        <summary style="font-family:var(--font-display);font-size:0.74rem;color:rgba(139,92,246,0.85);font-weight:700;cursor:pointer;padding:6px 2px;letter-spacing:0.02em;">More backgrounds</summary>
+        <div class="vc-location-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;margin-top:8px;">${moreCards}</div>
+      </details>`);
+
+      // If no recs returned at all, keep the old grid visible as primary.
+      if (!rows.length || (!recs?.brand_matched?.length && !recs?.events_now?.length && !recs?.trending_now?.length)) {
+        shell.outerHTML = `<div class="vc-location-grid" id="vc-location-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;">${moreCards}</div>`;
+      } else {
+        shell.outerHTML = `<div id="vc-scene-shell">${rows.join('')}</div>`;
+      }
+
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
