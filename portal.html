@@ -3447,6 +3447,20 @@
               <span class="studio-card__date">${date}</span>
               <span class="studio-card__status studio-card__status--${statusClass}" style="margin-left:auto;">${status === 'Regenerating' ? 'Regenerating...' : status === 'Ready for Review' ? 'Pending' : status}</span>
               ${regenCount > 0 ? `<span title="${regenLeft} regeneration${regenLeft !== 1 ? 's' : ''} remaining" style="font-size:0.58rem;padding:2px 6px;border-radius:4px;background:${regenLeft > 0 ? 'rgba(124,58,237,0.1)' : 'rgba(244,67,54,0.1)'};color:${regenLeft > 0 ? '#7C3AED' : '#f44336'};font-weight:600;white-space:nowrap;cursor:help;">↻ ${regenLeft}/3</span>` : ''}
+              ${(() => {
+                try {
+                  const rp = post.render_provenance ? (typeof post.render_provenance === 'string' ? JSON.parse(post.render_provenance) : post.render_provenance) : null;
+                  if (!rp) return '';
+                  const qa = rp.qa || null;
+                  const model = String(rp.model || '').slice(0, 18);
+                  const qaScore = qa && typeof qa.score === 'number' ? qa.score : null;
+                  const qaPass = qa ? (qa.passed === true && !qa.skipped) : null;
+                  const qaColor = qa == null ? '#A78BFA' : qa.skipped ? 'rgba(148,163,184,0.7)' : qaPass ? '#22C55E' : '#F59E0B';
+                  const qaLabel = qa == null ? 'AI' : qa.skipped ? 'AI' : qaPass ? ('QA ' + qaScore + '%') : ('Review ' + (qaScore || ''));
+                  const title = ((model ? 'Model: ' + model + ' · ' : '') + (qa ? (qa.passed ? ('QA passed (' + qaScore + '%)') : (qa.skipped ? 'QA skipped' : ('QA flagged: ' + (qa.reasons || []).slice(0, 2).join(', ')))) : 'Rendered by SocialEngine AI')).replace(/"/g, '&quot;');
+                  return `<span class="studio-card__qa-badge" title="${title}" style="font-size:0.58rem;padding:2px 6px;border-radius:4px;background:rgba(124,58,237,0.08);color:${qaColor};font-weight:700;white-space:nowrap;cursor:help;letter-spacing:0.03em;">${qaLabel}</span>`;
+                } catch { return ''; }
+              })()}
             </div>
             <div class="studio-card__caption" onclick="openStudioModal(${index})" style="cursor:pointer;">${captionPreview}${captionPreview.length >= 90 ? '...' : ''}</div>
             ${hashtagPreview ? `<div style="font-size:0.65rem;color:rgba(124,58,237,0.6);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${hashtagPreview}</div>` : ''}
@@ -6614,13 +6628,54 @@
           // Remove typing indicator
           typingRow.remove();
 
-          // Add AI response with timestamp
+          // Add AI response with timestamp + one-click Coach actions (if any)
           const now = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
           const aiRow = document.createElement('div');
           aiRow.className = 'chat-msg-row';
           const replyHtml = formatAIText(data.reply || 'Got it!');
-          aiRow.innerHTML = '<div class="chat-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg></div><div class="chat-msg chat-msg--ai">' + replyHtml + '<div style="font-size:0.6rem;color:rgba(148,163,184,0.3);margin-top:6px;">' + now + '</div></div>';
+          let actionsHtml = '';
+          if (Array.isArray(data.coach_actions) && data.coach_actions.length) {
+            actionsHtml = '<div class="coach-actions" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
+              data.coach_actions.map((a, i) => {
+                if (a.type !== 'regenerate') return '';
+                const safeTid = String(a.template_id || '').replace(/"/g, '&quot;');
+                const safeProd = String(a.product_name || '').replace(/"/g, '&quot;');
+                const safeReason = String(a.reason || '').replace(/"/g, '&quot;');
+                const label = a.product_name ? ('Regenerate on: ' + a.product_name) : 'Regenerate';
+                return '<button class="coach-action-btn" data-type="regenerate" data-template-id="' + safeTid + '" data-product-name="' + safeProd + '" data-reason="' + safeReason + '" style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);color:#E9D5FF;font-size:0.78rem;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:var(--font-body);display:inline-flex;align-items:center;gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> ' + label + '</button>';
+              }).join('') + '</div>';
+          }
+          aiRow.innerHTML = '<div class="chat-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg></div><div class="chat-msg chat-msg--ai">' + replyHtml + actionsHtml + '<div style="font-size:0.6rem;color:rgba(148,163,184,0.3);margin-top:6px;">' + now + '</div></div>';
           messagesEl.appendChild(aiRow);
+          // Wire action buttons (one-click regenerate)
+          aiRow.querySelectorAll('.coach-action-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              if (btn.dataset.busy === '1') return;
+              btn.dataset.busy = '1';
+              const origLabel = btn.innerHTML;
+              btn.innerHTML = '<span class="se-spinner" style="width:12px;height:12px;border:2px solid rgba(233,213,255,0.3);border-top-color:#E9D5FF;border-radius:50%;animation:spin 0.7s linear infinite;"></span> Queuing…';
+              try {
+                const r = await fetch(`${API}/api/coach-action`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+                  body: JSON.stringify({ action: btn.dataset.type, template_id: btn.dataset.templateId, product_name: btn.dataset.productName, reason: btn.dataset.reason }),
+                });
+                const d = await r.json().catch(() => ({}));
+                if (d && d.success) {
+                  btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Queued — check Content';
+                  if (typeof showToast === 'function') showToast('Regeneration queued. Check the Content tab.');
+                } else {
+                  btn.innerHTML = '<span style="color:#F43F5E;">Failed — retry</span>';
+                  btn.dataset.busy = '';
+                  setTimeout(() => { btn.innerHTML = origLabel; }, 2500);
+                }
+              } catch (e) {
+                btn.innerHTML = '<span style="color:#F43F5E;">Network error</span>';
+                btn.dataset.busy = '';
+                setTimeout(() => { btn.innerHTML = origLabel; }, 2500);
+              }
+            });
+          });
           scrollToBottom();
           saveToHistory('assistant', replyHtml);
 
