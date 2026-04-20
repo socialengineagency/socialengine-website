@@ -2904,16 +2904,24 @@
     }
 
     async function sha256(str) {
-      // Try Web Crypto API (requires secure context/HTTPS)
       try {
         const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
         return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
       } catch(e) {
-        // Fallback: use known hash for dev/localhost
-        // Known hash for 'Welcome2026!' = a5ebdb42521ba5a49a0021b4d3173f061c19a9efc484f4e81eb15db85c970213
-        if (str === 'Welcome2026!') return 'a5ebdb42521ba5a49a0021b4d3173f061c19a9efc484f4e81eb15db85c970213';
-        throw e;
+        return null;
       }
+    }
+
+    async function magicLogin(email, password) {
+      const res = await fetch(`${API}/api/magic-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) return null;
+      const d = await res.json().catch(() => null);
+      if (!d?.success || !d?.hash) return null;
+      return d;
     }
 
     // ━━━ Login ━━━
@@ -2931,12 +2939,22 @@
         const pw = document.getElementById('login-password').value;
 
         try {
-          const hash = await sha256(pw);
-          const res = await fetch(`${API}/api/client-data`, {
-            headers: { 'x-client-email': email, 'x-client-hash': hash },
-          });
-
-          if (!res.ok) throw new Error('Auth failed');
+          let hash = await sha256(pw);
+          let res = null;
+          if (hash) {
+            res = await fetch(`${API}/api/client-data`, {
+              headers: { 'x-client-email': email, 'x-client-hash': hash },
+            });
+          }
+          if (!res || !res.ok) {
+            const magic = await magicLogin(email, pw);
+            if (!magic) throw new Error('Auth failed');
+            hash = magic.hash;
+            res = await fetch(`${API}/api/client-data`, {
+              headers: { 'x-client-email': email, 'x-client-hash': hash },
+            });
+            if (!res.ok) throw new Error('Auth failed');
+          }
           const data = await res.json();
 
           clientEmail = email;
