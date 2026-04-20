@@ -3238,11 +3238,61 @@
             </div>
           </div>
         </div>
+
+        <div class="dash-card" id="competitor-snipe-card" style="margin-top:var(--space-6);background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(167,139,250,0.06));border:1px solid rgba(124,58,237,0.3);">
+          <div class="dash-card__header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <h3 class="dash-card__title" style="display:flex;align-items:center;gap:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              Competitive Snipe
+            </h3>
+            <span style="font-size:0.62rem;padding:3px 8px;border-radius:4px;background:rgba(34,197,94,0.12);color:#22C55E;font-weight:700;letter-spacing:0.05em;">NEW</span>
+          </div>
+          <div style="padding:var(--space-4) var(--space-6) var(--space-5);">
+            <p style="margin:0 0 14px;font-size:0.82rem;line-height:1.55;color:var(--color-text-muted);">
+              Scan your top competitors across Instagram, TikTok, Facebook and X — find their single best post this week, and generate a brand-dressed counter for your store. Runs weekly automatically; click below to run now.
+            </p>
+            <button id="competitor-snipe-btn" onclick="triggerCompetitorSnipe(this)" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:white;border:none;padding:10px 18px;border-radius:8px;font-weight:600;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:var(--font-body);box-shadow:0 4px 12px rgba(124,58,237,0.3);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Snipe a competitor now
+            </button>
+            <div id="competitor-snipe-status" style="margin-top:10px;font-size:0.72rem;color:var(--color-text-muted);"></div>
+          </div>
+        </div>
       `;
       setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
       // Fetch and render widgets asynchronously
       loadAIIntelligenceWidget();
       loadAttributedRevenueWidget();
+    }
+
+    async function triggerCompetitorSnipe(btn) {
+      const statusEl = document.getElementById('competitor-snipe-status');
+      if (btn.dataset.busy === '1') return;
+      btn.dataset.busy = '1';
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<span class="se-spinner" style="width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;"></span> Scanning competitors...';
+      if (statusEl) statusEl.textContent = 'Pulling top posts from Instagram, TikTok, Facebook and X...';
+      try {
+        const res = await fetch(`${API}/api/competitor-snipe/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+        });
+        const d = await res.json().catch(() => ({}));
+        if (d && d.success) {
+          btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Queued — check Content';
+          if (statusEl) statusEl.textContent = 'Counter is rendering. It will appear in your Content tab in a few minutes.';
+          if (typeof showToast === 'function') showToast('Competitor snipe queued — check Content in a few minutes.');
+          setTimeout(() => { btn.innerHTML = orig; btn.dataset.busy = ''; if (statusEl) statusEl.textContent = ''; }, 12000);
+        } else {
+          btn.innerHTML = orig;
+          btn.dataset.busy = '';
+          if (statusEl) statusEl.textContent = (d && d.error) ? ('Could not snipe: ' + d.error) : 'Could not snipe right now. Try again shortly.';
+        }
+      } catch (e) {
+        btn.innerHTML = orig;
+        btn.dataset.busy = '';
+        if (statusEl) statusEl.textContent = 'Network error. Try again.';
+      }
     }
 
     async function loadAttributedRevenueWidget() {
