@@ -6499,8 +6499,20 @@
             <div class="chat-suggestions" id="chat-suggestions">
               ${smartSuggestions.slice(0,3).map(s => `<button class="chat-chip" data-msg="${s}">${s}</button>`).join('')}
             </div>
+            <div id="chat-attachment-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+            <div id="chat-attach-toolbar" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+              <button type="button" id="chat-attach-product" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.25);color:#A78BFA;font-size:0.72rem;font-weight:600;padding:6px 11px;border-radius:7px;cursor:pointer;font-family:var(--font-body);display:inline-flex;align-items:center;gap:5px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                + Reference product
+              </button>
+              <button type="button" id="chat-attach-upload" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.25);color:#A78BFA;font-size:0.72rem;font-weight:600;padding:6px 11px;border-radius:7px;cursor:pointer;font-family:var(--font-body);display:inline-flex;align-items:center;gap:5px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                + Upload image/video
+              </button>
+              <input type="file" id="chat-upload-input" accept="image/*,video/*" style="display:none;">
+            </div>
             <div class="chat-input-bar">
-              <textarea class="chat-input" id="chat-input" placeholder="Ask your marketing coach anything..." rows="1"></textarea>
+              <textarea class="chat-input" id="chat-input" placeholder="Ask your marketing coach anything — or describe content to create..." rows="1"></textarea>
               <button class="chat-send-btn" id="chat-send" aria-label="Send message">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               </button>
@@ -6644,15 +6656,29 @@
       }
 
       async function sendMessage() {
-        const message = inputEl.value.trim();
-        if (!message) return;
+        const userText = inputEl.value.trim();
+        if (!userText && !window._seCoachAttachedProduct && !window._seCoachAttachedImage) return;
         inputEl.value = '';
         inputEl.style.height = 'auto';
         sendBtn.disabled = true;
         suggestionsEl.style.display = 'none';
 
-        appendMessage(message, 'user');
-        saveToHistory('user', message);
+        // Build the message with attachment context so the Coach knows to emit CREATE_CONTENT.
+        let message = userText;
+        const ctxParts = [];
+        if (window._seCoachAttachedProduct) {
+          ctxParts.push('Attached product reference: "' + window._seCoachAttachedProduct + '" (use as the hero product in any content you generate).');
+        }
+        if (window._seCoachAttachedImage) {
+          ctxParts.push('Attached custom image/video asset (user uploaded) — use as reference or image-to-video base.');
+        }
+        if (ctxParts.length) {
+          message = userText + '\n\n' + ctxParts.join(' ');
+        }
+
+        appendMessage(userText || '(attachment sent)', 'user');
+        saveToHistory('user', userText || '(attachment sent)');
+        try { const chipsBar = document.getElementById('chat-attachment-chips'); if (chipsBar) chipsBar.innerHTML = ''; } catch {}
 
         // Typing indicator with animated dots
         const typingRow = document.createElement('div');
@@ -6687,33 +6713,57 @@
           if (Array.isArray(data.coach_actions) && data.coach_actions.length) {
             actionsHtml = '<div class="coach-actions" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
               data.coach_actions.map((a, i) => {
-                if (a.type !== 'regenerate') return '';
-                const safeTid = String(a.template_id || '').replace(/"/g, '&quot;');
-                const safeProd = String(a.product_name || '').replace(/"/g, '&quot;');
-                const safeReason = String(a.reason || '').replace(/"/g, '&quot;');
-                const label = a.product_name ? ('Regenerate on: ' + a.product_name) : 'Regenerate';
-                return '<button class="coach-action-btn" data-type="regenerate" data-template-id="' + safeTid + '" data-product-name="' + safeProd + '" data-reason="' + safeReason + '" style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);color:#E9D5FF;font-size:0.78rem;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:var(--font-body);display:inline-flex;align-items:center;gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> ' + label + '</button>';
+                if (a.type === 'regenerate') {
+                  const safeTid = String(a.template_id || '').replace(/"/g, '&quot;');
+                  const safeProd = String(a.product_name || '').replace(/"/g, '&quot;');
+                  const safeReason = String(a.reason || '').replace(/"/g, '&quot;');
+                  const label = a.product_name ? ('Regenerate on: ' + a.product_name) : 'Regenerate';
+                  return '<button class="coach-action-btn" data-type="regenerate" data-template-id="' + safeTid + '" data-product-name="' + safeProd + '" data-reason="' + safeReason + '" style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);color:#E9D5FF;font-size:0.78rem;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:var(--font-body);display:inline-flex;align-items:center;gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> ' + label + '</button>';
+                }
+                if (a.type === 'create') {
+                  const safePrompt = String(a.prompt || '').replace(/"/g, '&quot;');
+                  const safeProd = String(a.product_name || '').replace(/"/g, '&quot;');
+                  const safeMode = (a.mode === 'image' ? 'image' : 'video');
+                  const safeAR = ['9:16','1:1','16:9'].includes(a.aspect_ratio) ? a.aspect_ratio : '9:16';
+                  const label = a.product_name ? ('Create ' + safeMode + ': ' + a.product_name) : ('Create this ' + safeMode);
+                  return '<button class="coach-action-btn" data-type="create" data-prompt="' + safePrompt + '" data-product-name="' + safeProd + '" data-mode="' + safeMode + '" data-aspect-ratio="' + safeAR + '" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:white;font-size:0.78rem;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;border:none;font-family:var(--font-body);display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(124,58,237,0.3);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> ' + label + '</button>';
+                }
+                return '';
               }).join('') + '</div>';
           }
           aiRow.innerHTML = '<div class="chat-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg></div><div class="chat-msg chat-msg--ai">' + replyHtml + actionsHtml + '<div style="font-size:0.6rem;color:rgba(148,163,184,0.3);margin-top:6px;">' + now + '</div></div>';
           messagesEl.appendChild(aiRow);
-          // Wire action buttons (one-click regenerate)
+          // Wire action buttons (one-click regenerate OR create-in-chat)
           aiRow.querySelectorAll('.coach-action-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
               if (btn.dataset.busy === '1') return;
               btn.dataset.busy = '1';
               const origLabel = btn.innerHTML;
-              btn.innerHTML = '<span class="se-spinner" style="width:12px;height:12px;border:2px solid rgba(233,213,255,0.3);border-top-color:#E9D5FF;border-radius:50%;animation:spin 0.7s linear infinite;"></span> Queuing…';
+              btn.innerHTML = '<span class="se-spinner" style="width:12px;height:12px;border:2px solid rgba(233,213,255,0.3);border-top-color:#E9D5FF;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;"></span> Queuing…';
               try {
-                const r = await fetch(`${API}/api/coach-action`, {
+                const isCreate = btn.dataset.type === 'create';
+                const endpoint = isCreate ? '/api/coach-create' : '/api/coach-action';
+                const body = isCreate ? {
+                  prompt: btn.dataset.prompt,
+                  product_title: btn.dataset.productName,
+                  mode: btn.dataset.mode,
+                  aspect_ratio: btn.dataset.aspectRatio,
+                  attached_image_url: window._seCoachAttachedImage || '',
+                } : {
+                  action: btn.dataset.type,
+                  template_id: btn.dataset.templateId,
+                  product_name: btn.dataset.productName,
+                  reason: btn.dataset.reason,
+                };
+                const r = await fetch(`${API}${endpoint}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
-                  body: JSON.stringify({ action: btn.dataset.type, template_id: btn.dataset.templateId, product_name: btn.dataset.productName, reason: btn.dataset.reason }),
+                  body: JSON.stringify(body),
                 });
                 const d = await r.json().catch(() => ({}));
                 if (d && d.success) {
-                  btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Queued — check Content';
-                  if (typeof showToast === 'function') showToast('Regeneration queued. Check the Content tab.');
+                  btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ' + (isCreate ? 'Rendering — check Content' : 'Queued — check Content');
+                  if (typeof showToast === 'function') showToast(isCreate ? 'Rendering your content. Check the Content tab in a few min.' : 'Regeneration queued. Check the Content tab.');
                 } else {
                   btn.innerHTML = '<span style="color:#F43F5E;">Failed — retry</span>';
                   btn.dataset.busy = '';
@@ -6753,6 +6803,111 @@
           sendMessage();
         }
       });
+
+      // ━━━ Coach attach toolbar: reference product + upload image/video ━━━
+      window._seCoachAttachedProduct = window._seCoachAttachedProduct || '';
+      window._seCoachAttachedImage = window._seCoachAttachedImage || '';
+
+      function _seRenderAttachChips() {
+        const bar = document.getElementById('chat-attachment-chips');
+        if (!bar) return;
+        const chips = [];
+        if (window._seCoachAttachedProduct) {
+          chips.push('<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);color:#E9D5FF;font-size:0.7rem;font-weight:600;padding:4px 10px;border-radius:20px;">' +
+            '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>' +
+            String(window._seCoachAttachedProduct).replace(/[<>]/g, '').slice(0, 40) +
+            ' <button onclick="window._seCoachAttachedProduct=\'\';_seRenderAttachChips();" style="background:none;border:none;color:#E9D5FF;cursor:pointer;padding:0;font-size:1.1em;line-height:1;">×</button>' +
+            '</span>');
+        }
+        if (window._seCoachAttachedImage) {
+          const safeUrl = String(window._seCoachAttachedImage).replace(/[<>]/g, '');
+          chips.push('<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);color:#E9D5FF;font-size:0.7rem;font-weight:600;padding:4px 10px;border-radius:20px;">' +
+            '<img src="' + safeUrl + '" alt="" style="width:16px;height:16px;border-radius:3px;object-fit:cover;">' +
+            'Uploaded asset' +
+            ' <button onclick="window._seCoachAttachedImage=\'\';_seRenderAttachChips();" style="background:none;border:none;color:#E9D5FF;cursor:pointer;padding:0;font-size:1.1em;line-height:1;">×</button>' +
+            '</span>');
+        }
+        bar.innerHTML = chips.join('');
+      }
+      window._seRenderAttachChips = _seRenderAttachChips;
+
+      const attachProductBtn = document.getElementById('chat-attach-product');
+      if (attachProductBtn) {
+        attachProductBtn.addEventListener('click', async () => {
+          let products = (window._seStudioCatalog || []);
+          if (!products.length) {
+            try {
+              const r = await fetch(`${API}/api/client-data`, { headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash } });
+              const d = await r.json().catch(() => ({}));
+              products = d?.catalog_products || [];
+              window._seStudioCatalog = products;
+            } catch {}
+          }
+          if (!products.length) {
+            if (typeof showToast === 'function') showToast('No products found. Connect Shopify in Settings.');
+            return;
+          }
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+          const panel = document.createElement('div');
+          panel.style.cssText = 'background:#0B0F1A;border:1px solid rgba(124,58,237,0.3);border-radius:14px;width:100%;max-width:640px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;';
+          panel.innerHTML = '<div style="padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
+            '<div style="font-weight:700;font-size:0.95rem;color:#F8FAFC;">Reference a product</div>' +
+            '<input id="_sePickerSearch" placeholder="Search products…" style="flex:1;max-width:260px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#F8FAFC;padding:6px 10px;border-radius:8px;font-size:0.78rem;font-family:var(--font-body);">' +
+            '<button id="_sePickerClose" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:1.4rem;line-height:1;">×</button>' +
+            '</div>' +
+            '<div id="_sePickerGrid" style="padding:16px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;"></div>';
+          overlay.appendChild(panel);
+          document.body.appendChild(overlay);
+          function render(filter) {
+            const grid = panel.querySelector('#_sePickerGrid');
+            const q = String(filter || '').toLowerCase();
+            const list = products.filter(p => !q || String(p.title || '').toLowerCase().includes(q)).slice(0, 60);
+            grid.innerHTML = list.map(p => {
+              const title = String(p.title || '').replace(/"/g, '&quot;');
+              const img = String(p.image_url || '').replace(/"/g, '&quot;');
+              return '<button class="_sePickerCard" data-title="' + title + '" data-image="' + img + '" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;cursor:pointer;padding:0;display:flex;flex-direction:column;text-align:left;font-family:var(--font-body);transition:border-color 0.15s, transform 0.1s;">' +
+                (img ? '<img src="' + img + '" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;">' : '<div style="width:100%;aspect-ratio:1/1;background:rgba(124,58,237,0.1);"></div>') +
+                '<div style="padding:8px 10px;font-size:0.7rem;color:#E9D5FF;font-weight:600;line-height:1.3;">' + title.slice(0, 60) + '</div>' +
+                '</button>';
+            }).join('');
+            grid.querySelectorAll('._sePickerCard').forEach(card => {
+              card.addEventListener('click', () => {
+                window._seCoachAttachedProduct = card.dataset.title;
+                window._seCoachAttachedImage = '';
+                _seRenderAttachChips();
+                document.body.removeChild(overlay);
+              });
+            });
+          }
+          render('');
+          panel.querySelector('#_sePickerSearch').addEventListener('input', (e) => render(e.target.value));
+          panel.querySelector('#_sePickerClose').addEventListener('click', () => document.body.removeChild(overlay));
+          overlay.addEventListener('click', (e) => { if (e.target === overlay) document.body.removeChild(overlay); });
+        });
+      }
+
+      const attachUploadBtn = document.getElementById('chat-attach-upload');
+      const uploadInput = document.getElementById('chat-upload-input');
+      if (attachUploadBtn && uploadInput) {
+        attachUploadBtn.addEventListener('click', () => uploadInput.click());
+        uploadInput.addEventListener('change', () => {
+          const file = uploadInput.files?.[0];
+          if (!file) return;
+          if (file.size > 20 * 1024 * 1024) {
+            if (typeof showToast === 'function') showToast('File too large — 20MB max.');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => {
+            window._seCoachAttachedImage = reader.result;
+            window._seCoachAttachedProduct = '';
+            _seRenderAttachChips();
+            uploadInput.value = '';
+          };
+          reader.readAsDataURL(file);
+        });
+      }
 
       // Auto-resize textarea
       inputEl.addEventListener('input', () => {
