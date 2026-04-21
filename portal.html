@@ -4821,6 +4821,9 @@
     // ━━━ Analytics Page ━━━
     function renderAnalyticsPage(data) {
       const content = document.getElementById('dash-content');
+      if (!content) return; // Guard against timing issue where nav fires before content root mounts
+      data = data || {};
+      data.client = data.client || {};
 
       // Free tier: show full upgrade page instead of analytics
       if (!isPaid()) {
