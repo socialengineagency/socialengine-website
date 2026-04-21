@@ -7142,7 +7142,9 @@
       }
 
       function renderInboxConnect() {
-        document.getElementById('inbox-body').innerHTML = `
+        const el = document.getElementById('inbox-body');
+        if (!el) return; // User navigated away from the Inbox tab before async load resolved
+        el.innerHTML = `
           <div style="text-align:center;padding:48px 20px;">
             <div style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,rgba(225,48,108,0.08),rgba(131,58,180,0.08),rgba(252,175,69,0.08));border:1px solid rgba(225,48,108,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
