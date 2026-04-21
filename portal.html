@@ -7454,6 +7454,7 @@
     // ━━━ Competitor Intel ━━━
     function renderCompetitorIntel() {
       const content = document.getElementById('dash-content');
+      if (!content) return;
       const clientName = clientData?.client?.business_name || 'Your Brand';
 
       // Preview tier: show teaser with upgrade prompt
