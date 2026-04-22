@@ -196,6 +196,158 @@ function getPlanInfo(tier) {
     if (err) err.textContent = msg;
   }
 
+  const DEFAULT_ERROR_TOAST = 'Something went wrong. Please try again.';
+  let toastContainer = null;
+
+  class SafeWriteError extends Error {
+    constructor(message, options = {}) {
+      super(message);
+      this.name = 'SafeWriteError';
+      this.code = options.code || 'WRITE_FAILED';
+      this.status = typeof options.status === 'number' ? options.status : null;
+      this.payload = options.payload || null;
+      this.userMessage = options.userMessage || message || DEFAULT_ERROR_TOAST;
+      if (options.cause) this.cause = options.cause;
+    }
+  }
+
+  function getPayloadErrorMessage(payload) {
+    if (!payload || typeof payload !== 'object') return '';
+    const candidates = [
+      payload.error,
+      payload.message,
+      payload.detail,
+      payload.data && payload.data.error,
+      payload.data && payload.data.message,
+    ];
+
+    const match = candidates.find((value) => typeof value === 'string' && value.trim());
+    return match ? match.trim() : '';
+  }
+
+  function getUserFacingErrorMessage(error, fallbackMessage = DEFAULT_ERROR_TOAST) {
+    if (error instanceof SafeWriteError && error.userMessage) return error.userMessage;
+    if (error && typeof error.userMessage === 'string' && error.userMessage.trim()) return error.userMessage.trim();
+    return fallbackMessage;
+  }
+
+  function getToastContainer() {
+    if (toastContainer && !toastContainer.removed) return toastContainer;
+    if (!document.body) return null;
+
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+    return toastContainer;
+  }
+
+  function showToast(message, type = 'error') {
+    if (!message) return;
+    const container = getToastContainer();
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    toast.setAttribute('aria-live', 'polite');
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add('toast--hiding');
+      setTimeout(() => {
+        if (typeof toast.remove === 'function') toast.remove();
+      }, 220);
+    }, 4200);
+  }
+
+  async function safeWrite(url, body, options = {}) {
+    const method = (options.method || 'POST').toUpperCase();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    };
+    const requestOptions = {
+      method,
+      headers,
+    };
+
+    if (body !== undefined) {
+      requestOptions.body = JSON.stringify(body);
+    }
+
+    let response;
+    try {
+      response = await fetch(url, requestOptions);
+    } catch (error) {
+      throw new SafeWriteError('Network request failed', {
+        code: 'NETWORK_ERROR',
+        cause: error,
+        userMessage: 'We could not reach the server. Please check your connection and try again.',
+      });
+    }
+
+    let payload = null;
+    try {
+      if (response.status === 204) {
+        payload = { success: true, data: null };
+      } else {
+        payload = await response.json();
+      }
+    } catch (error) {
+      throw new SafeWriteError('Response was not valid JSON', {
+        code: 'INVALID_JSON',
+        status: typeof response.status === 'number' ? response.status : null,
+        cause: error,
+        userMessage: 'The server returned an unexpected response. Please try again.',
+      });
+    }
+
+    const payloadMessage = getPayloadErrorMessage(payload);
+    if (!response.ok) {
+      throw new SafeWriteError(payloadMessage || `Request failed with status ${response.status}`, {
+        code: 'HTTP_ERROR',
+        status: typeof response.status === 'number' ? response.status : null,
+        payload,
+        userMessage: payloadMessage || 'We could not save your request right now. Please try again.',
+      });
+    }
+
+    const acknowledged = payload && typeof payload === 'object'
+      && (payload.success === true || payload.data !== undefined);
+
+    if (!acknowledged) {
+      throw new SafeWriteError('Unexpected response from server', {
+        code: 'INVALID_RESPONSE',
+        status: typeof response.status === 'number' ? response.status : null,
+        payload,
+        userMessage: 'The server returned an unexpected response. Please try again.',
+      });
+    }
+
+    return payload;
+  }
+
+  function handleGlobalError(error, context, details = {}) {
+    console.error(context, error, details);
+    showToast(getUserFacingErrorMessage(error), 'error');
+  }
+
+  window.onerror = function onWindowError(message, source, lineno, colno, error) {
+    handleGlobalError(error || new Error(typeof message === 'string' ? message : DEFAULT_ERROR_TOAST), 'Unhandled application error', {
+      message,
+      source,
+      lineno,
+      colno,
+    });
+    return false;
+  };
+
+  window.onunhandledrejection = function onUnhandledRejection(event) {
+    handleGlobalError(event.reason, 'Unhandled promise rejection');
+  };
+
   // Animated processing steps
   const processingSteps = [
     'Connecting to your store...',
@@ -415,18 +567,18 @@ function getPlanInfo(tier) {
       const stopAnimation = showProcessingAnimation();
 
       try {
-        const response = await fetch(`${API_BASE}/api/audit`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ website: normalizeURL(url), email, name, instagram_handle: document.getElementById('audit-instagram')?.value || '', tiktok_handle: document.getElementById('audit-tiktok')?.value || '', facebook_handle: document.getElementById('audit-facebook')?.value || '' }),
+        const data = await safeWrite(`${API_BASE}/api/audit`, {
+          website: normalizeURL(url),
+          email,
+          name,
+          instagram_handle: document.getElementById('audit-instagram')?.value || '',
+          tiktok_handle: document.getElementById('audit-tiktok')?.value || '',
+          facebook_handle: document.getElementById('audit-facebook')?.value || '',
         });
-
-        if (!response.ok) throw new Error('Audit request failed');
-        const data = await response.json();
 
         stopAnimation();
 
-        if (data.success && data.audit) {
+        if (data.audit) {
           // Show results on screen
           auditForm.hidden = true;
           if (auditSuccess) auditSuccess.hidden = true;
@@ -445,12 +597,19 @@ function getPlanInfo(tier) {
           // Smooth scroll to results
           resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
-          throw new Error('Invalid response');
+          throw new SafeWriteError('Audit payload was incomplete', {
+            code: 'MISSING_AUDIT',
+            payload: data,
+            userMessage: 'Your audit completed with an incomplete response. Please try again.',
+          });
         }
       } catch (err) {
         console.error('Audit error:', err);
         stopAnimation();
+        showToast(getUserFacingErrorMessage(err), 'error');
         if (auditError) {
+          const auditErrorText = auditError.querySelector('.ai-audit__error-text');
+          if (auditErrorText) auditErrorText.textContent = getUserFacingErrorMessage(err);
           auditError.hidden = false;
           auditForm.hidden = true;
         }
@@ -475,6 +634,15 @@ function getPlanInfo(tier) {
     window.addEventListener('load', () => {
       if (typeof lucide !== 'undefined') lucide.createIcons();
     });
+  }
+
+  if (window.__SOCIALENGINE_ENABLE_TEST_HOOKS__) {
+    window.__SOCIALENGINE_TEST_HOOKS__ = {
+      SafeWriteError,
+      safeWrite,
+      getUserFacingErrorMessage,
+      showToast,
+    };
   }
 
 })();
