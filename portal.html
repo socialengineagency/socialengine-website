@@ -2477,6 +2477,7 @@
     </div>
   </footer>
 
+  <script src="./portal-native-oauth.js"></script>
   <script>
   (function() {
     'use strict';
@@ -2515,7 +2516,205 @@
     let clientEmail = '';
     let clientHash = '';
     let clientData = null;
+    let nativeOAuthStatus = {};
     let _videoRegenSelectedByPost = {};
+
+    function getNativeOAuthApi() {
+      return window.SENativeOAuth || null;
+    }
+
+    function normalizeSocialPlatform(platform) {
+      return String(platform || '').trim().toLowerCase();
+    }
+
+    function getPlatformLabel(platform) {
+      const target = normalizeSocialPlatform(platform);
+      const api = getNativeOAuthApi();
+      if (api?.PLATFORM_META?.[target]?.label) return api.PLATFORM_META[target].label;
+      if (!target) return 'Social account';
+      return target.charAt(0).toUpperCase() + target.slice(1);
+    }
+
+    function getPlatformConnectionStateForSnapshot(platform, snapshot = clientData) {
+      const target = normalizeSocialPlatform(platform);
+      const api = getNativeOAuthApi();
+      if (api && typeof api.getPlatformConnectionState === 'function') {
+        return api.getPlatformConnectionState(target, snapshot?.client || {}, snapshot?.upload_post_connection || {});
+      }
+      const clientRecord = snapshot?.client || {};
+      const connectedPlatforms = Array.isArray(clientRecord.social_connected_platforms)
+        ? clientRecord.social_connected_platforms.map((item) => normalizeSocialPlatform(item))
+        : [];
+      const accounts = Array.isArray(snapshot?.upload_post_connection?.accounts)
+        ? snapshot.upload_post_connection.accounts
+        : [];
+      const publishConnected = connectedPlatforms.includes(target) || accounts.some((account) => normalizeSocialPlatform(account?.platform) === target);
+      return {
+        platform: target,
+        label: getPlatformLabel(target),
+        publishConnected,
+        nativeConnected: false,
+        fullyConnected: false,
+        analyticsLimited: publishConnected,
+        analyticsOnly: false,
+        statusLabel: publishConnected ? 'Publishing only' : 'Not connected',
+      };
+    }
+
+    function shouldStartNativeOAuthForSnapshot(platform, snapshot = clientData) {
+      const target = normalizeSocialPlatform(platform);
+      const api = getNativeOAuthApi();
+      if (api && typeof api.shouldStartNativeOAuth === 'function') {
+        return api.shouldStartNativeOAuth(target, snapshot?.client || {}, snapshot?.upload_post_connection || {});
+      }
+      const state = getPlatformConnectionStateForSnapshot(target, snapshot);
+      return !!(state.publishConnected && !state.nativeConnected);
+    }
+
+    function getNativeOAuthFailureCopy(platform) {
+      const target = normalizeSocialPlatform(platform);
+      const api = getNativeOAuthApi();
+      if (api && typeof api.getNativeOAuthFailureMessage === 'function') {
+        return api.getNativeOAuthFailureMessage(target);
+      }
+      return `${getPlatformLabel(target)} publishing is connected, but analytics data will be limited until native OAuth is completed.`;
+    }
+
+    function setNativeOAuthStatus(platform, nextState = {}) {
+      const target = normalizeSocialPlatform(platform);
+      if (!target) return;
+      nativeOAuthStatus[target] = {
+        ...(nativeOAuthStatus[target] || {}),
+        ...nextState,
+        platform: target,
+      };
+    }
+
+    function clearNativeOAuthStatus(platform) {
+      delete nativeOAuthStatus[normalizeSocialPlatform(platform)];
+    }
+
+    function getNativeOAuthStatus(platform) {
+      return nativeOAuthStatus[normalizeSocialPlatform(platform)] || null;
+    }
+
+    function getConnectionTone(state) {
+      if (state?.analyticsLimited) {
+        return {
+          color: '#F59E0B',
+          dot: 'background:#F59E0B;box-shadow:0 0 6px rgba(245,158,11,0.45);',
+          badgeBg: 'rgba(245,158,11,0.12)',
+          badgeBorder: 'rgba(245,158,11,0.25)',
+        };
+      }
+      if (state?.publishConnected || state?.nativeConnected) {
+        return {
+          color: '#7C3AED',
+          dot: 'background:#7C3AED;box-shadow:0 0 6px #7C3AED;',
+          badgeBg: 'rgba(124,58,237,0.08)',
+          badgeBorder: 'rgba(124,58,237,0.15)',
+        };
+      }
+      return {
+        color: 'rgba(100,116,139,0.7)',
+        dot: 'background:rgba(100,116,139,0.5);',
+        badgeBg: 'rgba(100,116,139,0.08)',
+        badgeBorder: 'rgba(100,116,139,0.12)',
+      };
+    }
+
+    function getNativeConnectionState(platform, clientRecord, uploadPostSnapshot) {
+      const state = getPlatformConnectionStateForSnapshot(platform, {
+        client: clientRecord || {},
+        upload_post_connection: uploadPostSnapshot || {},
+      });
+      const warning = getNativeOAuthStatus(platform);
+      if (warning?.message) {
+        return { ...state, warningMessage: warning.message };
+      }
+      return state;
+    }
+
+    function getNativePlatformLabel(platform) {
+      return getPlatformLabel(platform);
+    }
+
+    function getNativeFailureMessage(platform) {
+      return getNativeOAuthFailureCopy(platform);
+    }
+
+    function shouldStartNativeFollowUp(platform, snapshot = clientData) {
+      return shouldStartNativeOAuthForSnapshot(platform, snapshot);
+    }
+
+    function setNativeOAuthFailure(platform, message) {
+      setNativeOAuthStatus(platform, {
+        failed: true,
+        message: message || getNativeFailureMessage(platform),
+      });
+    }
+
+    function clearNativeOAuthFailure(platform) {
+      clearNativeOAuthStatus(platform);
+    }
+
+    function renderNativeOAuthAlert({ platforms = [], compact = false } = {}) {
+      const uniquePlatforms = [...new Set((platforms || []).map((platform) => normalizeSocialPlatform(platform)).filter(Boolean))];
+      const warnings = uniquePlatforms
+        .map((platform) => {
+          const status = getNativeOAuthStatus(platform);
+          if (!status?.message) return '';
+          const label = getNativePlatformLabel(platform);
+          const retryLabel = compact ? 'Retry native OAuth' : 'Retry native analytics OAuth';
+          return `
+            <div style="padding:${compact ? '12px 14px' : '14px 16px'};border-radius:12px;border:1px solid rgba(245,158,11,0.28);background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(17,29,48,0.95));margin-bottom:${compact ? '10px' : '14px'};">
+              <div style="display:flex;align-items:flex-start;gap:10px;justify-content:space-between;flex-wrap:wrap;">
+                <div style="min-width:0;flex:1;">
+                  <div style="font-size:0.78rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#FBBF24;margin-bottom:6px;">${label} analytics limited</div>
+                  <div style="font-size:${compact ? '0.78rem' : '0.82rem'};line-height:1.55;color:rgba(255,248,235,0.92);">${escapeHtml(status.message)}</div>
+                </div>
+                <button onclick="retryNativeOAuth('${platform}')" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(124,58,237,0.16);color:#E9D5FF;border:1px solid rgba(124,58,237,0.35);border-radius:10px;font-weight:700;font-size:0.76rem;cursor:pointer;font-family:var(--font-body);white-space:nowrap;">
+                  ${retryLabel}
+                </button>
+              </div>
+            </div>
+          `;
+        })
+        .filter(Boolean);
+
+      return warnings.join('');
+    }
+
+    async function refreshClientDataSnapshot() {
+      if (!clientEmail || !clientHash) return clientData;
+      try {
+        const fresh = await fetch(`${API}/api/client-data`, {
+          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+        });
+        if (fresh.ok) clientData = await fresh.json();
+      } catch { /* ignore */ }
+      return clientData;
+    }
+
+    async function refreshClientData() {
+      return refreshClientDataSnapshot();
+    }
+
+    function rerenderNativeOAuthSurfaces() {
+      if (!clientData) return;
+      if (activeNav === 'settings') renderSettingsPage(clientData);
+      if (activeNav === 'inbox') renderInbox();
+    }
+
+    async function retryNativeOAuth(platform) {
+      const target = normalizeSocialPlatform(platform);
+      if (!target) return;
+      clearNativeOAuthFailure(target);
+      await refreshClientData();
+      rerenderNativeOAuthSurfaces();
+      showToast(`Re-opening ${getNativePlatformLabel(target)} native analytics OAuth…`);
+      return connectViaUploadPost(target);
+    }
 
     /** Authenticated fetch to Railway API (same headers as client-data). */
     function apiFetch(path, init = {}) {
@@ -5869,15 +6068,17 @@
       const socialPlatforms = Array.isArray(c.social_connected_platforms)
         ? c.social_connected_platforms.map(p => String(p || '').trim().toLowerCase())
         : [];
-      const socialSet = new Set(socialPlatforms);
       const isShopifyConnected = !!(c.shopify_domain && c.shopify_domain.length > 0);
-      const isIGConnected = socialSet.has('instagram') || !!(c.instagram_user_id);
-      const isTTConnected = socialSet.has('tiktok') || !!(c.tiktok_access_token && c.tiktok_access_token !== '');
-      const isFBConnected = socialSet.has('facebook') || !!(c.meta_page_id && c.meta_page_token && c.facebook_connected === 'true');
 
       const upAccounts = (data.upload_post_connection && Array.isArray(data.upload_post_connection.accounts))
         ? data.upload_post_connection.accounts
         : [];
+      const igConnection = getNativeConnectionState('instagram', c, data.upload_post_connection);
+      const ttConnection = getNativeConnectionState('tiktok', c, data.upload_post_connection);
+      const fbConnection = getNativeConnectionState('facebook', c, data.upload_post_connection);
+      const isIGConnected = igConnection.publishConnected;
+      const isTTConnected = ttConnection.publishConnected;
+      const isFBConnected = fbConnection.publishConnected;
       const _handleFor = (platform) => {
         const match = upAccounts.find(a => String(a?.platform || '').toLowerCase() === platform);
         return match && match.name ? String(match.name) : '';
@@ -5885,6 +6086,7 @@
       const igHandle = _handleFor('instagram') || c.instagram_handle || '';
       const ttHandle = _handleFor('tiktok') || c.tiktok_display_name || '';
       const fbHandle = _handleFor('facebook') || c.meta_page_name || '';
+      const settingsNativeBanner = renderNativeOAuthAlert({ platforms: ['instagram', 'tiktok', 'facebook'], compact: false });
 
       const tierName = c.tier || 'Pro';
       const tierPrice = tierName === 'Annual' ? '$247' : '$297';
@@ -5896,6 +6098,8 @@
           <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:#fff;letter-spacing:-0.02em;margin:0 0 4px;">Settings</h2>
           <p style="font-size:0.875rem;color:var(--color-text-muted);margin:0;">Manage your account, integrations, and brand configuration</p>
         </div>
+
+        ${settingsNativeBanner}
 
         <!-- Plan hero card -->
         <div style="margin-bottom:16px;border-radius:16px;border:1px solid rgba(124,58,237,0.15);background:linear-gradient(135deg,rgba(124,58,237,0.06) 0%,rgba(255,255,255,0.02) 60%,rgba(17,29,48,0.95) 100%);padding:24px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 4px 24px rgba(0,0,0,0.2);overflow:hidden;position:relative;">
@@ -6117,9 +6321,9 @@
           <div style="padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.01);">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
             <h3 style="font-family:var(--font-display);font-size:0.9375rem;font-weight:700;color:#fff;margin:0;letter-spacing:-0.01em;">Instagram</h3>
-            <div style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:700;${isIGConnected ? 'color:#7C3AED;' : 'color:rgba(100,116,139,0.7);'}">
-              <span style="width:7px;height:7px;border-radius:50%;${isIGConnected ? 'background:#7C3AED;box-shadow:0 0 6px #7C3AED;' : 'background:rgba(100,116,139,0.5);'}"></span>
-              ${isIGConnected ? 'Connected' : 'Not connected'}
+            <div style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:700;${getConnectionTone(igConnection).color}">
+              <span style="width:7px;height:7px;border-radius:50%;${getConnectionTone(igConnection).dot}"></span>
+              ${igConnection.statusLabel}
             </div>
           </div>
           <div style="padding:22px 24px;">
@@ -6128,11 +6332,12 @@
               <div style="flex:1;min-width:0;">
                 <div style="font-size:0.9375rem;font-weight:700;color:#fff;margin:0 0 4px;">Instagram Business</div>
                 ${isIGConnected ? `
-                  <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;margin-bottom:10px;">
-                    <span style="width:6px;height:6px;border-radius:50%;background:#7C3AED;box-shadow:0 0 5px #7C3AED;"></span>
-                    ${igHandle ? `Connected as @${igHandle}` : 'Connected'}
+                  <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;${getConnectionTone(igConnection).badge}border-radius:8px;font-size:0.78rem;font-weight:600;margin-bottom:10px;">
+                    <span style="width:6px;height:6px;border-radius:50%;${getConnectionTone(igConnection).dot}"></span>
+                    ${igHandle ? `${igConnection.statusLabel} as @${igHandle}` : igConnection.statusLabel}
                   </div>
-                  <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">Instagram is connected. SocialEngine can schedule content directly to your feed and read profile analytics.</p>
+                  <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">${igConnection.analyticsLimited ? 'Instagram publishing is connected, but native analytics OAuth still needs to finish before Grow can pull impressions, reach, and saves.' : 'Instagram is fully connected. SocialEngine can schedule content directly to your feed and read profile analytics.'}</p>
+                  ${igConnection.analyticsLimited ? `<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;"><button onclick="retryNativeOAuth('instagram')" style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:rgba(124,58,237,0.12);color:#E9D5FF;border:1px solid rgba(124,58,237,0.35);border-radius:10px;font-weight:700;font-size:0.8125rem;cursor:pointer;font-family:var(--font-body);">Complete Analytics Connection</button><span style="font-size:0.74rem;color:var(--color-text-faint);line-height:1.5;">If this step fails, Grow analytics will stay limited until native OAuth succeeds.</span></div>` : ''}
                 ` : `
                   <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.12);border-radius:8px;font-size:0.78rem;font-weight:600;color:var(--color-text-faint);margin-bottom:10px;">
                     <span style="width:6px;height:6px;border-radius:50%;background:rgba(100,116,139,0.5);"></span>
@@ -6156,9 +6361,9 @@
           <div style="padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.01);">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#69C9D0" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
             <h3 style="font-family:var(--font-display);font-size:0.9375rem;font-weight:700;color:#fff;margin:0;letter-spacing:-0.01em;">TikTok</h3>
-            <div style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:700;${isTTConnected ? 'color:#7C3AED;' : 'color:rgba(100,116,139,0.7);'}">
-              <span style="width:7px;height:7px;border-radius:50%;${isTTConnected ? 'background:#7C3AED;box-shadow:0 0 6px #7C3AED;' : 'background:rgba(100,116,139,0.5);'}"></span>
-              ${isTTConnected ? 'Connected' : 'Not connected'}
+            <div style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:700;${getConnectionTone(ttConnection).color}">
+              <span style="width:7px;height:7px;border-radius:50%;${getConnectionTone(ttConnection).dot}"></span>
+              ${ttConnection.statusLabel}
             </div>
           </div>
           <div style="padding:22px 24px;">
@@ -6167,11 +6372,12 @@
               <div style="flex:1;min-width:0;">
                 <div style="font-size:0.9375rem;font-weight:700;color:#fff;margin:0 0 4px;">TikTok Business</div>
                 ${isTTConnected ? `
-                  <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;margin-bottom:10px;">
-                    <span style="width:6px;height:6px;border-radius:50%;background:#7C3AED;"></span>
-                    ${ttHandle ? `Connected as @${ttHandle}` : 'Connected'}
+                  <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;${getConnectionTone(ttConnection).badge}border-radius:8px;font-size:0.78rem;font-weight:600;margin-bottom:10px;">
+                    <span style="width:6px;height:6px;border-radius:50%;${getConnectionTone(ttConnection).dot}"></span>
+                    ${ttHandle ? `${ttConnection.statusLabel} as @${ttHandle}` : ttConnection.statusLabel}
                   </div>
-                  <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">TikTok is connected. SocialEngine can publish videos directly to your TikTok account.</p>
+                  <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">${ttConnection.analyticsLimited ? 'TikTok publishing is connected, but native business OAuth still needs to finish before Grow can pull platform metrics.' : 'TikTok is fully connected. SocialEngine can publish videos directly to your TikTok account and read analytics.'}</p>
+                  ${ttConnection.analyticsLimited ? `<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;"><button onclick="retryNativeOAuth('tiktok')" style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:rgba(124,58,237,0.12);color:#E9D5FF;border:1px solid rgba(124,58,237,0.35);border-radius:10px;font-weight:700;font-size:0.8125rem;cursor:pointer;font-family:var(--font-body);">Complete Analytics Connection</button><span style="font-size:0.74rem;color:var(--color-text-faint);line-height:1.5;">Complete TikTok native OAuth to unlock impressions, reach, and saves in Grow.</span></div>` : ''}
                 ` : `
                   <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.12);border-radius:8px;font-size:0.78rem;font-weight:600;color:var(--color-text-faint);margin-bottom:10px;">
                     <span style="width:6px;height:6px;border-radius:50%;background:rgba(100,116,139,0.5);"></span>
@@ -6194,9 +6400,9 @@
           <div style="padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.01);">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1877F2" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
             <h3 style="font-family:var(--font-display);font-size:0.9375rem;font-weight:700;color:#fff;margin:0;letter-spacing:-0.01em;">Facebook</h3>
-            <div style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:700;${isFBConnected ? 'color:#7C3AED;' : 'color:rgba(100,116,139,0.7);'}">
-              <span style="width:7px;height:7px;border-radius:50%;${isFBConnected ? 'background:#7C3AED;box-shadow:0 0 6px #7C3AED;' : 'background:rgba(100,116,139,0.5);'}"></span>
-              ${isFBConnected ? 'Connected' : 'Not connected'}
+            <div style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:700;${getConnectionTone(fbConnection).color}">
+              <span style="width:7px;height:7px;border-radius:50%;${getConnectionTone(fbConnection).dot}"></span>
+              ${fbConnection.statusLabel}
             </div>
           </div>
           <div style="padding:22px 24px;">
@@ -6205,11 +6411,12 @@
               <div style="flex:1;min-width:0;">
                 <div style="font-size:0.9375rem;font-weight:700;color:#fff;margin:0 0 4px;">Facebook Page</div>
                 ${isFBConnected ? `
-                  <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;margin-bottom:10px;">
-                    <span style="width:6px;height:6px;border-radius:50%;background:#7C3AED;"></span>
-                    ${fbHandle ? `Connected — ${fbHandle}` : 'Connected'}
+                  <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;${getConnectionTone(fbConnection).badge}border-radius:8px;font-size:0.78rem;font-weight:600;margin-bottom:10px;">
+                    <span style="width:6px;height:6px;border-radius:50%;${getConnectionTone(fbConnection).dot}"></span>
+                    ${fbHandle ? `${fbConnection.statusLabel} — ${fbHandle}` : fbConnection.statusLabel}
                   </div>
-                  <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">Facebook is connected. SocialEngine can publish content directly to your Facebook Page.</p>
+                  <p style="font-size:0.8125rem;color:var(--color-text-muted);line-height:1.55;margin:0;">${fbConnection.analyticsLimited ? 'Facebook publishing is connected, but Meta page OAuth still needs to finish before Grow can read page insights.' : 'Facebook is fully connected. SocialEngine can publish content directly to your Facebook Page and read page analytics.'}</p>
+                  ${fbConnection.analyticsLimited ? `<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;"><button onclick="retryNativeOAuth('facebook')" style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:rgba(124,58,237,0.12);color:#E9D5FF;border:1px solid rgba(124,58,237,0.35);border-radius:10px;font-weight:700;font-size:0.8125rem;cursor:pointer;font-family:var(--font-body);">Complete Analytics Connection</button><span style="font-size:0.74rem;color:var(--color-text-faint);line-height:1.5;">Meta native OAuth stores the page ID + token Grow needs for analytics.</span></div>` : ''}
                 ` : `
                   <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.12);border-radius:8px;font-size:0.78rem;font-weight:600;color:var(--color-text-faint);margin-bottom:10px;">
                     <span style="width:6px;height:6px;border-radius:50%;background:rgba(100,116,139,0.5);"></span>
@@ -6235,15 +6442,19 @@
           </div>
           <div style="padding:16px 24px;">
             ${(() => { const _pArr = Array.isArray(c.platforms) ? c.platforms : (c.platforms ? String(c.platforms).split(',').map(p=>p.trim()) : []); return _pArr.length > 0 ? (() => {
-              const oauthStatus = { instagram: isIGConnected, tiktok: isTTConnected, facebook: isFBConnected, shopify: isShopifyConnected };
+              const oauthStatus = { instagram: igConnection.fullyConnected, tiktok: ttConnection.fullyConnected, facebook: fbConnection.fullyConnected, shopify: isShopifyConnected };
+              const oauthStates = { instagram: igConnection, tiktok: ttConnection, facebook: fbConnection };
               return _pArr.map(p => {
                 const pLower = p.toLowerCase();
                 const isConnected = oauthStatus[pLower] || false;
+                const state = oauthStates[pLower];
+                const statusLabel = state ? state.statusLabel : (isConnected ? 'Connected' : 'Pending setup');
+                const tone = state ? getConnectionTone(state) : { color: isConnected ? '#7C3AED' : 'rgba(148,163,184,0.5)', dot: isConnected ? 'background:#7C3AED;box-shadow:0 0 6px rgba(124,58,237,0.4);' : 'background:rgba(100,116,139,0.5);' };
                 return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
                   <span style="font-size:0.9rem;color:var(--color-text);text-transform:capitalize;font-weight:500;">${p}</span>
-                  <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;${isConnected ? 'color:#7C3AED;' : 'color:rgba(148,163,184,0.5);'}font-weight:600;">
-                    <span style="width:7px;height:7px;border-radius:50%;${isConnected ? 'background:#7C3AED;box-shadow:0 0 6px rgba(124,58,237,0.4);' : 'background:rgba(100,116,139,0.5);'}"></span>
-                    ${isConnected ? 'Connected' : 'Pending setup'}
+                  <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;${tone.color}font-weight:600;">
+                    <span style="width:7px;height:7px;border-radius:50%;${tone.dot}"></span>
+                    ${statusLabel}
                   </div>
                 </div>`;
               }).join('');
@@ -9500,8 +9711,52 @@
             });
             if (fresh.ok) clientData = await fresh.json();
           } catch { /* ignore */ }
-          if (activeNav === 'settings') renderSettingsPage(clientData);
-          else document.querySelector('[data-nav=settings]')?.click();
+          rerenderCurrentPage();
+        };
+
+        const startNativeOAuthFollowUp = async () => {
+          if (!shouldStartNativeFollowUp(target, clientData)) {
+            clearNativeOAuthFailure(target);
+            rerenderCurrentPage();
+            return true;
+          }
+
+          let nativePopup;
+          try {
+            const nativeUrl = nativeOAuthApi.buildNativeOAuthUrl(API, target, clientEmail, clientHash);
+            _seShowConnectBanner(`Publishing is connected. Finishing ${getNativePlatformLabel(target)} analytics permissions…`);
+            nativePopup = window.open(nativeUrl, `native_oauth_${target}`, `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`);
+          } catch (err) {
+            setNativeOAuthFailure(target, getNativeFailureMessage(target));
+            rerenderCurrentPage();
+            showToast(getNativeFailureMessage(target));
+            return false;
+          }
+
+          if (!nativePopup) {
+            setNativeOAuthFailure(target, getNativeFailureMessage(target));
+            rerenderCurrentPage();
+            showToast(`${getNativePlatformLabel(target)} native analytics popup was blocked. Grow analytics will stay limited until you reconnect.`);
+            return false;
+          }
+
+          const nativeDeadline = Date.now() + 120000;
+          while (Date.now() < nativeDeadline) {
+            await new Promise((resolve) => setTimeout(resolve, 2500));
+            await refreshClientData();
+            if (!shouldStartNativeFollowUp(target, clientData)) {
+              clearNativeOAuthFailure(target);
+              rerenderCurrentPage();
+              _seShowConnectBanner(`${getNativePlatformLabel(target)} analytics permissions connected. Refreshing your dashboard…`);
+              return true;
+            }
+            if (nativePopup.closed) break;
+          }
+
+          setNativeOAuthFailure(target, getNativeFailureMessage(target));
+          rerenderCurrentPage();
+          showToast(getNativeFailureMessage(target));
+          return false;
         };
 
         // Unified poller: checks every 4s for up to ~4 minutes (60 attempts),
@@ -9523,6 +9778,7 @@
               if (checkTargetConnected(snapshot) || messageConnected) {
                 clearInterval(poller);
                 await refreshAfterConnect();
+                await startNativeOAuthFollowUp();
                 finish(true);
                 return;
               }
@@ -9543,6 +9799,9 @@
                 connected_platforms: clientData?.client?.social_connected_platforms || [],
                 accounts: clientData?.upload_post_connection?.accounts || [],
               }) && !messageConnected;
+              if (!stillNotConnected) {
+                await startNativeOAuthFollowUp();
+              }
               finish(!stillNotConnected, stillNotConnected ? `${platformLabel} connection not detected yet. You can re-open connect and finish OAuth.` : '');
             }
           }
@@ -9565,6 +9824,7 @@
                 if (checkTargetConnected(snapshot) || messageConnected) {
                   clearInterval(poller);
                   await refreshAfterConnect();
+                  await startNativeOAuthFollowUp();
                   finish(true);
                 }
               }

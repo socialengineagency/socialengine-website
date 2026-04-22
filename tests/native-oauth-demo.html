@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Native OAuth UI Demo</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0b1220;
+      color: #e2e8f0;
+      font-family: Inter, Arial, sans-serif;
+      padding: 32px;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 28px;
+      margin: 0 0 8px;
+    }
+    p {
+      color: #94a3b8;
+      line-height: 1.55;
+    }
+    .alert {
+      margin: 20px 0 24px;
+      padding: 16px 18px;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      background: rgba(245, 158, 11, 0.12);
+      border-radius: 14px;
+      color: #fde68a;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: linear-gradient(135deg, rgba(17,29,48,0.95), rgba(22,34,55,0.82));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 12px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+    }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(124,58,237,0.14);
+      border: 1px solid rgba(124,58,237,0.35);
+      color: #e9d5ff;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Native OAuth follow-up demo</h1>
+    <p>This harness renders the same helper-driven connection states used by the portal after the Upload-Post OAuth step.</p>
+    <div id="app"></div>
+  </div>
+
+  <script src="../portal-native-oauth.js"></script>
+  <script>
+    const snapshot = {
+      client: {
+        social_connected_platforms: ['instagram', 'tiktok', 'facebook'],
+        instagram_user_id: '',
+        tiktok_access_token: '',
+        meta_page_id: '12345',
+        meta_page_token: 'meta-token',
+      },
+      upload_post_connection: {
+        accounts: [
+          { platform: 'instagram', name: 'brand.ig' },
+          { platform: 'tiktok', name: 'brandtok' },
+          { platform: 'facebook', name: 'Brand Page' },
+        ],
+      },
+    };
+
+    const warningPlatforms = ['instagram', 'tiktok']
+      .map((platform) => window.SENativeOAuth.getPlatformConnectionState(platform, snapshot.client, snapshot.upload_post_connection))
+      .filter((state) => state.analyticsLimited);
+
+    const toneFor = (state) => {
+      if (state.analyticsLimited) return { color: '#f59e0b', dot: '#f59e0b' };
+      return { color: '#7c3aed', dot: '#7c3aed' };
+    };
+
+    document.getElementById('app').innerHTML = `
+      <div class="alert">
+        <strong>Analytics data will be limited.</strong><br>
+        ${warningPlatforms.map((state) => window.SENativeOAuth.getNativeOAuthFailureMessage(state.platform)).join('<br><br>')}
+      </div>
+      <div class="grid">
+        ${['instagram', 'tiktok', 'facebook'].map((platform) => {
+          const state = window.SENativeOAuth.getPlatformConnectionState(platform, snapshot.client, snapshot.upload_post_connection);
+          const tone = toneFor(state);
+          return `
+            <div class="card">
+              <div class="status" style="color:${tone.color}">
+                <span class="status-dot" style="background:${tone.dot}"></span>
+                ${state.label}: ${state.statusLabel}
+              </div>
+              <div><strong>Publishing connected:</strong> ${state.publishConnected ? 'Yes' : 'No'}</div>
+              <div><strong>Native analytics connected:</strong> ${state.nativeConnected ? 'Yes' : 'No'}</div>
+              <p>${state.analyticsLimited
+                ? 'The Upload-Post publishing connection is live, but Grow analytics still needs the second native OAuth step.'
+                : 'Both publishing and analytics tokens are available for the Grow tab.'}</p>
+              ${state.analyticsLimited ? '<a href="#" class="cta">Complete Analytics Connection</a>' : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  </script>
+</body>
+</html>
