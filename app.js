@@ -5,6 +5,16 @@
 const API_BASE = 'https://socialengine-api-production-18e0.up.railway.app';
 const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
 
+function generateIdempotencyToken() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 (function () {
   'use strict';
 
@@ -382,8 +392,13 @@ const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
     if (urlInput) urlInput.addEventListener('input', () => clearFieldError('audit-url'));
     if (emailInput) emailInput.addEventListener('input', () => clearFieldError('audit-email'));
 
+    let auditSubmitting = false;
+
     auditForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      if (auditSubmitting) return;
+
       const url = urlInput.value.trim();
       const email = emailInput.value.trim();
       const name = document.getElementById('audit-name')?.value.trim() || '';
@@ -398,15 +413,44 @@ const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
       else if (!validateEmail(email)) { setFieldError('audit-email', 'Enter a valid email address.'); valid = false; }
       if (!valid) return;
 
-      // Show processing animation
+      auditSubmitting = true;
+      if (auditSubmit) auditSubmit.disabled = true;
+
+      const idempotencyToken = generateIdempotencyToken();
+
       const stopAnimation = showProcessingAnimation();
 
       try {
-        const response = await fetch(`${API_BASE}/api/audit`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ website: normalizeURL(url), email, name, instagram_handle: document.getElementById('audit-instagram')?.value || '', tiktok_handle: document.getElementById('audit-tiktok')?.value || '', facebook_handle: document.getElementById('audit-facebook')?.value || '' }),
-        });
+        const auditPayload = {
+          website: normalizeURL(url),
+          email,
+          name,
+          instagram_handle: document.getElementById('audit-instagram')?.value || '',
+          tiktok_handle: document.getElementById('audit-tiktok')?.value || '',
+          facebook_handle: document.getElementById('audit-facebook')?.value || '',
+          idempotency_token: idempotencyToken,
+        };
+
+        const [response] = await Promise.all([
+          fetch(`${API_BASE}/api/audit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(auditPayload),
+          }),
+          fetch(`${API_BASE}/api/onboard`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              name,
+              website: normalizeURL(url),
+              instagram_handle: document.getElementById('audit-instagram')?.value || '',
+              tiktok_handle: document.getElementById('audit-tiktok')?.value || '',
+              facebook_handle: document.getElementById('audit-facebook')?.value || '',
+              idempotency_token: idempotencyToken,
+            }),
+          }).catch(() => {}),
+        ]);
 
         if (!response.ok) throw new Error('Audit request failed');
         const data = await response.json();
@@ -414,12 +458,10 @@ const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
         stopAnimation();
 
         if (data.success && data.audit) {
-          // Show results on screen
           auditForm.hidden = true;
           if (auditSuccess) auditSuccess.hidden = true;
           if (auditError) auditError.hidden = true;
 
-          // Create results container if it doesn't exist
           let resultsEl = document.getElementById('audit-results');
           if (!resultsEl) {
             resultsEl = document.createElement('div');
@@ -429,7 +471,6 @@ const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
           resultsEl.innerHTML = renderAuditResults(data);
           resultsEl.hidden = false;
 
-          // Smooth scroll to results
           resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
           throw new Error('Invalid response');
@@ -441,6 +482,9 @@ const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
           auditError.hidden = false;
           auditForm.hidden = true;
         }
+      } finally {
+        auditSubmitting = false;
+        if (auditSubmit) auditSubmit.disabled = false;
       }
     });
   }

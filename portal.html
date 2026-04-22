@@ -2483,6 +2483,16 @@
 
     const API = 'https://socialengine-api-production-18e0.up.railway.app';  // Railway backend (production)
 
+    function generateIdempotencyToken() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
     // ━━━ Theme Toggle ━━━
     const themeToggle = document.querySelector('[data-theme-toggle]');
     const root = document.documentElement;
@@ -2987,8 +2997,8 @@
           if (urlParams.get('shopify_connected') === 'true') {
             const shopName = urlParams.get('shop_name') || 'your store';
             const callbackEmail = (urlParams.get('client_email') || '').trim().toLowerCase();
+            const airtableWriteFailed = urlParams.get('airtable_error') === 'true';
             if (callbackEmail && clientData?.client?.contact_email && String(clientData.client.contact_email).trim().toLowerCase() === callbackEmail) {
-              // Re-fetch immediately so Settings reflects Shopify callback write-through deterministically.
               try {
                 const refreshed = await fetch(`${API}/api/client-data`, {
                   headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
@@ -2996,26 +3006,79 @@
                 if (refreshed.ok) clientData = await refreshed.json();
               } catch {}
             }
-            // Navigate to settings and show success
             setTimeout(() => {
               document.querySelector('[data-nav=settings]')?.click();
               setTimeout(() => {
                 const card = document.getElementById('settings-shopify-card');
                 if (card) {
-                  const successBanner = document.createElement('div');
-                  successBanner.style.cssText = 'padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:0.875rem;color:rgba(255,255,255,0.7);font-weight:500;';
-                  successBanner.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Successfully connected to ' + shopName + '. Your product data is now syncing.';
-                  card.parentElement.insertBefore(successBanner, card);
-                  setTimeout(() => successBanner.remove(), 8000);
+                  if (airtableWriteFailed) {
+                    const errorBanner = document.createElement('div');
+                    errorBanner.id = 'airtable-retry-banner';
+                    errorBanner.style.cssText = 'padding:14px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;margin-bottom:16px;';
+                    errorBanner.innerHTML = `
+                      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <div>
+                          <div style="font-size:0.875rem;font-weight:600;color:#FCA5A5;margin-bottom:4px;">Shopify connected, but account save failed</div>
+                          <div style="font-size:0.8125rem;color:rgba(252,165,165,0.7);line-height:1.5;">Your Shopify store was connected successfully, but we couldn't save the record to our system. Click below to retry — your Shopify connection is safe.</div>
+                        </div>
+                      </div>
+                      <button id="airtable-retry-btn" style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#FCA5A5;font-size:0.8125rem;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:background 0.15s;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        Retry Save
+                      </button>
+                    `;
+                    card.parentElement.insertBefore(errorBanner, card);
+                    document.getElementById('airtable-retry-btn')?.addEventListener('click', async function() {
+                      const retryBtn = this;
+                      retryBtn.disabled = true;
+                      retryBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(252,165,165,0.4);border-top-color:#FCA5A5;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Retrying...';
+                      try {
+                        const retryRes = await fetch(`${API}/api/onboard`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+                          body: JSON.stringify({ email: clientEmail, shopify_domain: shopName }),
+                        });
+                        const retryResult = await retryRes.json();
+                        if (retryRes.ok && retryResult.success) {
+                          errorBanner.style.cssText = 'padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:0.875rem;color:rgba(255,255,255,0.7);font-weight:500;';
+                          errorBanner.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Account saved successfully!';
+                          setTimeout(() => errorBanner.remove(), 6000);
+                        } else {
+                          retryBtn.disabled = false;
+                          retryBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Retry Save';
+                        }
+                      } catch (retryErr) {
+                        retryBtn.disabled = false;
+                        retryBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Retry Save';
+                      }
+                    });
+                  } else {
+                    const successBanner = document.createElement('div');
+                    successBanner.style.cssText = 'padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:0.875rem;color:rgba(255,255,255,0.7);font-weight:500;';
+                    successBanner.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Successfully connected to ' + shopName + '. Your product data is now syncing.';
+                    card.parentElement.insertBefore(successBanner, card);
+                    setTimeout(() => successBanner.remove(), 8000);
+                  }
                 }
               }, 200);
             }, 300);
-            // Clean URL
             window.history.replaceState({}, '', window.location.pathname);
           }
           if (urlParams.get('shopify_error') === 'true') {
+            const shopifyErrorMsg = urlParams.get('shopify_error_msg') || '';
             setTimeout(() => {
               document.querySelector('[data-nav=settings]')?.click();
+              setTimeout(() => {
+                const card = document.getElementById('settings-shopify-card');
+                if (card) {
+                  const errorBanner = document.createElement('div');
+                  errorBanner.style.cssText = 'padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:0.875rem;color:#FCA5A5;font-weight:500;';
+                  errorBanner.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Shopify connection failed' + (shopifyErrorMsg ? ': ' + shopifyErrorMsg : '') + '. Please try again.';
+                  card.parentElement.insertBefore(errorBanner, card);
+                  setTimeout(() => errorBanner.remove(), 10000);
+                }
+              }, 200);
             }, 300);
             window.history.replaceState({}, '', window.location.pathname);
           }
@@ -6330,12 +6393,17 @@
       setTimeout(() => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
         // OAuth Shopify connect button
+        let _shopifyOAuthInFlight = false;
         function startShopifyOAuth(inputId) {
+          if (_shopifyOAuthInFlight) return;
           const domain = (document.getElementById(inputId)?.value || '').trim();
           if (!domain) { alert('Please enter your Shopify store domain.'); return; }
-          // Send the raw storefront domain (without protocol/path) to the backend.
-          // Backend canonicalizes to the true .myshopify.com handle via meta.json
-          // resolver so custom domains work reliably.
+          _shopifyOAuthInFlight = true;
+          const goBtn = document.getElementById('shopify-oauth-go') || document.getElementById('shopify-oauth-reconnect-go');
+          if (goBtn) {
+            goBtn.disabled = true;
+            goBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Connecting...';
+          }
           const raw = domain.replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
           const authUrl = `${API}/api/shopify/auth?email=${encodeURIComponent(clientEmail)}&hash=${encodeURIComponent(clientHash)}&shop=${encodeURIComponent(raw)}`;
           window.location.href = authUrl;
@@ -6378,25 +6446,28 @@
       const btn = container.querySelector('.shopify-connect-submit');
       const msg = container.querySelector('.shopify-connect-msg');
       if (!btn) return;
+      let _shopifyConnecting = false;
       btn.addEventListener('click', async () => {
+        if (_shopifyConnecting) return;
         const domain = (container.querySelector('.shopify-domain-input')?.value || '').trim();
         const token = (container.querySelector('.shopify-token-input')?.value || '').trim();
         if (!domain || !token) {
           showShopifyMsg(msg, 'error', 'Please enter both your store domain and access token.');
           return;
         }
+        _shopifyConnecting = true;
         btn.disabled = true;
         btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Connecting...';
+        const idempotencyToken = generateIdempotencyToken();
         try {
           const res = await fetch(`${API}/api/connect-shopify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
-            body: JSON.stringify({ shopify_domain: domain, shopify_token: token })
+            body: JSON.stringify({ shopify_domain: domain, shopify_token: token, idempotency_token: idempotencyToken })
           });
           const result = await res.json();
           if (res.ok && result.success) {
             showShopifyMsg(msg, 'success', `Connected: ${result.shop_name || domain} (${result.product_count != null ? result.product_count + ' products' : 'connected'})`);
-            // Update local client data
             if (clientData?.client) { clientData.client.shopify_domain = domain; }
             btn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Connected!';
             if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -6411,6 +6482,8 @@
           btn.disabled = false;
           btn.innerHTML = '<i data-lucide="link" style="width:16px;height:16px;"></i> Connect Store';
           if (typeof lucide !== 'undefined') lucide.createIcons();
+        } finally {
+          _shopifyConnecting = false;
         }
       });
     }
