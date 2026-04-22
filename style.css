@@ -230,6 +230,45 @@ input, textarea, select { font-family: inherit; }
   z-index: 10000;
 }
 
+.toast-container {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.toast {
+  min-width: min(90vw, 320px);
+  max-width: min(90vw, 420px);
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  background: rgba(16, 16, 30, 0.94);
+  color: var(--text-primary);
+  box-shadow: 0 16px 40px -22px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.toast--error {
+  border-color: rgba(239, 68, 68, 0.36);
+}
+
+.toast--hiding {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
 .container {
   width: 100%;
   max-width: var(--max-width);
