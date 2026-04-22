@@ -1,0 +1,25 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "SocialEngine website and golden-path portal end-to-end tests",
+  "main": "app.js",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:golden-path": "playwright test tests/e2e/golden-path.spec.js",
+    "test:e2e:headed": "playwright test --headed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocialEngineAgency/socialengine-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SocialEngineAgency/socialengine-website/issues"
+  },
+  "homepage": "https://github.com/SocialEngineAgency/socialengine-website#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}
