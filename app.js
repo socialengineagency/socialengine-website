@@ -18,6 +18,16 @@ function getPlanInfo(tier) {
   return PLAN_CONFIG[tier] || PLAN_CONFIG['Growth'];
 }
 
+function generateIdempotencyToken() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 (function () {
   'use strict';
 
@@ -547,8 +557,13 @@ function getPlanInfo(tier) {
     if (urlInput) urlInput.addEventListener('input', () => clearFieldError('audit-url'));
     if (emailInput) emailInput.addEventListener('input', () => clearFieldError('audit-email'));
 
+    let auditSubmitting = false;
+
     auditForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      if (auditSubmitting) return;
+
       const url = urlInput.value.trim();
       const email = emailInput.value.trim();
       const name = document.getElementById('audit-name')?.value.trim() || '';
@@ -563,18 +578,33 @@ function getPlanInfo(tier) {
       else if (!validateEmail(email)) { setFieldError('audit-email', 'Enter a valid email address.'); valid = false; }
       if (!valid) return;
 
-      // Show processing animation
+      auditSubmitting = true;
+      if (auditSubmit) auditSubmit.disabled = true;
+
+      const idempotencyToken = generateIdempotencyToken();
+
       const stopAnimation = showProcessingAnimation();
 
       try {
-        const data = await safeWrite(`${API_BASE}/api/audit`, {
+        const sharedPayload = {
           website: normalizeURL(url),
           email,
           name,
           instagram_handle: document.getElementById('audit-instagram')?.value || '',
           tiktok_handle: document.getElementById('audit-tiktok')?.value || '',
           facebook_handle: document.getElementById('audit-facebook')?.value || '',
-        });
+          idempotency_token: idempotencyToken,
+        };
+
+        // Fire /api/onboard in parallel (non-blocking) — backend alias merged in
+        // shopify-app PR #2 creates an idempotent Airtable record by email.
+        fetch(`${API_BASE}/api/onboard`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sharedPayload),
+        }).catch(() => {});
+
+        const data = await safeWrite(`${API_BASE}/api/audit`, sharedPayload);
 
         stopAnimation();
 
@@ -584,7 +614,6 @@ function getPlanInfo(tier) {
           if (auditSuccess) auditSuccess.hidden = true;
           if (auditError) auditError.hidden = true;
 
-          // Create results container if it doesn't exist
           let resultsEl = document.getElementById('audit-results');
           if (!resultsEl) {
             resultsEl = document.createElement('div');
@@ -594,7 +623,6 @@ function getPlanInfo(tier) {
           resultsEl.innerHTML = renderAuditResults(data);
           resultsEl.hidden = false;
 
-          // Smooth scroll to results
           resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
           throw new SafeWriteError('Audit payload was incomplete', {
@@ -613,6 +641,9 @@ function getPlanInfo(tier) {
           auditError.hidden = false;
           auditForm.hidden = true;
         }
+      } finally {
+        auditSubmitting = false;
+        if (auditSubmit) auditSubmit.disabled = false;
       }
     });
   }
