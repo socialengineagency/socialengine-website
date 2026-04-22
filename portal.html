@@ -2609,25 +2609,36 @@
     }
 
     function getConnectionTone(state) {
+      // Returns CSS-ready style fragments for inline style injection.
+      // `color`  — a `color:HEX;` fragment ready to drop into a style="" attribute
+      // `dot`    — a dot-background style fragment
+      // `badge`  — a badge background + border fragment
+      // `hex`    — raw hex for non-CSS uses (e.g. JS manipulation)
       if (state?.analyticsLimited) {
         return {
-          color: '#F59E0B',
+          hex: '#F59E0B',
+          color: 'color:#F59E0B;',
           dot: 'background:#F59E0B;box-shadow:0 0 6px rgba(245,158,11,0.45);',
+          badge: 'background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);',
           badgeBg: 'rgba(245,158,11,0.12)',
           badgeBorder: 'rgba(245,158,11,0.25)',
         };
       }
       if (state?.publishConnected || state?.nativeConnected) {
         return {
-          color: '#7C3AED',
+          hex: '#7C3AED',
+          color: 'color:#7C3AED;',
           dot: 'background:#7C3AED;box-shadow:0 0 6px #7C3AED;',
+          badge: 'background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);',
           badgeBg: 'rgba(124,58,237,0.08)',
           badgeBorder: 'rgba(124,58,237,0.15)',
         };
       }
       return {
-        color: 'rgba(100,116,139,0.7)',
+        hex: 'rgba(100,116,139,0.7)',
+        color: 'color:rgba(100,116,139,0.7);',
         dot: 'background:rgba(100,116,139,0.5);',
+        badge: 'background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.12);',
         badgeBg: 'rgba(100,116,139,0.08)',
         badgeBorder: 'rgba(100,116,139,0.12)',
       };
@@ -6537,7 +6548,12 @@
                 const isConnected = oauthStatus[pLower] || false;
                 const state = oauthStates[pLower];
                 const statusLabel = state ? state.statusLabel : (isConnected ? 'Connected' : 'Pending setup');
-                const tone = state ? getConnectionTone(state) : { color: isConnected ? '#7C3AED' : 'rgba(148,163,184,0.5)', dot: isConnected ? 'background:#7C3AED;box-shadow:0 0 6px rgba(124,58,237,0.4);' : 'background:rgba(100,116,139,0.5);' };
+                const tone = state ? getConnectionTone(state) : {
+                  hex: isConnected ? '#7C3AED' : 'rgba(148,163,184,0.5)',
+                  color: isConnected ? 'color:#7C3AED;' : 'color:rgba(148,163,184,0.5);',
+                  dot: isConnected ? 'background:#7C3AED;box-shadow:0 0 6px rgba(124,58,237,0.4);' : 'background:rgba(100,116,139,0.5);',
+                  badge: isConnected ? 'background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);' : 'background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.12);'
+                };
                 return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
                   <span style="font-size:0.9rem;color:var(--color-text);text-transform:capitalize;font-weight:500;">${p}</span>
                   <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;${tone.color}font-weight:600;">
