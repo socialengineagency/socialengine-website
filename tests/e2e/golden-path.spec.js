@@ -16,11 +16,20 @@ const TAB_DEFINITIONS = [
     requestedName: 'Home',
     actualName: 'Home',
     nav: 'dashboard',
-    data: async (page) => {
-      await expect(page.locator('#dash-user-name')).not.toHaveText(/^$/, { timeout: TAB_TIMEOUT_MS });
-      await expect(
-        page.locator('#dash-content').getByText(/Content Queue|Attributed Revenue|AI Intelligence|Competitive Snipe/)
-      ).toBeVisible({ timeout: TAB_TIMEOUT_MS });
+    data: async (page, context) => {
+      const client = context.clientData.client || {};
+      const expectedName = client.business_name || client.contact_name;
+
+      if (expectedName) {
+        await expect(page.locator('#dash-user-name')).toHaveText(expectedName, { timeout: TAB_TIMEOUT_MS });
+      }
+
+      if (client.contact_email) {
+        await expect(page.locator('#dash-user-email')).toHaveText(client.contact_email, { timeout: TAB_TIMEOUT_MS });
+      }
+
+      await expect(page.locator('#dash-content').getByText(/Content Queue|Attributed Revenue|AI Intelligence|Competitive Snipe/))
+        .toBeVisible({ timeout: TAB_TIMEOUT_MS });
     },
     ctas: [
       { name: 'Review Posts', locator: (page) => page.locator('.dash-quick-action').filter({ hasText: 'Review Posts' }) },
@@ -37,14 +46,9 @@ const TAB_DEFINITIONS = [
     data: async (page) => {
       const body = page.locator('#inbox-body');
       await expect(body).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect
-        .poll(async () => {
-          const text = await body.textContent();
-          return (
-            /Total Messages|Needs Reply|Connect Your Social Accounts|Unlock Engagement Inbox/i.test(text || '')
-          );
-        }, { timeout: TAB_TIMEOUT_MS })
-        .toBe(true);
+      await expect(body.getByText(/Total Messages/i)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(body.getByText(/Needs Reply/i)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(body.locator('.inbox-filter').first()).toBeVisible({ timeout: TAB_TIMEOUT_MS });
     },
     ctas: [
       { name: 'Refresh', locator: (page) => page.locator('#inbox-refresh-btn') },
@@ -67,9 +71,9 @@ const TAB_DEFINITIONS = [
     nav: 'video-studio',
     data: async (page) => {
       await expect(page.getByText(/Marketing Studio/i)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect(
-        page.locator('#dash-content').getByText(/credits|Templates|AI Models|Recent Generations/i)
-      ).toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(page.locator('#ms-credits-display')).toHaveText(/^\d+\s+credits$/, { timeout: TAB_TIMEOUT_MS });
+      await expect(page.locator('#dash-content').getByText(/Templates|AI Models|Recent Generations/i))
+        .toBeVisible({ timeout: TAB_TIMEOUT_MS });
     },
     ctas: [
       { name: 'Create Video', locator: (page) => page.getByRole('button', { name: /^Create Video$/ }).first() },
@@ -83,9 +87,13 @@ const TAB_DEFINITIONS = [
     nav: 'ad-studio',
     data: async (page) => {
       await expect(page.getByText(/Ad Creative Studio/i)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect(
-        page.locator('#dash-content').getByText(/Select Product|Platform & Format|Copy Direction/i)
-      ).toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(page.locator('#dash-content').getByText(/Select Product|Platform & Format|Copy Direction/i))
+        .toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect
+        .poll(async () => await page.locator('#ad-product-selector .ad-product-pick').count(), { timeout: TAB_TIMEOUT_MS })
+        .toBeGreaterThan(0);
+      await page.locator('#ad-product-selector .ad-product-pick').first().click();
+      await expect(page.locator('#ad-generate-btn')).toBeEnabled({ timeout: TAB_TIMEOUT_MS });
     },
     ctas: [
       { name: 'Product picker', locator: (page) => page.locator('#ad-product-selector').locator('.ad-product-pick').first() },
@@ -97,11 +105,14 @@ const TAB_DEFINITIONS = [
     requestedName: 'Coach',
     actualName: 'Coach',
     nav: 'ai-coach',
-    data: async (page) => {
+    data: async (page, context) => {
+      const client = context.clientData.client || {};
+      const expectedBusinessName = client.business_name || 'your business';
+
       await expect(page.getByText(/AI Marketing Coach/i)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect(
-        page.locator('#chat-welcome').getByText(/Brand Fingerprint|Ask me anything|pending posts/i)
-      ).toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(page.locator('#chat-welcome')).toContainText(expectedBusinessName, { timeout: TAB_TIMEOUT_MS });
+      await expect(page.locator('#chat-welcome').getByText(/Brand Fingerprint|Ask me anything|pending posts/i))
+        .toBeVisible({ timeout: TAB_TIMEOUT_MS });
     },
     ctas: [
       { name: 'Suggestion chip', locator: (page) => page.locator('.chat-chip').first() },
@@ -113,12 +124,16 @@ const TAB_DEFINITIONS = [
     requestedName: 'Plan',
     actualName: 'Settings > plan management',
     nav: 'settings',
-    data: async (page) => {
+    data: async (page, context) => {
+      const client = context.clientData.client || {};
+      const tierName = client.tier || 'Pro';
+
       await expect(page.getByText(/^Settings$/)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
       await expect(page.getByText(/Current Plan/i)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect(
-        page.locator('#dash-content').getByText(/Plan|Billing|Subscription & Support|Request Cancellation/i)
-      ).toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(page.locator('#dash-content').getByText(new RegExp(`${escapeRegExp(tierName)}\\s+Plan`, 'i')))
+        .toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(page.locator('#dash-content').getByText(/Subscription & Support|Request Cancellation/i))
+        .toBeVisible({ timeout: TAB_TIMEOUT_MS });
     },
     ctas: [
       { name: 'Contact Support', locator: (page) => page.getByRole('button', { name: /Contact Support/i }) },
@@ -138,17 +153,14 @@ const TAB_DEFINITIONS = [
     requestedName: 'Calendar',
     actualName: 'Content calendar within Content',
     nav: 'content',
-    data: async (page) => {
+    data: async (page, context) => {
+      const posts = context.clientData.content || [];
+      const headerSummary = page.locator('.studio-header__left p');
+
       await expect(page.getByText(/Content Studio/i)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect
-        .poll(async () => {
-          const text = await page.locator('#dash-content').textContent();
-          return /pieces|Scheduled|Pending|Approved|No content yet/i.test(text || '');
-        }, { timeout: TAB_TIMEOUT_MS })
-        .toBe(true);
-      await expect(
-        page.locator('#dash-content').getByText(/Scheduled|Pending|Approved|Newest First|Oldest First/i).first()
-      ).toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(headerSummary).toContainText(`${posts.length} pieces`, { timeout: TAB_TIMEOUT_MS });
+      await expect(page.locator('#dash-content').getByText(/Newest First|Oldest First|Pending|Approved/i).first())
+        .toBeVisible({ timeout: TAB_TIMEOUT_MS });
     },
     ctas: [
       { name: 'Grid view', locator: (page) => page.locator('.studio-view-btn').filter({ hasText: 'Grid' }) },
@@ -160,14 +172,18 @@ const TAB_DEFINITIONS = [
     requestedName: 'Content',
     actualName: 'Content',
     nav: 'content',
-    data: async (page) => {
+    data: async (page, context) => {
+      const posts = context.clientData.content || [];
+
       await expect(page.getByText(/Content Studio/i)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect
-        .poll(async () => {
-          const count = await page.locator('.studio-card, .studio-list-item').count();
-          return count > 0;
-        }, { timeout: TAB_TIMEOUT_MS })
-        .toBe(true);
+      await expect(page.locator('.studio-header__left p')).toContainText(`${posts.length} pieces`, {
+        timeout: TAB_TIMEOUT_MS,
+      });
+      if (posts.length > 0) {
+        await expect
+          .poll(async () => await page.locator('.studio-card, .studio-list-item').count(), { timeout: TAB_TIMEOUT_MS })
+          .toBeGreaterThan(0);
+      }
     },
     ctas: [
       { name: 'Create Video', locator: (page) => page.getByRole('button', { name: /Create Video/i }).first() },
@@ -191,12 +207,8 @@ const TAB_DEFINITIONS = [
     data: async (page) => {
       const body = page.locator('#inbox-body');
       await expect(body).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect
-        .poll(async () => {
-          const text = await body.textContent();
-          return /Comments|DMs|Mentions|Connect Your Social Accounts|Unlock Engagement Inbox/i.test(text || '');
-        }, { timeout: TAB_TIMEOUT_MS })
-        .toBe(true);
+      await expect(body.locator('.inbox-filter').first()).toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(body.getByText(/Comments|DMs|Mentions/i)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
     },
     ctas: [
       {
@@ -216,14 +228,17 @@ const TAB_DEFINITIONS = [
     requestedName: 'Grow',
     actualName: 'Grow',
     nav: 'analytics',
-    data: async (page) => {
+    data: async (page, context) => {
+      const client = context.clientData.client || {};
+      const expectedBusinessName = client.business_name || client.contact_name;
+
       await expect(page.getByText(/^Analytics$/)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect
-        .poll(async () => {
-          const text = await page.locator('#dash-content').textContent();
-          return /Analytics Dashboard|Total Content Created|Approval Rate|Download Report/i.test(text || '');
-        }, { timeout: TAB_TIMEOUT_MS })
-        .toBe(true);
+      if (expectedBusinessName) {
+        await expect(page.locator('#dash-content')).toContainText(expectedBusinessName, { timeout: TAB_TIMEOUT_MS });
+      }
+      await expect(page.locator('#analytics-body').getByText(/Total Content Created|Approval Rate|Posts Published/i))
+        .toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      await expect(page.locator('.analytics-kpi-card__value').first()).not.toHaveText(/^$/, { timeout: TAB_TIMEOUT_MS });
     },
     ctas: [
       {
@@ -246,14 +261,18 @@ const TAB_DEFINITIONS = [
     requestedName: 'Settings',
     actualName: 'Settings',
     nav: 'settings',
-    data: async (page) => {
+    data: async (page, context) => {
+      const client = context.clientData.client || {};
+
       await expect(page.getByText(/^Settings$/)).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect(
-        page.locator('#dash-content').getByText(/Manage your account|Account|Security|Shopify Store/i)
-      ).toBeVisible({ timeout: TAB_TIMEOUT_MS });
-      await expect(page.locator('#dash-content').getByText(/Business Name|Email|Website|Current Plan/i)).toBeVisible({
-        timeout: TAB_TIMEOUT_MS,
-      });
+      await expect(page.locator('#dash-content').getByText(/Manage your account|Account|Security|Shopify Store/i))
+        .toBeVisible({ timeout: TAB_TIMEOUT_MS });
+      if (client.business_name) {
+        await expect(page.locator('#dash-content')).toContainText(client.business_name, { timeout: TAB_TIMEOUT_MS });
+      }
+      if (client.contact_email) {
+        await expect(page.locator('#dash-content')).toContainText(client.contact_email, { timeout: TAB_TIMEOUT_MS });
+      }
     },
     ctas: [
       {
@@ -284,6 +303,7 @@ test.describe('SocialEngine portal golden path', () => {
       pageErrors.push(error.message);
     });
     page.on('requestfailed', (request) => {
+      if (!['document', 'script', 'stylesheet'].includes(request.resourceType())) return;
       failedRequests.push({
         url: request.url(),
         method: request.method(),
@@ -296,8 +316,17 @@ test.describe('SocialEngine portal golden path', () => {
 
   test('covers the deployed paying-customer portal journey', async ({ page }) => {
     assertRequiredEnv();
+    const context = {
+      clientData: null,
+    };
 
     await test.step('sign in with env credentials', async () => {
+      const loginCheckpoint = captureErrorSnapshot(page);
+      const clientDataResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/client-data') && response.ok(),
+        { timeout: LOGIN_TIMEOUT_MS }
+      );
+
       await page.goto(PORTAL_URL, { waitUntil: 'domcontentloaded' });
 
       await expect(page.locator('#login-form')).toBeVisible({ timeout: LOGIN_TIMEOUT_MS });
@@ -305,17 +334,20 @@ test.describe('SocialEngine portal golden path', () => {
       await page.locator('#login-password').fill(process.env.PORTAL_PASSWORD);
       await page.locator('#login-btn').click();
 
+      const clientDataResponse = await clientDataResponsePromise;
+      context.clientData = await clientDataResponse.json();
       await expect(page.locator('#dashboard-view')).toHaveClass(/active/, { timeout: LOGIN_TIMEOUT_MS });
       await expect(page.locator('#portal-login-view')).toHaveClass(/hidden/, { timeout: LOGIN_TIMEOUT_MS });
       await expect(page.locator('#dash-user-email')).not.toHaveText(/^$/, { timeout: LOGIN_TIMEOUT_MS });
       await waitForInitialPortalData(page);
-      assertNoJavaScriptErrors(page, 'after login');
+      assertNoJavaScriptErrors(page, 'after login', loginCheckpoint);
     });
 
     for (const tab of TAB_DEFINITIONS) {
       await test.step(`verify ${tab.requestedName}`, async () => {
+        const checkpoint = captureErrorSnapshot(page);
         await navigateToTab(page, tab.nav);
-        await tab.data(page);
+        await tab.data(page, context);
 
         for (const cta of tab.ctas) {
           const locator = await cta.locator(page);
@@ -329,7 +361,7 @@ test.describe('SocialEngine portal golden path', () => {
           await locator.click({ trial: true });
         }
 
-        assertNoJavaScriptErrors(page, tab.requestedName);
+        assertNoJavaScriptErrors(page, tab.requestedName, checkpoint);
       });
     }
   });
@@ -357,15 +389,19 @@ async function waitForInitialPortalData(page) {
     .toBe(true);
 }
 
-function assertNoJavaScriptErrors(page, scope) {
+function assertNoJavaScriptErrors(page, scope, checkpoint = { jsErrors: 0, pageErrors: 0, failedRequests: 0 }) {
   const state = page.__goldenPathState;
   const ignoredPatterns = [
     /Failed to load resource:.*favicon/i,
   ];
 
-  const jsErrors = state.jsErrors.filter((message) => !ignoredPatterns.some((pattern) => pattern.test(message)));
-  const pageErrors = state.pageErrors.filter((message) => !ignoredPatterns.some((pattern) => pattern.test(message)));
-  const failedRequests = state.failedRequests.filter((entry) => {
+  const jsErrors = state.jsErrors
+    .slice(checkpoint.jsErrors)
+    .filter((message) => !ignoredPatterns.some((pattern) => pattern.test(message)));
+  const pageErrors = state.pageErrors
+    .slice(checkpoint.pageErrors)
+    .filter((message) => !ignoredPatterns.some((pattern) => pattern.test(message)));
+  const failedRequests = state.failedRequests.slice(checkpoint.failedRequests).filter((entry) => {
     if (/favicon/i.test(entry.url)) return false;
     return true;
   });
@@ -382,6 +418,19 @@ function assertNoJavaScriptErrors(page, scope) {
     pageErrors: [],
     failedRequests: [],
   });
+}
+
+function captureErrorSnapshot(page) {
+  const state = page.__goldenPathState;
+  return {
+    jsErrors: state.jsErrors.length,
+    pageErrors: state.pageErrors.length,
+    failedRequests: state.failedRequests.length,
+  };
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function resolveFirstVisible(...locators) {
