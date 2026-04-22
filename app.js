@@ -5,6 +5,19 @@
 const API_BASE = 'https://socialengine-api-production-18e0.up.railway.app';
 const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
 
+const PLAN_CONFIG = {
+  Starter:    { displayName: 'Starter',    priceMonthly: 197,  priceAnnual: 164  },
+  Growth:     { displayName: 'Growth',     priceMonthly: 497,  priceAnnual: 414  },
+  Premium:    { displayName: 'Premium',    priceMonthly: 697,  priceAnnual: 581  },
+  Scale:      { displayName: 'Scale',      priceMonthly: 997,  priceAnnual: 831  },
+  Enterprise: { displayName: 'Enterprise', priceMonthly: 2997, priceAnnual: 2497 },
+  Annual:     { displayName: 'Annual',     priceMonthly: 247,  priceAnnual: 247  },
+};
+
+function getPlanInfo(tier) {
+  return PLAN_CONFIG[tier] || PLAN_CONFIG['Growth'];
+}
+
 (function () {
   'use strict';
 
@@ -302,7 +315,7 @@ const STRIPE_MONTHLY_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
           <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#FF6B35;margin:0 0 10px;">READY TO GO FULL THROTTLE?</p>
           <p style="font-size:0.85rem;color:#94A3B8;line-height:1.55;margin:0 0 16px;">Your free portal shows you the preview. Growth Plan unlocks <strong style="color:#F1F5F9;">45 posts/month, AI video reels, full analytics, competitor intel, and the AI marketing coach</strong> — all pre-trained on your brand.</p>
           <a href="https://buy.stripe.com/fZu4gz7KP4LSfYY40vcQU05" target="_blank" rel="noopener" class="btn btn--accent btn--lg" style="width:100%;text-align:center;display:block;padding:14px;border-radius:10px;font-size:0.95rem;font-weight:700;text-decoration:none;background:linear-gradient(135deg,#FF6B35,#FF8F65);color:#fff;border:none;box-shadow:0 10px 28px -8px rgba(255,107,53,0.45);">
-            Start Growth Plan &mdash; $297/mo &#8594;
+            Start Growth Plan &mdash; $${PLAN_CONFIG.Growth.priceMonthly}/mo &#8594;
           </a>
           <p style="font-size:0.72rem;color:#64748B;text-align:center;margin:10px 0 0;">30-day money-back guarantee &nbsp;&bull;&nbsp; Cancel anytime</p>
         </div>
