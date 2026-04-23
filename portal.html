@@ -2251,6 +2251,29 @@
       padding: 0 5px;
     }
 
+    /* ========== SOC-5 Step 5: Forced password-change modal ==========
+       Shown only when /api/client-data responds with must_change_password=true
+       (set by Stripe webhook on new paid signups). All selectors scoped
+       .soc5-pw-* to isolate from existing portal CSS. */
+    .soc5-pw-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+    .soc5-pw-backdrop { position: absolute; inset: 0; background: rgba(6, 9, 18, 0.88); backdrop-filter: blur(6px); }
+    .soc5-pw-card { position: relative; max-width: 440px; width: 100%; background: var(--color-surface, #10101E); border: 1px solid var(--color-border, #2A2A4E); border-radius: 16px; padding: 1.75rem; box-shadow: 0 28px 70px -20px rgba(124,58,237,0.5), inset 0 1px 0 rgba(255,255,255,0.04); }
+    .soc5-pw-header { display: flex; gap: 0.9rem; align-items: flex-start; margin-bottom: 1.25rem; }
+    .soc5-pw-icon { width: 42px; height: 42px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(124,58,237,0.18); color: #C4B5FD; }
+    .soc5-pw-card h2 { font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif); font-size: 1.35rem; font-weight: 700; color: #F1F5F9; margin: 0 0 0.25rem 0; letter-spacing: -0.02em; }
+    .soc5-pw-sub { font-size: 0.87rem; color: #94A3B8; margin: 0; line-height: 1.4; }
+    .soc5-pw-field { margin-bottom: 0.9rem; }
+    .soc5-pw-field label { display: block; font-size: 0.78rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; }
+    .soc5-pw-field input { width: 100%; padding: 0.7rem 0.95rem; background: rgba(20,20,36,0.8); border: 1px solid #2A2A4E; border-radius: 10px; color: #F1F5F9; font-size: 0.95rem; transition: border-color 180ms, box-shadow 180ms; }
+    .soc5-pw-field input:focus { outline: none; border-color: #7C3AED; box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
+    .soc5-pw-err { font-size: 0.78rem; color: #FCA5A5; min-height: 14px; margin-top: 4px; }
+    .soc5-pw-banner { display: none; margin: 0.25rem 0 0.9rem; padding: 0.65rem 0.85rem; font-size: 0.82rem; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; color: #FCA5A5; }
+    .soc5-pw-banner.visible { display: block; }
+    .soc5-pw-submit { width: 100%; padding: 0.85rem; background: linear-gradient(135deg,#8B5CF6 0%,#7C3AED 55%,#6D28D9 100%); color: #fff; font-family: var(--font-body, Inter, sans-serif); font-weight: 600; font-size: 0.92rem; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 10px 26px -12px rgba(124,58,237,0.6); transition: transform 160ms, box-shadow 160ms; }
+    .soc5-pw-submit:hover { transform: translateY(-1px); box-shadow: 0 14px 30px -12px rgba(124,58,237,0.72); }
+    .soc5-pw-submit:disabled { opacity: 0.6; cursor: wait; transform: none; }
+    .soc5-pw-fine { font-size: 0.76rem; color: #64748B; text-align: center; margin: 0.85rem 0 0; }
+
 </style>
 </head>
 <body>
@@ -2287,6 +2310,41 @@
       <li><a href="index.html#ai-audit">Free Audit</a></li>
       <li><a href="portal.html">Client Portal</a></li>
     </ul>
+  </div>
+
+  <!-- SOC-5 Step 5: First-login forced password-change modal. Rendered once
+       at page load but hidden until soc5ForcePasswordChange() flips display.
+       Triggered only when client-data responds with must_change_password=true. -->
+  <div id="soc5-pw-modal" class="soc5-pw-modal" role="dialog" aria-modal="true" aria-labelledby="soc5-pw-title" style="display:none;">
+    <div class="soc5-pw-backdrop" aria-hidden="true"></div>
+    <div class="soc5-pw-card">
+      <div class="soc5-pw-header">
+        <div class="soc5-pw-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div>
+          <h2 id="soc5-pw-title">Set your password</h2>
+          <p class="soc5-pw-sub">You signed in with the temporary password from your welcome email. Pick a permanent one now.</p>
+        </div>
+      </div>
+      <form id="soc5-pw-form" novalidate>
+        <div class="soc5-pw-field">
+          <label for="soc5-pw-new">New password</label>
+          <input id="soc5-pw-new" name="new_password" type="password" autocomplete="new-password" minlength="8" maxlength="200" required aria-describedby="soc5-pw-new-err">
+          <div class="soc5-pw-err" id="soc5-pw-new-err" role="alert"></div>
+        </div>
+        <div class="soc5-pw-field">
+          <label for="soc5-pw-confirm">Confirm password</label>
+          <input id="soc5-pw-confirm" name="confirm_password" type="password" autocomplete="new-password" minlength="8" maxlength="200" required aria-describedby="soc5-pw-confirm-err">
+          <div class="soc5-pw-err" id="soc5-pw-confirm-err" role="alert"></div>
+        </div>
+        <div class="soc5-pw-banner" id="soc5-pw-banner" role="alert" aria-live="polite"></div>
+        <button type="submit" class="soc5-pw-submit" id="soc5-pw-submit">
+          <span class="soc5-pw-submit-text">Set password &amp; continue</span>
+        </button>
+        <p class="soc5-pw-fine">Minimum 8 characters. This becomes your login password.</p>
+      </form>
+    </div>
   </div>
 
   <main id="main">
@@ -3168,6 +3226,111 @@
       return d;
     }
 
+    /** SOC-5 Step 5: Forced first-login password rotation.
+     *  Shows the modal, waits for a successful POST /api/change-password,
+     *  then resolves. The user cannot skip this — no close button, no Esc
+     *  handler, no backdrop-click dismiss. A server-side error leaves the
+     *  modal open; a network error leaves the modal open. The promise
+     *  resolves only when the server confirms both the hash write AND
+     *  must_change_password clearance.
+     *
+     *  Rejects only if the modal markup is missing (shouldn't happen —
+     *  the markup is rendered at page load).
+     */
+    function soc5ForcePasswordChange() {
+      return new Promise((resolve, reject) => {
+        const modal = document.getElementById('soc5-pw-modal');
+        const form = document.getElementById('soc5-pw-form');
+        if (!modal || !form) return reject(new Error('soc5-pw-modal markup missing'));
+
+        const newInput = document.getElementById('soc5-pw-new');
+        const confirmInput = document.getElementById('soc5-pw-confirm');
+        const newErr = document.getElementById('soc5-pw-new-err');
+        const confirmErr = document.getElementById('soc5-pw-confirm-err');
+        const banner = document.getElementById('soc5-pw-banner');
+        const submitBtn = document.getElementById('soc5-pw-submit');
+        const submitText = submitBtn.querySelector('.soc5-pw-submit-text');
+
+        modal.style.display = 'flex';
+        setTimeout(() => { try { newInput.focus(); } catch (_) {} }, 80);
+
+        function clearErrors() {
+          newErr.textContent = '';
+          confirmErr.textContent = '';
+          banner.textContent = '';
+          banner.classList.remove('visible');
+        }
+
+        async function onSubmit(e) {
+          e.preventDefault();
+          clearErrors();
+          const newPw = newInput.value;
+          const confirmPw = confirmInput.value;
+
+          if (!newPw || newPw.length < 8) {
+            newErr.textContent = 'Password must be at least 8 characters.';
+            newInput.focus();
+            return;
+          }
+          if (newPw !== confirmPw) {
+            confirmErr.textContent = 'Passwords do not match.';
+            confirmInput.focus();
+            return;
+          }
+          if (newPw === 'Welcome' + new Date().getFullYear() + '!') {
+            newErr.textContent = 'Choose a different password — that is the temporary one from your email.';
+            newInput.focus();
+            return;
+          }
+
+          submitBtn.disabled = true;
+          submitText.textContent = 'Saving…';
+
+          try {
+            const res = await fetch(`${API}/api/change-password`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-client-email': clientEmail,
+                'x-client-hash': clientHash,
+              },
+              body: JSON.stringify({ new_password: newPw }),
+            });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || body.success !== true) {
+              banner.textContent = body.error || `Server returned ${res.status}. Try again or email hello@socialengine.agency.`;
+              banner.classList.add('visible');
+              submitBtn.disabled = false;
+              submitText.textContent = 'Set password & continue';
+              return;
+            }
+
+            // Swap in-memory credentials so subsequent API calls use the new hash.
+            if (body.new_hash) {
+              clientHash = body.new_hash;
+              window._seHash = clientHash;
+              try {
+                if (window.sessionStorage) sessionStorage.setItem('se_hash', clientHash);
+                if (window.localStorage) localStorage.setItem('se_hash', clientHash);
+              } catch (_) {}
+            }
+            if (clientData?.client) clientData.client.must_change_password = false;
+
+            modal.style.display = 'none';
+            form.removeEventListener('submit', onSubmit);
+            resolve();
+          } catch (_err) {
+            banner.textContent = 'Network error. Check your connection and try again.';
+            banner.classList.add('visible');
+            submitBtn.disabled = false;
+            submitText.textContent = 'Set password & continue';
+          }
+        }
+
+        form.addEventListener('submit', onSubmit);
+      });
+    }
+
     // ━━━ Login ━━━
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
@@ -3219,6 +3382,20 @@
           // Onboarding gates intentionally disabled for direct access flow.
 
           activeNav = 'dashboard';
+
+          // SOC-5 Step 5: first-login forced password rotation. Only triggers
+          // when the Stripe webhook set must_change_password on new signups.
+          // Existing customers (flag absent/false) skip straight to renderDashboard.
+          if (data?.client?.must_change_password === true) {
+            try {
+              await soc5ForcePasswordChange();
+            } catch (err) {
+              console.error('[SOC5] password change flow error:', err);
+              // Fall through to dashboard rather than trap the user; server
+              // will re-prompt on next login because the flag remains true.
+            }
+          }
+
           renderDashboard(data, true);
           prefetchStudioCatalogSilently().catch(() => {});
           startTierPolling();
