@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Start your SocialEngine plan — Signup</title>
+  <meta name="description" content="Pick your SocialEngine plan. Monthly or annual. Name, email, and you're on the way to a paid account.">
+  <meta name="robots" content="noindex,follow">
+
+  <!-- Fonts — Design System v7 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="./base.css">
+  <link rel="stylesheet" href="./style.css">
+
+  <style>
+    /* Signup-specific layout — scoped with .signup- prefix, never overrides
+       global tokens. All colors sourced from existing --tokens in style.css. */
+    .signup-main { padding: 7rem 0 4rem; min-height: calc(100vh - 200px); }
+    .signup-layout {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    .signup-header { text-align: center; margin-bottom: 2rem; }
+    .signup-header .section-label { margin-bottom: 1rem; }
+    .signup-header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      margin: 0 0 0.75rem 0;
+      color: var(--text-primary);
+    }
+    .signup-header p {
+      color: var(--text-secondary);
+      font-size: var(--text-md);
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    /* Interval pill toggle */
+    .signup-interval {
+      display: inline-flex;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: 999px;
+      padding: 4px;
+      gap: 2px;
+      margin: 1.5rem auto 0;
+    }
+    .signup-interval__btn {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: var(--text-sm);
+      padding: 0.55rem 1.25rem;
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+    }
+    .signup-interval__btn[aria-pressed="true"] {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 6px 18px -8px var(--primary-glow);
+    }
+    .signup-interval__save {
+      font-size: 0.72rem;
+      color: var(--accent-cyan);
+      margin-left: 0.4rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    /* Plan grid — 4 radio cards */
+    .signup-plans {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin: 2rem 0 1rem;
+    }
+    @media (max-width: 900px) { .signup-plans { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .signup-plans { grid-template-columns: 1fr; } }
+
+    .signup-plan {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1.25rem 1rem;
+      background: var(--bg-surface-raised);
+      border: 1.5px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition), transform var(--transition);
+    }
+    .signup-plan:hover {
+      border-color: rgba(124, 58, 237, 0.5);
+      background: var(--bg-surface-hover);
+    }
+    .signup-plan input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .signup-plan:has(input:checked) {
+      border-color: var(--primary);
+      background: var(--primary-muted);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
+    }
+    .signup-plan__name {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: var(--text-md);
+      letter-spacing: -0.01em;
+    }
+    .signup-plan__badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(124,58,237,0.16);
+      color: var(--primary-strong);
+      border: 1px solid rgba(124,58,237,0.28);
+      align-self: flex-start;
+    }
+    .signup-plan__badge--best  { background: rgba(20,184,166,0.12); color: #5EEAD4; border-color: rgba(45,212,191,0.32); }
+    .signup-plan__badge--ent   { background: rgba(251,146,60,0.12); color: #FDBA74; border-color: rgba(251,146,60,0.32); }
+    .signup-plan__price {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.75rem;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+    .signup-plan__period {
+      font-size: var(--text-sm);
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+    .signup-plan__tagline {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.35;
+      margin-top: auto;
+    }
+
+    .signup-form-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-2xl);
+      padding: 1.75rem;
+      box-shadow: 0 28px 70px -34px rgba(124, 58, 237, 0.38), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .signup-fine {
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 0.82rem;
+      margin-top: 1rem;
+    }
+    .signup-fine a { color: var(--primary-strong); text-decoration: underline; text-underline-offset: 3px; }
+
+    .signup-banner {
+      display: none;
+      padding: 0.8rem 1rem;
+      margin-bottom: 1rem;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #FCA5A5;
+    }
+    .signup-banner--visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <a href="#main" class="sr-only skip-link">Skip to content</a>
+
+  <header class="header" role="banner">
+    <div class="container header__inner">
+      <a href="/" class="header__logo" aria-label="SocialEngine home">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="28" height="28" rx="7" stroke="#7C3AED" stroke-width="2"/>
+          <circle cx="11" cy="16" r="3" fill="#7C3AED"/>
+          <circle cx="21.5" cy="10" r="2.2" fill="#00E5FF" opacity="0.9"/>
+          <circle cx="21.5" cy="22" r="2.2" fill="#00E5FF" opacity="0.9"/>
+          <line x1="13.8" y1="14.6" x2="19.5" y2="11.2" stroke="#8B5CF6" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="13.8" y1="17.4" x2="19.5" y2="20.8" stroke="#8B5CF6" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="header__logo-text">SocialEngine</span>
+      </a>
+      <div class="header__actions">
+        <a href="portal.html" class="btn btn--ghost btn--sm">Client Portal</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="signup-main">
+    <div class="container">
+      <div class="signup-layout">
+
+        <div class="signup-header">
+          <div class="section-label">Start your plan</div>
+          <h1>Pick a plan. Pay. Start shipping content.</h1>
+          <p>Checkout is handled by Stripe. Your welcome email with portal access lands within a minute of payment.</p>
+
+          <div class="signup-interval" role="radiogroup" aria-label="Billing interval">
+            <button type="button" class="signup-interval__btn" data-interval="monthly" aria-pressed="true" role="radio" aria-checked="true">Monthly</button>
+            <button type="button" class="signup-interval__btn" data-interval="annual" aria-pressed="false" role="radio" aria-checked="false">
+              Annual
+              <span class="signup-interval__save">SAVE 2 MONTHS</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="signup-form-card">
+          <div class="signup-banner" id="signup-banner" role="alert" aria-live="polite"></div>
+
+          <form id="signup-form" novalidate>
+            <div class="signup-plans" role="radiogroup" aria-label="Plan tier">
+
+              <label class="signup-plan" data-plan="starter">
+                <input type="radio" name="plan" value="starter">
+                <span class="signup-plan__badge">Solo</span>
+                <span class="signup-plan__name">Starter</span>
+                <span class="signup-plan__price" data-price-monthly="$197" data-price-annual="$1,970">$197</span>
+                <span class="signup-plan__period" data-period-monthly="/month" data-period-annual="/year">/month</span>
+                <span class="signup-plan__tagline">30 posts/mo · 3 platforms · 10 video credits</span>
+              </label>
+
+              <label class="signup-plan" data-plan="growth">
+                <input type="radio" name="plan" value="growth" checked>
+                <span class="signup-plan__badge">Most Popular</span>
+                <span class="signup-plan__name">Growth</span>
+                <span class="signup-plan__price" data-price-monthly="$497" data-price-annual="$4,970">$497</span>
+                <span class="signup-plan__period" data-period-monthly="/month" data-period-annual="/year">/month</span>
+                <span class="signup-plan__tagline">90 posts/mo · 5 platforms · 30 video credits · AI Coach unlimited</span>
+              </label>
+
+              <label class="signup-plan" data-plan="scale">
+                <input type="radio" name="plan" value="scale">
+                <span class="signup-plan__badge signup-plan__badge--best">Best Value</span>
+                <span class="signup-plan__name">Scale</span>
+                <span class="signup-plan__price" data-price-monthly="$997" data-price-annual="$9,970">$997</span>
+                <span class="signup-plan__period" data-period-monthly="/month" data-period-annual="/year">/month</span>
+                <span class="signup-plan__tagline">Unlimited posts · 100 video credits · full AI Tools · NSFW lane</span>
+              </label>
+
+              <label class="signup-plan" data-plan="agency">
+                <input type="radio" name="plan" value="agency">
+                <span class="signup-plan__badge signup-plan__badge--ent">Enterprise</span>
+                <span class="signup-plan__name">Agency</span>
+                <span class="signup-plan__price" data-price-monthly="$2,997" data-price-annual="$29,970">$2,997</span>
+                <span class="signup-plan__period" data-period-monthly="/month" data-period-annual="/year">/month</span>
+                <span class="signup-plan__tagline">5 client brands · white-label portal · dedicated AM</span>
+              </label>
+
+            </div>
+
+            <div class="ai-audit__field" style="margin-top: 1.25rem;">
+              <label for="signup-name" class="ai-audit__field-label">Your name <span class="ai-audit__optional">(optional)</span></label>
+              <div class="ai-audit__input-wrap">
+                <input id="signup-name" name="name" type="text" autocomplete="name" class="ai-audit__input" style="padding-left: 1rem;" placeholder="Jane Merchant" maxlength="200">
+              </div>
+            </div>
+
+            <div class="ai-audit__field">
+              <label for="signup-email" class="ai-audit__field-label">Email<span class="required-star">*</span></label>
+              <div class="ai-audit__input-wrap">
+                <input id="signup-email" name="email" type="email" autocomplete="email" required class="ai-audit__input" style="padding-left: 1rem;" placeholder="you@yourbrand.com" maxlength="254" aria-describedby="signup-email-err">
+              </div>
+              <div id="signup-email-err" class="ai-audit__field-error" role="alert"></div>
+            </div>
+
+            <button type="submit" class="btn btn--accent btn--lg ai-audit__submit" id="signup-submit">
+              <span class="ai-audit__submit-text">Continue to secure checkout →</span>
+            </button>
+
+            <p class="signup-fine">
+              Redirected to Stripe Checkout. Cancel in one click inside the portal — no long-term lock-in.
+              By continuing you agree to our <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Policy</a>.
+            </p>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function() {
+      const API_BASE = 'https://socialengine-api-production-18e0.up.railway.app';
+
+      const params = new URLSearchParams(window.location.search);
+      const urlPlan = (params.get('plan') || '').toLowerCase();
+      const urlInterval = (params.get('interval') || '').toLowerCase();
+
+      const VALID_PLANS = ['starter', 'growth', 'scale', 'agency'];
+      // legacy aliases accepted in URL — server normalizes, but we pre-select the canonical card
+      const ALIAS = { premium: 'scale', pro: 'growth', enterprise: 'agency' };
+
+      const initialPlan = VALID_PLANS.includes(urlPlan) ? urlPlan : (ALIAS[urlPlan] || 'growth');
+      const initialInterval = (urlInterval === 'annual') ? 'annual' : 'monthly';
+
+      document.querySelectorAll('input[name="plan"]').forEach(r => {
+        r.checked = (r.value === initialPlan);
+      });
+
+      const intervalBtns = document.querySelectorAll('.signup-interval__btn');
+      function setIntervalUI(v) {
+        intervalBtns.forEach(b => {
+          const pressed = b.dataset.interval === v;
+          b.setAttribute('aria-pressed', pressed);
+          b.setAttribute('aria-checked', pressed);
+        });
+        document.querySelectorAll('.signup-plan__price').forEach(el => {
+          el.textContent = el.dataset['price' + (v === 'annual' ? 'Annual' : 'Monthly')];
+        });
+        document.querySelectorAll('.signup-plan__period').forEach(el => {
+          el.textContent = el.dataset['period' + (v === 'annual' ? 'Annual' : 'Monthly')];
+        });
+      }
+      setIntervalUI(initialInterval);
+
+      intervalBtns.forEach(b => {
+        b.addEventListener('click', () => setIntervalUI(b.dataset.interval));
+      });
+
+      const form = document.getElementById('signup-form');
+      const emailErr = document.getElementById('signup-email-err');
+      const banner = document.getElementById('signup-banner');
+      const submitBtn = document.getElementById('signup-submit');
+      const submitText = submitBtn.querySelector('.ai-audit__submit-text');
+
+      function showBanner(msg) {
+        banner.textContent = msg;
+        banner.classList.add('signup-banner--visible');
+      }
+      function hideBanner() {
+        banner.classList.remove('signup-banner--visible');
+        banner.textContent = '';
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideBanner();
+        emailErr.textContent = '';
+
+        const chosenPlan = document.querySelector('input[name="plan"]:checked')?.value || 'growth';
+        const chosenInterval = document.querySelector('.signup-interval__btn[aria-pressed="true"]')?.dataset.interval || 'monthly';
+        const name = document.getElementById('signup-name').value.trim();
+        const email = document.getElementById('signup-email').value.trim();
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          emailErr.textContent = 'Please enter a valid email address.';
+          document.getElementById('signup-email').focus();
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitText.textContent = 'Preparing checkout…';
+
+        try {
+          const res = await fetch(`${API_BASE}/api/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, plan: chosenPlan, interval: chosenInterval }),
+          });
+          const data = await res.json().catch(() => ({}));
+
+          if (res.status === 429) {
+            showBanner(data.error || 'Too many signup attempts. Please wait a few minutes and try again.');
+            submitBtn.disabled = false;
+            submitText.textContent = 'Continue to secure checkout →';
+            return;
+          }
+          if (!res.ok || !data.ok || !data.redirect_url) {
+            if (data.field === 'email') {
+              emailErr.textContent = data.error || 'Invalid email.';
+            } else {
+              showBanner(data.error || `Signup failed (${res.status}). Email hello@socialengine.agency if this persists.`);
+            }
+            submitBtn.disabled = false;
+            submitText.textContent = 'Continue to secure checkout →';
+            return;
+          }
+
+          window.location.assign(data.redirect_url);
+        } catch (err) {
+          showBanner('Network error. Check your connection and try again.');
+          submitBtn.disabled = false;
+          submitText.textContent = 'Continue to secure checkout →';
+        }
+      });
+    })();
+  </script>
+
+</body>
+</html>
