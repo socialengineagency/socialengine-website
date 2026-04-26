@@ -2861,6 +2861,59 @@
     let studioCurrentIndex = 0;
     let studioViewMode = 'grid'; // 'grid' or 'list'
 
+    // Resolve a single best image URL for a CONTENT row.
+    //
+    // Priority (per 2026-04-25 thumbnail-loading fix):
+    //   1. image_url text field — canonical read path. Permanent for Shopify
+    //      CDN sources; also covers Airtable signed URLs that persistImage-
+    //      ToAirtable used to write (those expire ~24h, so anything still
+    //      airtableusercontent will likely 410; frontend just shows the
+    //      placeholder icon in that case — the backfill script is what
+    //      repairs those rows server-side).
+    //   2. Legacy `image` multilineText field — was historically stored as a
+    //      JSON-array-stringified attachment list (Airtable v2 schema).
+    //      The prior code did `post.image?.length > 0 ? post.image[0].url`
+    //      which silently failed: a string's .length is its char count, and
+    //      `string[0]` is the first character, not the first element, so
+    //      `.url` was always undefined and this branch has never returned a
+    //      URL since the column type was changed. Here we actually parse it.
+    //   3. `media[0].url` — newer attachment field written by persistImage-
+    //      ToAirtable. Per-request signed URL from Airtable; short-lived
+    //      but recent rows will have it.
+    //   4. '' if none of the above yield a usable URL.
+    //
+    // Always filters out same-origin URLs pointing back at the portal itself
+    // (ghost values like `/portal.html` left over from an earlier bug).
+    function resolveImageUrl(post) {
+      if (!post || typeof post !== 'object') return '';
+      const isHttp = (u) => typeof u === 'string' && /^https?:\/\//.test(u) && !u.includes('portal.html');
+
+      // 1. image_url text field
+      if (isHttp(post.image_url)) return post.image_url;
+
+      // 2. legacy image field (multilineText containing JSON array)
+      const legacy = post.image;
+      if (typeof legacy === 'string' && legacy.trim().startsWith('[')) {
+        try {
+          const parsed = JSON.parse(legacy);
+          if (Array.isArray(parsed)) {
+            const first = parsed.find(a => a && typeof a.url === 'string');
+            if (first && isHttp(first.url)) return first.url;
+          }
+        } catch {}
+      } else if (Array.isArray(legacy) && legacy.length > 0 && isHttp(legacy[0]?.url)) {
+        return legacy[0].url;
+      }
+
+      // 3. media[] attachment field
+      if (Array.isArray(post.media) && post.media.length > 0 && isHttp(post.media[0]?.url)) {
+        return post.media[0].url;
+      }
+
+      return '';
+    }
+    window.resolveImageUrl = resolveImageUrl;
+
     window.openStudioModal = function(postIndex) {
       studioCurrentIndex = postIndex;
       const modal = document.getElementById('studio-modal');
@@ -2901,8 +2954,8 @@
       const fullText = post.full_post_text || post.caption || '';
       const hookLine = post.hook_line || '';
       const isReel = (post.content_type || '').includes('reel') || (post.post_label || '').includes('reel');
-      const imageUrl = (post.image?.length > 0 ? post.image[0].url : null) || post.image_url || '';
-      const hasImage = imageUrl && imageUrl.startsWith('http') && !imageUrl.includes('portal.html');
+      const imageUrl = resolveImageUrl(post);
+      const hasImage = !!imageUrl;
       const videoUrl = post.video_url || '';
       const hasVideo = videoUrl && videoUrl.startsWith('http');
       const hasVideoBrief = hookLine.includes('🎬');
@@ -3926,8 +3979,8 @@
       const platform = (post.platform || 'instagram').toLowerCase();
       const status = post.status || 'Draft';
       const isReel = (post.content_type || '').includes('reel') || (post.post_label || '').includes('reel');
-      const imageUrl = (post.image?.length > 0 ? post.image[0].url : null) || post.image_url || '';
-      const hasImage = imageUrl && imageUrl.startsWith('http') && !imageUrl.includes('portal.html');
+      const imageUrl = resolveImageUrl(post);
+      const hasImage = !!imageUrl;
       const videoUrl = post.video_url || '';
       const hasVideo = videoUrl && videoUrl.startsWith('http');
       const fullText = post.full_post_text || post.caption || '';
@@ -4034,8 +4087,8 @@
       const platform = (post.platform || 'instagram').toLowerCase();
       const status = post.status || 'Draft';
       const isReel = (post.content_type || '').includes('reel') || (post.post_label || '').includes('reel');
-      const imageUrl = (post.image?.length > 0 ? post.image[0].url : null) || post.image_url || '';
-      const hasImage = imageUrl && imageUrl.startsWith('http') && !imageUrl.includes('portal.html');
+      const imageUrl = resolveImageUrl(post);
+      const hasImage = !!imageUrl;
       const videoUrl = post.video_url || '';
       const hasVideo = videoUrl && videoUrl.startsWith('http');
       const fullText = post.full_post_text || post.caption || '';
@@ -9113,9 +9166,9 @@
 
       const posts = window._studioPosts || window.studioPostsList || [];
       const images = posts.map(p => {
-        const url = (p.image && p.image.length > 0 ? p.image[0].url : null) || p.image_url || '';
+        const url = resolveImageUrl(p);
         const title = p.product_title || p.theme || '';
-        return { url: url && url.startsWith('http') && !url.includes('portal.html') ? url : null, title };
+        return { url: url || null, title };
       }).filter(p => p.url);
       const unique = [...new Map(images.map(p => [p.url, p])).values()];
       if (!unique.length) {
