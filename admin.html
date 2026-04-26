@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>SocialEngine Admin</title>
+<style>
+  /* ── Theme tokens (match portal.html) ─────────────────────────────── */
+  :root {
+    --bg:            #0f0f1a;
+    --bg-2:          #15151f;
+    --surface:       #1a1a26;
+    --surface-2:     #20202d;
+    --border:        rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text:          #e8e8f0;
+    --text-muted:    rgba(232,232,240,0.55);
+    --text-dim:      rgba(232,232,240,0.35);
+    --purple:        #7C3AED;
+    --purple-soft:   rgba(124,58,237,0.12);
+    --red:           #EF4444;
+    --red-soft:      rgba(239,68,68,0.12);
+    --orange:        #F59E0B;
+    --orange-soft:   rgba(245,158,11,0.12);
+    --green:         #10B981;
+    --green-soft:    rgba(16,185,129,0.12);
+    --blue:          #60A5FA;
+    --blue-soft:     rgba(96,165,250,0.12);
+    --gold:          #FBBF24;
+    --gold-soft:     rgba(251,191,36,0.12);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  button { font: inherit; }
+  a { color: var(--purple); text-decoration: none; }
+
+  /* ── Login card ───────────────────────────────────────────────────── */
+  .login-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .login-card h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .login-card h1 span { color: var(--purple); }
+  .login-card p { color: var(--text-muted); font-size: 13px; margin: 0 0 24px; }
+  .login-card input[type=password] {
+    width: 100%;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 12px 14px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .login-card input[type=password]:focus { border-color: var(--purple); }
+  .login-card button {
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s;
+  }
+  .login-card button:hover { background: #6D28D9; }
+  .login-card button:active { transform: translateY(1px); }
+  .login-card button[disabled] { opacity: 0.5; cursor: not-allowed; }
+  .login-error {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 12px;
+    min-height: 18px;
+  }
+  .shake { animation: shake 0.4s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+  }
+
+  /* ── Dashboard chrome ─────────────────────────────────────────────── */
+  .dash { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  .sidebar {
+    background: var(--bg-2);
+    border-right: 1px solid var(--border);
+    padding: 22px 16px;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .sidebar h2 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+  }
+  .sidebar h2 span { color: var(--purple); }
+  .nav-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 12px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.03); color: var(--text); }
+  .nav-item.active { background: var(--purple-soft); color: var(--purple); }
+  .nav-item.disabled { opacity: 0.35; cursor: not-allowed; }
+  .nav-item.disabled:hover { background: transparent; color: var(--text-muted); }
+  .nav-item .coming-soon { font-size: 9px; font-weight: 700; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .main { padding: 0; }
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: rgba(15,15,26,0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .topbar-title span { color: var(--purple); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .topbar-stamp { font-size: 11px; color: var(--text-dim); }
+  .topbar-btn {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .topbar-btn:hover { border-color: var(--border-strong); color: var(--text); }
+  .status-pills { display: flex; gap: 6px; }
+  .pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .pill.ok       { border-color: rgba(16,185,129,0.3);  background: var(--green-soft);  color: var(--green); }
+  .pill.warn     { border-color: rgba(251,191,36,0.3);  background: var(--gold-soft);   color: var(--gold); }
+  .pill.bad      { border-color: rgba(239,68,68,0.3);   background: var(--red-soft);    color: var(--red); }
+  .pill.info     { border-color: rgba(96,165,250,0.3);  background: var(--blue-soft);   color: var(--blue); }
+  .pill.neutral  { }
+
+  .content { padding: 24px 28px 60px; }
+  .section-title { font-size: 18px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .section-sub   { font-size: 12px; color: var(--text-muted); margin: 0 0 20px; }
+
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; margin-bottom: 20px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 6px; }
+  .card .value { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .card .sub   { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ── Tables ───────────────────────────────────────────────────────── */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .table th, .table td {
+    padding: 10px 14px;
+    font-size: 12.5px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .table th { color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; background: rgba(255,255,255,0.02); }
+  .table tr:last-child td { border-bottom: 0; }
+  .table tr.clickable { cursor: pointer; transition: background 0.1s; }
+  .table tr.clickable:hover { background: rgba(255,255,255,0.02); }
+
+  /* ── Badges / status dots ─────────────────────────────────────────── */
+  .tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+  }
+  .tag-grey   { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+  .tag-blue   { background: var(--blue-soft);   color: var(--blue); }
+  .tag-purple { background: var(--purple-soft); color: var(--purple); }
+  .tag-gold   { background: var(--gold-soft);   color: var(--gold); }
+  .tag-red    { background: var(--red-soft);    color: var(--red); }
+  .tag-orange { background: var(--orange-soft); color: var(--orange); }
+  .tag-green  { background: var(--green-soft);  color: var(--green); }
+
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+  .dot-healthy  { background: var(--green); }
+  .dot-warning  { background: var(--gold); }
+  .dot-critical { background: var(--red); }
+
+  /* ── Error feed ───────────────────────────────────────────────────── */
+  .feed { max-height: 520px; overflow-y: auto; background: var(--surface); border:1px solid var(--border); border-radius: 12px; padding: 6px; }
+  .feed-item {
+    display: grid;
+    grid-template-columns: 82px 140px 96px 1fr;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    align-items: center;
+  }
+  .feed-item:last-child { border-bottom: 0; }
+  .feed-item .time { color: var(--text-dim); font-size: 11px; }
+  .feed-item .client { color: var(--text-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .feed-item .msg { color: var(--text); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .feed-item.expanded .msg { white-space: normal; }
+  .feed-item .type { text-align: center; }
+
+  /* ── Search + filters ─────────────────────────────────────────────── */
+  .row-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .input-search {
+    flex: 1; min-width: 240px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 9px 12px;
+    font-size: 13px;
+    outline: none;
+  }
+  .input-search:focus { border-color: var(--purple); }
+  .filter-btn {
+    padding: 7px 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .filter-btn.active { border-color: var(--purple); background: var(--purple-soft); color: var(--purple); }
+
+  /* ── Drawer ──────────────────────────────────────────────────────── */
+  .drawer-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none; z-index: 50;
+  }
+  .drawer-overlay.open { display: block; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(640px, 100vw);
+    background: var(--bg-2);
+    border-left: 1px solid var(--border);
+    z-index: 51;
+    transform: translateX(100%);
+    transition: transform 0.25s ease-out;
+    overflow-y: auto;
+    padding: 24px;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+  .drawer-close {
+    background: transparent; border: 1px solid var(--border);
+    width: 32px; height: 32px; border-radius: 8px;
+    color: var(--text-muted); cursor: pointer; font-size: 16px;
+    flex-shrink: 0;
+  }
+  .drawer-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .drawer-tab {
+    background: transparent; border: 0; border-bottom: 2px solid transparent;
+    color: var(--text-muted); font-size: 13px; font-weight: 600;
+    padding: 8px 12px; cursor: pointer;
+  }
+  .drawer-tab.active { color: var(--purple); border-color: var(--purple); }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(110px,1fr)); gap: 8px; margin: 12px 0 20px; }
+  .stat-grid .card { padding: 12px; }
+  .stat-grid .value { font-size: 18px; }
+
+  .failed-row { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border:1px solid var(--border); border-radius: 10px; margin-bottom: 8px; }
+  .failed-row img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; background: var(--surface); }
+  .failed-row.requeued { background: var(--green-soft); border-color: rgba(16,185,129,0.3); opacity: 0.7; transition: opacity 0.6s; }
+  .failed-row.requeued.faded { opacity: 0; }
+  .failed-row .title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .failed-row .meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 8px; flex-wrap: wrap; }
+  .failed-row .actions { display: flex; gap: 6px; }
+  .failed-row .btn-sm {
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .failed-row .btn-sm.primary { background: var(--purple-soft); border-color: rgba(124,58,237,0.3); color: var(--purple); }
+  .failed-row .btn-sm[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Buttons ──────────────────────────────────────────────────────── */
+  .btn-primary {
+    padding: 9px 16px;
+    background: var(--purple);
+    color: #fff; border: none; border-radius: 8px;
+    font-weight: 700; font-size: 13px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #6D28D9; }
+  .btn-primary[disabled] { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost {
+    padding: 9px 16px;
+    background: transparent;
+    color: var(--text-muted); border: 1px solid var(--border);
+    border-radius: 8px; font-weight: 600; font-size: 13px;
+    cursor: pointer;
+  }
+  .btn-ghost:hover { border-color: var(--border-strong); color: var(--text); }
+
+  /* ── Toasts ──────────────────────────────────────────────────────── */
+  .toast-wrap { position: fixed; right: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
+  .toast {
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    min-width: 220px;
+    max-width: 360px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+    animation: toast-in 0.2s ease-out;
+  }
+  .toast.success { border-color: rgba(16,185,129,0.4); background: linear-gradient(var(--surface),var(--surface)) padding-box, linear-gradient(135deg,rgba(16,185,129,0.2),rgba(16,185,129,0.05)) border-box; }
+  .toast.error   { border-color: rgba(239,68,68,0.4); color: var(--red); }
+  @keyframes toast-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* ── Modal (confirm dialog) ──────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none; z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 420px;
+    width: calc(100% - 40px);
+  }
+  .modal h3 { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+  .modal p  { margin: 0 0 20px; font-size: 13px; color: var(--text-muted); }
+  .modal .actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* ── Skeleton ────────────────────────────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 4px;
+    height: 14px;
+  }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+  .empty { text-align: center; padding: 36px 12px; color: var(--text-muted); font-size: 13px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+  <!-- ── LOGIN VIEW ─────────────────────────────────────────────────── -->
+  <div class="login-wrap" id="view-login">
+    <div class="login-card" id="login-card">
+      <h1>Social<span>Engine</span> Admin</h1>
+      <p>Internal-only. Operator credentials required.</p>
+      <form id="login-form" autocomplete="off">
+        <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password">
+        <button type="submit" id="login-btn">Sign In</button>
+        <div class="login-error" id="login-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD VIEW ─────────────────────────────────────────────── -->
+  <div class="dash hidden" id="view-dash">
+    <aside class="sidebar">
+      <h2>Social<span>Engine</span> Admin</h2>
+      <div class="nav-item active" data-section="health">Platform Health</div>
+      <div class="nav-item" data-section="merchants">Merchants</div>
+      <div class="nav-item" data-section="failed">Failed Videos</div>
+      <div class="nav-item disabled">Content Pipeline <span class="coming-soon">Soon</span></div>
+      <div class="nav-item disabled">Usage &amp; Cost <span class="coming-soon">Soon</span></div>
+      <div class="nav-item disabled">Revenue <span class="coming-soon">Soon</span></div>
+      <div class="nav-item disabled">Support Tools <span class="coming-soon">Soon</span></div>
+      <div class="nav-item disabled">Alerts <span class="coming-soon">Soon</span></div>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div class="topbar-title">Social<span>Engine</span> Admin</div>
+        <div class="topbar-right">
+          <div class="status-pills" id="status-pills">
+            <span class="pill neutral" id="pill-api">API</span>
+            <span class="pill neutral" id="pill-airtable">Airtable</span>
+            <span class="pill neutral" id="pill-cron">CRON</span>
+            <span class="pill neutral" id="pill-queue">Queue</span>
+            <span class="pill neutral" id="pill-errors">Errors</span>
+          </div>
+          <span class="topbar-stamp" id="topbar-stamp">—</span>
+          <button class="topbar-btn" id="btn-refresh">Refresh</button>
+          <button class="topbar-btn" id="btn-logout">Sign Out</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <section id="section-health"></section>
+        <section id="section-merchants" class="hidden"></section>
+        <section id="section-failed" class="hidden"></section>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Merchant drawer ────────────────────────────────────────────── -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div style="min-width:0;">
+        <h2 id="drawer-title" style="margin:0 0 4px; font-size:18px;">Merchant</h2>
+        <div id="drawer-subtitle" style="color:var(--text-muted); font-size:12px;"></div>
+      </div>
+      <button class="drawer-close" id="drawer-close">×</button>
+    </div>
+    <div class="drawer-tabs">
+      <button class="drawer-tab active" data-dtab="overview">Overview</button>
+      <button class="drawer-tab" data-dtab="failed">Failed Videos</button>
+      <button class="drawer-tab" data-dtab="generations">Recent Generations</button>
+    </div>
+    <div id="drawer-body"></div>
+  </div>
+
+  <!-- ── Confirm modal ──────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h3 id="modal-title">Are you sure?</h3>
+      <p id="modal-body">This cannot be undone.</p>
+      <div class="actions">
+        <button class="btn-ghost" id="modal-cancel">Cancel</button>
+        <button class="btn-primary" id="modal-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toasts ─────────────────────────────────────────────────────── -->
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SocialEngine Admin — Phase 1
+  // Single-file vanilla JS SPA. No framework, no build step.
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // API base. Default to the live Railway host; allow a meta override
+  // for Netlify preview / local testing.
+  const META_API = document.querySelector('meta[name="api-base"]')?.content;
+  const API = (META_API && META_API.trim()) || 'https://socialengine-api-production-18e0.up.railway.app';
+
+  const TOKEN_KEY = 'se_admin_token';
+  const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
+  const setToken = (t) => t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY);
+
+  // Every admin API call goes through this. 401 bounces back to login.
+  async function adminFetch(path, opts = {}) {
+    const headers = new Headers(opts.headers || {});
+    headers.set('Authorization', 'Bearer ' + getToken());
+    if (opts.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    const res = await fetch(API + path, {
+      ...opts,
+      headers,
+      credentials: 'include',
+    });
+    if (res.status === 401) {
+      setToken('');
+      showLogin();
+      throw new Error('unauth');
+    }
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`${res.status}: ${body.slice(0, 200)}`);
+    }
+    return res.json();
+  }
+
+  // ── View switching ────────────────────────────────────────────────
+  const viewLogin = document.getElementById('view-login');
+  const viewDash  = document.getElementById('view-dash');
+  function showLogin()   { viewLogin.classList.remove('hidden'); viewDash.classList.add('hidden'); }
+  function showDash()    { viewLogin.classList.add('hidden');    viewDash.classList.remove('hidden'); }
+
+  // ── Login ─────────────────────────────────────────────────────────
+  const loginForm  = document.getElementById('login-form');
+  const loginPw    = document.getElementById('login-password');
+  const loginBtn   = document.getElementById('login-btn');
+  const loginErr   = document.getElementById('login-error');
+  const loginCard  = document.getElementById('login-card');
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginErr.textContent = '';
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in…';
+    try {
+      const res = await fetch(API + '/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: loginPw.value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        loginCard.classList.remove('shake'); void loginCard.offsetWidth;
+        loginCard.classList.add('shake');
+        loginErr.textContent = data.error || 'Incorrect password';
+        return;
+      }
+      setToken(data.token);
+      loginPw.value = '';
+      showDash();
+      boot();
+    } catch (err) {
+      loginErr.textContent = 'Network error — try again';
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+    }
+  });
+
+  // ── Logout ────────────────────────────────────────────────────────
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    try { await adminFetch('/admin/logout', { method: 'POST' }); } catch {}
+    setToken('');
+    showLogin();
+  });
+
+  // ── Nav ───────────────────────────────────────────────────────────
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.addEventListener('click', () => {
+      if (n.classList.contains('disabled')) return;
+      document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+      n.classList.add('active');
+      const sec = n.dataset.section;
+      document.getElementById('section-health').classList.toggle('hidden', sec !== 'health');
+      document.getElementById('section-merchants').classList.toggle('hidden', sec !== 'merchants');
+      document.getElementById('section-failed').classList.toggle('hidden', sec !== 'failed');
+      if (sec === 'health') renderHealth();
+      if (sec === 'merchants') renderMerchants();
+      if (sec === 'failed') renderFailed();
+    });
+  });
+
+  // ── Refresh ───────────────────────────────────────────────────────
+  document.getElementById('btn-refresh').addEventListener('click', () => refreshAll(true));
+  setInterval(() => refreshAll(false), 60 * 1000);
+
+  // ── Boot ──────────────────────────────────────────────────────────
+  function boot() {
+    renderHealth();
+    refreshAll(true);
+  }
+  if (getToken()) { showDash(); boot(); }
+
+  // ── State caches ─────────────────────────────────────────────────
+  const state = { health: null, errors: [], merchants: [], failed: [] };
+
+  async function refreshAll(userTriggered) {
+    try {
+      const [h, e] = await Promise.all([
+        adminFetch('/admin/api/health'),
+        adminFetch('/admin/api/errors?limit=100'),
+      ]);
+      state.health = h;
+      state.errors = e.errors || [];
+      updatePills();
+      updateStamp();
+      // Only re-render the section the user is looking at
+      const active = document.querySelector('.nav-item.active')?.dataset.section;
+      if (active === 'health') renderHealth();
+      if (active === 'merchants') renderMerchants();
+      if (active === 'failed') renderFailed();
+    } catch (err) {
+      if (err.message !== 'unauth') {
+        if (userTriggered) toast('Refresh failed: ' + err.message, 'error');
+      }
+    }
+  }
+
+  function updatePills() {
+    const h = state.health;
+    const apiOK = !!h;
+    const airOK = h?.airtable?.ok;
+    const crons = h?.crons || {};
+    const anyCronNever = Object.values(crons).some(c => c.status === 'never');
+    const anyCronMissed = Object.values(crons).some(c => c.status === 'missed' || c.status === 'error');
+    const qFailed = h?.queueDepth?.failed24h || 0;
+    const errCount = h?.errorCount24h || 0;
+
+    setPill('pill-api',       apiOK ? 'ok' : 'bad',   apiOK ? 'API OK' : 'API DOWN');
+    setPill('pill-airtable',  airOK ? 'ok' : 'bad',   airOK ? 'Airtable' : 'Airtable FAIL');
+    setPill('pill-cron',      anyCronNever ? 'bad' : anyCronMissed ? 'warn' : 'ok',
+                              anyCronNever ? 'CRON NEVER' : anyCronMissed ? 'CRON MISSED' : 'CRON OK');
+    setPill('pill-queue',     qFailed > 0 ? 'warn' : 'ok', 'Queue ' + (qFailed) + ' fail');
+    setPill('pill-errors',    errCount > 10 ? 'bad' : errCount > 0 ? 'warn' : 'ok', errCount + ' err/24h');
+  }
+  function setPill(id, variant, text) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'pill ' + variant;
+    el.textContent = text;
+  }
+  function updateStamp() {
+    document.getElementById('topbar-stamp').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  }
+
+  // ── Health section ───────────────────────────────────────────────
+  function renderHealth() {
+    const h = state.health;
+    const root = document.getElementById('section-health');
+    if (!h) {
+      root.innerHTML = skeletonBlock('Platform Health', 4);
+      return;
+    }
+    const crons = h.crons || {};
+    root.innerHTML = `
+      <h1 class="section-title">Platform Health</h1>
+      <p class="section-sub">Live process-level state. Fingerprint <code>${escape(h.fingerprint || 'unknown')}</code>.</p>
+
+      <div class="grid-3">
+        <div class="card"><div class="label">Airtable</div><div class="value">${h.airtable?.ok ? 'Healthy' : 'Down'}</div><div class="sub">${h.airtable?.status || h.airtable?.reason || '—'}</div></div>
+        <div class="card"><div class="label">Errors (24h)</div><div class="value">${h.errorCount24h}</div><div class="sub">rolling in-memory log</div></div>
+        <div class="card"><div class="label">Queue Depth</div><div class="value">${(h.queueDepth?.pending||0) + (h.queueDepth?.processing||0)}</div><div class="sub">pending ${h.queueDepth?.pending||0} · processing ${h.queueDepth?.processing||0}</div></div>
+        <div class="card"><div class="label">Failed 24h</div><div class="value">${h.queueDepth?.failed24h||0}</div><div class="sub">reels w/o video + status=failed</div></div>
+      </div>
+
+      <h2 class="section-sub" style="margin-top:24px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim);">CRON Heartbeat</h2>
+      <table class="table">
+        <thead><tr><th>Job</th><th>Last Run</th><th>Duration</th><th>Posts Generated</th><th>Status</th></tr></thead>
+        <tbody>
+          ${['daily_content_batch','inbox_poll','reminder_check'].map(name => cronRow(name, crons[name])).join('')}
+        </tbody>
+      </table>
+
+      <h2 class="section-sub" style="margin-top:24px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim);">Live Error Feed</h2>
+      <div class="feed" id="error-feed">
+        ${state.errors.length === 0
+          ? '<div class="empty">No errors logged since the server last booted. 🎉</div>'
+          : state.errors.map(errorFeedItem).join('')}
+      </div>
+    `;
+    root.querySelectorAll('.feed-item').forEach(it => {
+      it.addEventListener('click', () => it.classList.toggle('expanded'));
+    });
+  }
+  function cronRow(name, entry) {
+    if (!entry || !entry.lastRun) {
+      return `<tr><td><code>${name}</code></td><td>—</td><td>—</td><td>—</td><td><span class="tag tag-red">NEVER</span></td></tr>`;
+    }
+    const status = entry.status === 'ok' ? 'tag-green' : entry.status === 'missed' ? 'tag-orange' : 'tag-red';
+    const label  = entry.status === 'ok' ? 'OK' : entry.status === 'missed' ? 'MISSED' : (entry.status || '').toUpperCase();
+    return `<tr>
+      <td><code>${name}</code></td>
+      <td>${relativeTime(entry.lastRun)} <span style="color:var(--text-dim); font-size:11px;">(${new Date(entry.lastRun).toLocaleTimeString()})</span></td>
+      <td>${entry.durationMs != null ? entry.durationMs + 'ms' : '—'}</td>
+      <td>${entry.postsGenerated != null ? entry.postsGenerated : '—'}</td>
+      <td><span class="tag ${status}">${label}</span></td>
+    </tr>`;
+  }
+  function errorFeedItem(e) {
+    const tagClass =
+      /^VIDEO_FAILED$|^HIGGSFIELD_/.test(e.type) ? 'tag-red' :
+      /^AIRTABLE_/.test(e.type) ? 'tag-orange' :
+      /^CRON_/.test(e.type) ? 'tag-gold' :
+      'tag-grey';
+    return `<div class="feed-item">
+      <span class="time">${relativeTime(e.ts)}</span>
+      <span class="client" title="${escape(e.clientId||'system')}">${escape(e.clientId||'system')}</span>
+      <span class="type"><span class="tag ${tagClass}">${escape(e.type||'GENERAL')}</span></span>
+      <span class="msg" title="${escape(e.message||'')}">${escape((e.message||'').slice(0,180))}</span>
+    </div>`;
+  }
+
+  // ── Merchants section ────────────────────────────────────────────
+  let merchantsFilter = 'all';
+  async function renderMerchants() {
+    const root = document.getElementById('section-merchants');
+    root.innerHTML = `
+      <h1 class="section-title">Merchants</h1>
+      <p class="section-sub">All active client records. Click a row to drill down.</p>
+      <div class="row-bar">
+        <input id="m-search" class="input-search" placeholder="Search by business name…">
+        <button class="filter-btn" data-mf="all">All</button>
+        <button class="filter-btn" data-mf="critical">Critical</button>
+        <button class="filter-btn" data-mf="warning">Warning</button>
+        <button class="filter-btn" data-mf="healthy">Healthy</button>
+      </div>
+      <div id="merchants-body">${skeletonBlock('', 6)}</div>
+    `;
+    root.querySelectorAll('[data-mf]').forEach(b => {
+      if (b.dataset.mf === merchantsFilter) b.classList.add('active');
+      b.addEventListener('click', () => {
+        merchantsFilter = b.dataset.mf;
+        root.querySelectorAll('[data-mf]').forEach(x => x.classList.toggle('active', x === b));
+        drawMerchantsTable();
+      });
+    });
+    root.querySelector('#m-search').addEventListener('input', drawMerchantsTable);
+
+    try {
+      const resp = await adminFetch('/admin/api/merchants');
+      state.merchants = resp.merchants || [];
+      drawMerchantsTable();
+    } catch (e) {
+      if (e.message !== 'unauth') root.querySelector('#merchants-body').innerHTML = `<div class="empty" style="color:var(--red);">Error: ${escape(e.message)}</div>`;
+    }
+  }
+  function drawMerchantsTable() {
+    const root = document.getElementById('section-merchants');
+    if (!root) return;
+    const q = (root.querySelector('#m-search')?.value || '').toLowerCase();
+    const filtered = state.merchants.filter(m => {
+      if (merchantsFilter !== 'all' && m.health !== merchantsFilter) return false;
+      if (q && !(m.name || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const body = root.querySelector('#merchants-body');
+    if (!filtered.length) { body.innerHTML = '<div class="empty">No merchants match.</div>'; return; }
+    body.innerHTML = `
+      <table class="table">
+        <thead><tr>
+          <th>Client</th><th>Tier</th><th>Shopify</th><th>Social</th>
+          <th>Last Generated</th><th>Posts (7d)</th><th>Failed (24h)</th>
+          <th>Health</th><th></th>
+        </tr></thead>
+        <tbody>${filtered.map(merchantRow).join('')}</tbody>
+      </table>
+    `;
+    body.querySelectorAll('tr.clickable').forEach(tr => {
+      tr.addEventListener('click', () => openDrawer(tr.dataset.id));
+    });
+  }
+  function merchantRow(m) {
+    const tierMap = { starter: 'tag-grey', growth: 'tag-blue', scale: 'tag-purple', agency: 'tag-gold', premium: 'tag-purple' };
+    const tierTag = tierMap[(m.tier || 'starter').toLowerCase()] || 'tag-grey';
+    const failedColor = m.failedVideos24h > 0 ? 'color:var(--red); font-weight:700;' : '';
+    return `<tr class="clickable" data-id="${escape(m.id)}">
+      <td>${escape(m.name || '(unnamed)')}</td>
+      <td><span class="tag ${tierTag}">${escape(m.tier || 'starter')}</span></td>
+      <td>${m.shopifyConnected ? '✓' : '—'}</td>
+      <td>${m.socialConnected ? '✓' : '—'}</td>
+      <td>${m.lastGenerated ? relativeTime(m.lastGenerated) : '<span style="color:var(--text-dim);">never</span>'}</td>
+      <td>${m.postsThisWeek}</td>
+      <td style="${failedColor}">${m.failedVideos24h}</td>
+      <td><span class="dot dot-${m.health}"></span>${m.health}</td>
+      <td><button class="btn-sm" data-view="${escape(m.id)}" onclick="event.stopPropagation(); openDrawer('${escape(m.id)}');">View</button></td>
+    </tr>`;
+  }
+
+  // ── Failed section ───────────────────────────────────────────────
+  let failedFilter = { client: '', type: '' };
+  async function renderFailed() {
+    const root = document.getElementById('section-failed');
+    root.innerHTML = `
+      <h1 class="section-title">Failed Videos <span id="failed-count" style="color:var(--text-dim); font-weight:500;"></span></h1>
+      <p class="section-sub">Every row here is a reel whose video is missing or QA-failed. Grouped by client.</p>
+      <div class="row-bar">
+        <select id="failed-client" class="input-search" style="max-width:240px;"><option value="">All clients</option></select>
+        <select id="failed-type" class="input-search" style="max-width:200px;"><option value="">All error types</option></select>
+        <button class="btn-primary" id="btn-requeue-all">Re-queue All</button>
+      </div>
+      <div id="failed-body">${skeletonBlock('', 4)}</div>
+    `;
+    try {
+      const resp = await adminFetch('/admin/api/content/failed');
+      state.failed = resp.items || [];
+      const clients = Array.from(new Set(state.failed.map(i => i.clientName).filter(Boolean))).sort();
+      const cs = document.getElementById('failed-client');
+      cs.innerHTML = '<option value="">All clients</option>' + clients.map(c => `<option value="${escape(c)}">${escape(c)}</option>`).join('');
+      cs.addEventListener('change', () => { failedFilter.client = cs.value; drawFailed(); });
+      document.getElementById('failed-type').addEventListener('change', (e) => { failedFilter.type = e.target.value; drawFailed(); });
+      document.getElementById('btn-requeue-all').addEventListener('click', () => requeueAll(null));
+      drawFailed();
+    } catch (e) {
+      if (e.message !== 'unauth') root.querySelector('#failed-body').innerHTML = `<div class="empty" style="color:var(--red);">Error: ${escape(e.message)}</div>`;
+    }
+  }
+  function drawFailed() {
+    const root = document.getElementById('section-failed');
+    if (!root) return;
+    const items = state.failed.filter(it => {
+      if (failedFilter.client && it.clientName !== failedFilter.client) return false;
+      return true;
+    });
+    document.getElementById('failed-count').textContent = `(${items.length})`;
+    const body = root.querySelector('#failed-body');
+    if (!items.length) {
+      body.innerHTML = '<div class="empty">All clear — no failed videos. 🎬</div>';
+      return;
+    }
+    // Group by client
+    const byClient = {};
+    for (const it of items) {
+      const k = it.clientName || '(no client)';
+      (byClient[k] = byClient[k] || []).push(it);
+    }
+    body.innerHTML = Object.entries(byClient).map(([name, rows]) => `
+      <div class="card" style="padding:14px; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+          <div style="font-weight:700;">${escape(name)} <span style="color:var(--text-dim); font-weight:500;">(${rows.length})</span></div>
+          <button class="btn-ghost" data-requeue-client="${escape(name)}">Re-queue all for ${escape(name)}</button>
+        </div>
+        ${rows.map(failedRowHTML).join('')}
+      </div>
+    `).join('');
+    body.querySelectorAll('[data-requeue-client]').forEach(b => {
+      b.addEventListener('click', () => requeueAll(b.dataset.requeueClient));
+    });
+    body.querySelectorAll('[data-requeue-id]').forEach(b => {
+      b.addEventListener('click', () => requeueOne(b.dataset.requeueId, b.closest('.failed-row')));
+    });
+  }
+  function failedRowHTML(it) {
+    const img = it.imageUrl ? `<img src="${escape(it.imageUrl)}" alt="" onerror="this.style.visibility='hidden';">` : '<div style="width:56px;height:56px;background:var(--surface);border-radius:8px;"></div>';
+    return `<div class="failed-row" data-row-id="${escape(it.id)}">
+      ${img}
+      <div style="min-width:0;">
+        <div class="title">${escape(it.productName || '(no product)')}</div>
+        <div class="meta">
+          <span class="tag tag-grey">${escape((it.platform || '—').toLowerCase())}</span>
+          ${it.contentType ? `<span class="tag tag-grey">${escape(it.contentType)}</span>` : ''}
+          ${it.scheduledDate ? `<span>scheduled ${escape(it.scheduledDate)}</span>` : ''}
+          <span>${relativeTime(it.createdAt)}</span>
+        </div>
+        ${it.errorReason ? `<div style="font-size:11px; color:var(--red); margin-top:4px;">${escape(it.errorReason).slice(0,180)}</div>` : ''}
+      </div>
+      <div class="actions">
+        <button class="btn-sm primary" data-requeue-id="${escape(it.id)}">Re-queue</button>
+      </div>
+    </div>`;
+  }
+  async function requeueOne(id, rowEl) {
+    const btn = rowEl?.querySelector('button[data-requeue-id]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Re-queuing…'; }
+    try {
+      await adminFetch('/admin/api/content/' + encodeURIComponent(id) + '/requeue', { method: 'POST' });
+      if (rowEl) {
+        rowEl.classList.add('requeued');
+        setTimeout(() => rowEl.classList.add('faded'), 900);
+        setTimeout(() => rowEl.remove(), 1500);
+      }
+      toast('Re-queued', 'success');
+    } catch (e) {
+      if (e.message !== 'unauth') toast('Re-queue failed: ' + e.message, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Re-queue'; }
+    }
+  }
+  function requeueAll(clientName) {
+    const rows = state.failed.filter(it => !clientName || it.clientName === clientName);
+    if (!rows.length) return;
+    confirmModal(`Re-queue ${rows.length} video${rows.length === 1 ? '' : 's'}${clientName ? ` for ${clientName}` : ''}? This cannot be undone.`, async () => {
+      let ok = 0, err = 0;
+      for (const it of rows) {
+        try { await adminFetch('/admin/api/content/' + encodeURIComponent(it.id) + '/requeue', { method: 'POST' }); ok++; }
+        catch { err++; }
+      }
+      toast(`Re-queued ${ok}${err ? ` (${err} failed)` : ''}`, err ? 'error' : 'success');
+      renderFailed();
+    });
+  }
+
+  // ── Drawer ────────────────────────────────────────────────────────
+  const drawer      = document.getElementById('drawer');
+  const drawerOv    = document.getElementById('drawer-overlay');
+  const drawerBody  = document.getElementById('drawer-body');
+  let drawerMerchantId = null;
+  let drawerData = null;
+  let drawerTab = 'overview';
+
+  document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+  drawerOv.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+  document.querySelectorAll('.drawer-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      drawerTab = t.dataset.dtab;
+      document.querySelectorAll('.drawer-tab').forEach(x => x.classList.toggle('active', x === t));
+      renderDrawerBody();
+    });
+  });
+  async function openDrawer(id) {
+    drawerMerchantId = id;
+    drawerTab = 'overview';
+    document.querySelectorAll('.drawer-tab').forEach(x => x.classList.toggle('active', x.dataset.dtab === 'overview'));
+    drawer.classList.add('open');
+    drawerOv.classList.add('open');
+    drawerBody.innerHTML = skeletonBlock('', 5);
+    document.getElementById('drawer-title').textContent = 'Loading…';
+    document.getElementById('drawer-subtitle').textContent = '';
+    try {
+      const data = await adminFetch('/admin/api/merchants/' + encodeURIComponent(id));
+      drawerData = data;
+      const m = data.merchant;
+      document.getElementById('drawer-title').textContent = m.name || '(unnamed)';
+      document.getElementById('drawer-subtitle').textContent =
+        `${m.tier || 'starter'} · ${m.contactEmail || 'no email'} · ${m.shopifyDomain || 'no shopify'}`;
+      renderDrawerBody();
+    } catch (e) {
+      if (e.message !== 'unauth') drawerBody.innerHTML = `<div class="empty" style="color:var(--red);">Error: ${escape(e.message)}</div>`;
+    }
+  }
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    drawerOv.classList.remove('open');
+  }
+  function renderDrawerBody() {
+    if (!drawerData) return;
+    if (drawerTab === 'overview') renderDrawerOverview();
+    if (drawerTab === 'failed') renderDrawerFailed();
+    if (drawerTab === 'generations') renderDrawerGenerations();
+  }
+  function renderDrawerOverview() {
+    const m = drawerData.merchant;
+    const c = m.counts || {};
+    drawerBody.innerHTML = `
+      <div class="stat-grid">
+        <div class="card"><div class="label">Pending</div><div class="value">${c.pending || 0}</div></div>
+        <div class="card"><div class="label">Approved</div><div class="value">${c.approved || 0}</div></div>
+        <div class="card"><div class="label">Rejected</div><div class="value">${c.rejected || 0}</div></div>
+        <div class="card"><div class="label">Failed</div><div class="value" style="color:var(--red);">${c.failed || 0}</div></div>
+        <div class="card"><div class="label">Scheduled</div><div class="value">${c.scheduled || 0}</div></div>
+        <div class="card"><div class="label">Posted</div><div class="value">${c.posted || 0}</div></div>
+      </div>
+      <dl style="display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:13px; margin:12px 0 20px;">
+        <dt style="color:var(--text-dim);">Email</dt><dd>${escape(m.contactEmail || '—')}</dd>
+        <dt style="color:var(--text-dim);">Shopify</dt><dd>${escape(m.shopifyDomain || '—')}</dd>
+        <dt style="color:var(--text-dim);">Platforms</dt><dd>${(m.platforms || []).map(p => `<span class="tag tag-grey">${escape(p)}</span>`).join(' ') || '—'}</dd>
+        <dt style="color:var(--text-dim);">Tier</dt><dd>${escape(m.tier || 'starter')}</dd>
+        <dt style="color:var(--text-dim);">Industry</dt><dd>${escape(m.industry || '—')}</dd>
+        <dt style="color:var(--text-dim);">Onboarded</dt><dd>${escape(m.onboardingDate || '—')}</dd>
+        <dt style="color:var(--text-dim);">Video credits</dt><dd>${m.videoCredits ?? 0}</dd>
+        <dt style="color:var(--text-dim);">Last generated</dt><dd>${m.lastGenerated ? relativeTime(m.lastGenerated) : 'never'}</dd>
+      </dl>
+      <button class="btn-primary" id="btn-run-batch">Force Run Batch</button>
+    `;
+    document.getElementById('btn-run-batch').addEventListener('click', async (e) => {
+      const b = e.currentTarget;
+      b.disabled = true;
+      b.textContent = 'Triggering…';
+      try {
+        const resp = await adminFetch('/admin/api/merchants/' + encodeURIComponent(drawerMerchantId) + '/run-batch', { method: 'POST' });
+        toast(resp.message || 'Batch triggered', 'success');
+      } catch (err) {
+        if (err.message !== 'unauth') toast('Batch failed: ' + err.message, 'error');
+      } finally {
+        b.disabled = false;
+        b.textContent = 'Force Run Batch';
+      }
+    });
+  }
+  function renderDrawerFailed() {
+    const rows = drawerData.failedContent || [];
+    if (!rows.length) { drawerBody.innerHTML = '<div class="empty">No failed videos. 🎬</div>'; return; }
+    drawerBody.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="color:var(--text-muted); font-size:13px;">${rows.length} failed / missing video${rows.length === 1 ? '' : 's'}</div>
+        <button class="btn-primary" id="btn-requeue-all-drawer">Re-queue All</button>
+      </div>
+      ${rows.map(failedRowHTML).join('')}
+    `;
+    drawerBody.querySelectorAll('[data-requeue-id]').forEach(b => {
+      b.addEventListener('click', () => requeueOne(b.dataset.requeueId, b.closest('.failed-row')));
+    });
+    document.getElementById('btn-requeue-all-drawer').addEventListener('click', () => {
+      confirmModal(`Re-queue ${rows.length} video${rows.length === 1 ? '' : 's'}? This cannot be undone.`, async () => {
+        let ok = 0, err = 0;
+        for (const it of rows) {
+          try { await adminFetch('/admin/api/content/' + encodeURIComponent(it.id) + '/requeue', { method: 'POST' }); ok++; }
+          catch { err++; }
+        }
+        toast(`Re-queued ${ok}${err ? ` (${err} failed)` : ''}`, err ? 'error' : 'success');
+        openDrawer(drawerMerchantId);
+      });
+    });
+  }
+  function renderDrawerGenerations() {
+    const rows = drawerData.generations || [];
+    if (!rows.length) {
+      drawerBody.innerHTML = '<div class="empty">No GENERATIONS rows yet for this merchant.</div>';
+      return;
+    }
+    drawerBody.innerHTML = `
+      <table class="table">
+        <thead><tr><th>Model</th><th>Content Type</th><th>QA Score</th><th>Action</th><th>Duration</th></tr></thead>
+        <tbody>
+          ${rows.map(g => `<tr>
+            <td><code>${escape(g.model || '')}</code></td>
+            <td>${escape(g.contentType || '')}</td>
+            <td>${g.qaScore != null ? g.qaScore : '—'}</td>
+            <td><span class="tag ${g.merchantAction === 'approved' ? 'tag-green' : g.merchantAction === 'rejected' ? 'tag-red' : 'tag-grey'}">${escape(g.merchantAction || 'skipped')}</span></td>
+            <td>${g.durationMs != null ? (g.durationMs/1000).toFixed(1) + 's' : '—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  function escape(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+  function relativeTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso).getTime();
+    if (!d) return '—';
+    const s = Math.floor((Date.now() - d) / 1000);
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    return Math.floor(s/86400) + 'd ago';
+  }
+  function skeletonBlock(title, n) {
+    return `<div>${title ? `<h2 class="section-sub">${escape(title)}</h2>` : ''}${Array(n).fill(0).map(() => '<div class="skeleton" style="margin-bottom:8px; width:100%;"></div>').join('')}</div>`;
+  }
+  function toast(msg, variant) {
+    const wrap = document.getElementById('toast-wrap');
+    const el = document.createElement('div');
+    el.className = 'toast ' + (variant || 'success');
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 240); }, 3000);
+  }
+  // Simple confirm modal promise wrapper
+  let confirmModalResolve = null;
+  function confirmModal(body, onConfirm) {
+    document.getElementById('modal-body').textContent = body;
+    document.getElementById('modal-overlay').classList.add('open');
+    confirmModalResolve = onConfirm;
+  }
+  document.getElementById('modal-cancel').addEventListener('click', () => {
+    document.getElementById('modal-overlay').classList.remove('open');
+    confirmModalResolve = null;
+  });
+  document.getElementById('modal-confirm').addEventListener('click', () => {
+    document.getElementById('modal-overlay').classList.remove('open');
+    const fn = confirmModalResolve;
+    confirmModalResolve = null;
+    if (fn) fn();
+  });
+</script>
+</body>
+</html>
