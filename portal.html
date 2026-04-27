@@ -11984,7 +11984,7 @@
     // ondrop, oninput, etc.) run in the GLOBAL scope, not inside this
     // IIFE. Every `function foo() { ... }` declared directly inside the
     // IIFE is scoped to the IIFE closure and is NOT reachable from an
-    // inline handler. The user-reported bug today:
+    // inline handler. The user-reported bug:
     //   'Uncaught ReferenceError: handleVSUpload is not defined'
     //   at <input onchange="handleVSUpload(this.files[0])">
     // was caused by the file input calling `handleVSUpload()` which was
@@ -11993,31 +11993,43 @@
     // Some functions in this file were already exposed explicitly
     // (window.openStudioModal, window.studioApprove, etc). This block
     // promotes the 19 that weren't, matching the names the HTML attrs
-    // reference 1-for-1. If you add a NEW inline handler that calls a
-    // function defined inside this IIFE, add it to this block too —
-    // otherwise it will fail at click time with the same error.
+    // reference 1-for-1.
     //
-    // Validated by scanning every on*= HTML attribute and cross-
-    // referencing against IIFE-local function declarations.
-    window._seRemoveConnectBanner   = _seRemoveConnectBanner;
-    window.changePassword           = changePassword;
-    window.clearVSPreview           = clearVSPreview;
-    window.connectViaUploadPost     = connectViaUploadPost;
-    window.copyVoiceOutput          = copyVoiceOutput;
-    window.generateVoiceContent     = generateVoiceContent;
-    window.handleVSUpload           = handleVSUpload;
-    window.refreshBrandIntelligence = refreshBrandIntelligence;
-    window.regenerateVoiceContent   = regenerateVoiceContent;
-    window.reschedulePost           = reschedulePost;
-    window.retryNativeOAuth         = retryNativeOAuth;
-    window.selectVSTemplate         = selectVSTemplate;
-    window.showCancellationModal    = showCancellationModal;
-    window.showToast                = showToast;
-    window.submitVideoGeneration    = submitVideoGeneration;
-    window.submitVoiceFeedback      = submitVoiceFeedback;
-    window.toggleNotifications      = toggleNotifications;
-    window.triggerCompetitorSnipe   = triggerCompetitorSnipe;
-    window.voiceFeedback            = voiceFeedback;
+    // Safety (2026-04-27 follow-up audit): each assignment reads its
+    // source with `typeof <name> === 'function'`, which is parse-safe
+    // in 'use strict' mode even when the source identifier doesn't
+    // exist. Without this guard, a later edit that renames or removes
+    // any of these IIFE-local functions would throw a ReferenceError
+    // here and kill the rest of this block — including the `})();`
+    // IIFE closer — leaving every subsequent inline handler un-exposed.
+    // The console.warn surfaces the missing source immediately without
+    // breaking unrelated exposures.
+    const _exposeOnWindow = (name, ref) => {
+      if (typeof ref === 'function') {
+        window[name] = ref;
+      } else {
+        console.warn(`[portal] inline-handler expose skipped: ${name} is typeof=${typeof ref}`);
+      }
+    };
+    try { _exposeOnWindow('_seRemoveConnectBanner',   typeof _seRemoveConnectBanner   !== 'undefined' ? _seRemoveConnectBanner   : undefined); } catch(_){}
+    try { _exposeOnWindow('changePassword',           typeof changePassword           !== 'undefined' ? changePassword           : undefined); } catch(_){}
+    try { _exposeOnWindow('clearVSPreview',           typeof clearVSPreview           !== 'undefined' ? clearVSPreview           : undefined); } catch(_){}
+    try { _exposeOnWindow('connectViaUploadPost',     typeof connectViaUploadPost     !== 'undefined' ? connectViaUploadPost     : undefined); } catch(_){}
+    try { _exposeOnWindow('copyVoiceOutput',          typeof copyVoiceOutput          !== 'undefined' ? copyVoiceOutput          : undefined); } catch(_){}
+    try { _exposeOnWindow('generateVoiceContent',     typeof generateVoiceContent     !== 'undefined' ? generateVoiceContent     : undefined); } catch(_){}
+    try { _exposeOnWindow('handleVSUpload',           typeof handleVSUpload           !== 'undefined' ? handleVSUpload           : undefined); } catch(_){}
+    try { _exposeOnWindow('refreshBrandIntelligence', typeof refreshBrandIntelligence !== 'undefined' ? refreshBrandIntelligence : undefined); } catch(_){}
+    try { _exposeOnWindow('regenerateVoiceContent',   typeof regenerateVoiceContent   !== 'undefined' ? regenerateVoiceContent   : undefined); } catch(_){}
+    try { _exposeOnWindow('reschedulePost',           typeof reschedulePost           !== 'undefined' ? reschedulePost           : undefined); } catch(_){}
+    try { _exposeOnWindow('retryNativeOAuth',         typeof retryNativeOAuth         !== 'undefined' ? retryNativeOAuth         : undefined); } catch(_){}
+    try { _exposeOnWindow('selectVSTemplate',         typeof selectVSTemplate         !== 'undefined' ? selectVSTemplate         : undefined); } catch(_){}
+    try { _exposeOnWindow('showCancellationModal',    typeof showCancellationModal    !== 'undefined' ? showCancellationModal    : undefined); } catch(_){}
+    try { _exposeOnWindow('showToast',                typeof showToast                !== 'undefined' ? showToast                : undefined); } catch(_){}
+    try { _exposeOnWindow('submitVideoGeneration',    typeof submitVideoGeneration    !== 'undefined' ? submitVideoGeneration    : undefined); } catch(_){}
+    try { _exposeOnWindow('submitVoiceFeedback',      typeof submitVoiceFeedback      !== 'undefined' ? submitVoiceFeedback      : undefined); } catch(_){}
+    try { _exposeOnWindow('toggleNotifications',      typeof toggleNotifications      !== 'undefined' ? toggleNotifications      : undefined); } catch(_){}
+    try { _exposeOnWindow('triggerCompetitorSnipe',   typeof triggerCompetitorSnipe   !== 'undefined' ? triggerCompetitorSnipe   : undefined); } catch(_){}
+    try { _exposeOnWindow('voiceFeedback',            typeof voiceFeedback            !== 'undefined' ? voiceFeedback            : undefined); } catch(_){}
 
   })();
 </script>
