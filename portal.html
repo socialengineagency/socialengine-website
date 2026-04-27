@@ -11976,6 +11976,49 @@
       });
     }
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // GLOBAL EXPOSURE (2026-04-27 handleVSUpload fix)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //
+    // All the inline HTML event handlers in this file (onclick, onchange,
+    // ondrop, oninput, etc.) run in the GLOBAL scope, not inside this
+    // IIFE. Every `function foo() { ... }` declared directly inside the
+    // IIFE is scoped to the IIFE closure and is NOT reachable from an
+    // inline handler. The user-reported bug today:
+    //   'Uncaught ReferenceError: handleVSUpload is not defined'
+    //   at <input onchange="handleVSUpload(this.files[0])">
+    // was caused by the file input calling `handleVSUpload()` which was
+    // defined inside the IIFE and never promoted to window.
+    //
+    // Some functions in this file were already exposed explicitly
+    // (window.openStudioModal, window.studioApprove, etc). This block
+    // promotes the 19 that weren't, matching the names the HTML attrs
+    // reference 1-for-1. If you add a NEW inline handler that calls a
+    // function defined inside this IIFE, add it to this block too —
+    // otherwise it will fail at click time with the same error.
+    //
+    // Validated by scanning every on*= HTML attribute and cross-
+    // referencing against IIFE-local function declarations.
+    window._seRemoveConnectBanner   = _seRemoveConnectBanner;
+    window.changePassword           = changePassword;
+    window.clearVSPreview           = clearVSPreview;
+    window.connectViaUploadPost     = connectViaUploadPost;
+    window.copyVoiceOutput          = copyVoiceOutput;
+    window.generateVoiceContent     = generateVoiceContent;
+    window.handleVSUpload           = handleVSUpload;
+    window.refreshBrandIntelligence = refreshBrandIntelligence;
+    window.regenerateVoiceContent   = regenerateVoiceContent;
+    window.reschedulePost           = reschedulePost;
+    window.retryNativeOAuth         = retryNativeOAuth;
+    window.selectVSTemplate         = selectVSTemplate;
+    window.showCancellationModal    = showCancellationModal;
+    window.showToast                = showToast;
+    window.submitVideoGeneration    = submitVideoGeneration;
+    window.submitVoiceFeedback      = submitVoiceFeedback;
+    window.toggleNotifications      = toggleNotifications;
+    window.triggerCompetitorSnipe   = triggerCompetitorSnipe;
+    window.voiceFeedback            = voiceFeedback;
+
   })();
 </script>
 </body>
