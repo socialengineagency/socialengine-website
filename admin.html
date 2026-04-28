@@ -514,6 +514,19 @@
   const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
   const setToken = (t) => t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY);
 
+  // ── State caches (declared early to avoid TDZ) ────────────────────
+  // Previously this block sat below `if (getToken()) { showDash(); boot(); }`,
+  // which runs immediately on script load. boot() → renderHealth()/
+  // refreshAll() both read/write `state`, triggering
+  // "Cannot access 'state' before initialization" on the Failed
+  // Videos page (renderFailed reads state.failed). const declarations
+  // live in the temporal dead zone until their declaration is
+  // evaluated, so any function invocation BEFORE the declaration
+  // throws — even from inside an earlier function body. Moving the
+  // declaration to the top of the IIFE fixes every call site in one
+  // shot without refactoring handler registration order.
+  const state = { health: null, errors: [], merchants: [], failed: [] };
+
   // Every admin API call goes through this. 401 bounces back to login.
   async function adminFetch(path, opts = {}) {
     const headers = new Headers(opts.headers || {});
@@ -612,9 +625,6 @@
     refreshAll(true);
   }
   if (getToken()) { showDash(); boot(); }
-
-  // ── State caches ─────────────────────────────────────────────────
-  const state = { health: null, errors: [], merchants: [], failed: [] };
 
   async function refreshAll(userTriggered) {
     try {
