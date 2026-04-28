@@ -3470,6 +3470,13 @@
                 if (refreshed.ok) clientData = await refreshed.json();
               } catch {}
             }
+            // 2026-04-28 (SOC-6): start polling /api/shopify/connection-status
+            // so the Create tab catalog refreshes as soon as the server-side
+            // warm-up finishes. Non-blocking — runs in parallel with the
+            // Settings-tab success banner flow below.
+            if (typeof startShopifyConnectionPolling === 'function') {
+              startShopifyConnectionPolling({ reason: 'post-oauth' });
+            }
             setTimeout(() => {
               document.querySelector('[data-nav=settings]')?.click();
               setTimeout(() => {
@@ -9017,6 +9024,78 @@
       return `${API}/api/studio/products?${params.toString()}`;
     }
 
+    // 2026-04-28 (SOC-6) — poll /api/shopify/connection-status after
+    // OAuth so the Create tab swaps out of its "Connect Shopify Store"
+    // empty state the moment the token lands on the client's record.
+    //
+    // The server-side callback runs a setImmediate() catalog warm-up
+    // so catalogCache is primed BEFORE the first poll lands; in
+    // practice this resolves in 1–3 poll iterations (≈5–15 seconds).
+    //
+    // Hard cap: 24 polls (2 minutes). Manual re-entry via the Create
+    // tab's re-load button is always available.
+    let _shopifyPollTimer = null;
+    let _shopifyPollCount = 0;
+    function startShopifyConnectionPolling(opts) {
+      const reason = (opts && opts.reason) || 'post-oauth';
+      if (_shopifyPollTimer) return; // already polling — dedupe
+      _shopifyPollCount = 0;
+      const MAX = 24; // 24 × 5s = 2 min
+      const tick = async () => {
+        _shopifyPollCount++;
+        try {
+          const r = await fetch(`${API}/api/shopify/connection-status`, {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+          });
+          if (r.ok) {
+            const s = await r.json();
+            if (s && s.connected) {
+              clearInterval(_shopifyPollTimer);
+              _shopifyPollTimer = null;
+              // Sync the in-memory clientData so other views (Settings,
+              // Analytics, etc) see the fresh connection state without
+              // a full page reload.
+              try {
+                if (clientData && clientData.client) {
+                  clientData.client.shopify_domain = s.shopDomain;
+                }
+              } catch { /* ignore */ }
+              // Reload the Studio catalog. Prefer vcLoadShopifyProducts
+              // (re-hits /api/studio/products which now returns the
+              // fresh products warmed by the callback's setImmediate).
+              // Fall back to prefetchStudioCatalogSilently if the
+              // main loader isn't in scope yet.
+              try {
+                _vcProductsLoaded = false;
+                if (typeof vcLoadShopifyProducts === 'function') {
+                  await vcLoadShopifyProducts();
+                } else if (typeof prefetchStudioCatalogSilently === 'function') {
+                  await prefetchStudioCatalogSilently();
+                  if (typeof vcRenderProducts === 'function') vcRenderProducts(_vcShopifyProducts || []);
+                }
+              } catch { /* non-fatal — user can manually refresh */ }
+              if (typeof showToast === 'function') {
+                showToast('Shopify connected — ' + (s.productCount != null ? s.productCount + ' products loaded' : 'catalog syncing'));
+              }
+              return;
+            }
+          }
+        } catch { /* network blip — keep polling */ }
+        if (_shopifyPollCount >= MAX) {
+          clearInterval(_shopifyPollTimer);
+          _shopifyPollTimer = null;
+          if (reason === 'post-oauth' && typeof showToast === 'function') {
+            showToast('Shopify is taking longer than expected. Refresh the page to check status.', 'warning');
+          }
+        }
+      };
+      // Fire immediately (don't wait a full 5 s for the first check),
+      // then every 5 s.
+      tick();
+      _shopifyPollTimer = setInterval(tick, 5000);
+    }
+    window.startShopifyConnectionPolling = startShopifyConnectionPolling;
+
     /** Load first page of studio catalog after login so Content Studio regen has products without opening Marketing Studio first. */
     async function prefetchStudioCatalogSilently() {
       if (!clientEmail || !clientHash) return;
@@ -9254,11 +9333,57 @@
       }).filter(p => p.url);
       const unique = [...new Map(images.map(p => [p.url, p])).values()];
       if (!unique.length) {
+        // 2026-04-28 (SOC-6): replace the passive "Connect Shopify"
+        // text with an interactive button that starts the OAuth flow
+        // inline from the Create/Marketing Studio tab. Previously a
+        // new signup would see this screen, read "Connect Shopify
+        // Store" as copy, and have to navigate to Settings to find
+        // the connect form. Now they can kick it off right here.
+        const alreadyConnected = !!(clientData && clientData.client && clientData.client.shopify_domain);
+        if (alreadyConnected) {
+          // Connected but empty catalog — let the poll loop retry.
+          grid.innerHTML = `<div class="vc-product-empty">
+            <div class="vc-product-empty__icon">🔄</div>
+            <div class="vc-product-empty__title">Syncing your Shopify catalog…</div>
+            <div class="vc-product-empty__sub">This usually takes a few seconds. If it hasn't loaded in a minute, <a href="#" onclick="document.querySelector('[data-nav=settings]')?.click();return false;" style="color:#8B5CF6;text-decoration:underline;">check your Shopify connection</a>.</div>
+          </div>`;
+          startShopifyConnectionPolling({ reason: 'connected-but-empty' });
+          return;
+        }
         grid.innerHTML = `<div class="vc-product-empty">
           <div class="vc-product-empty__icon">🛍️</div>
-          <div class="vc-product-empty__title">No products yet</div>
-          <div class="vc-product-empty__sub">Connect your Shopify store to browse products,<br>or switch to the Upload tab to use a custom image.</div>
+          <div class="vc-product-empty__title">Connect your Shopify store to start</div>
+          <div class="vc-product-empty__sub">Your products will appear here the moment you connect. No CSV upload, no manual input.</div>
+          <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px;max-width:360px;margin-left:auto;margin-right:auto;">
+            <input id="vc-shopify-inline-domain" type="text" placeholder="your-store.myshopify.com" style="padding:11px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(139,92,246,0.3);border-radius:10px;color:#F8FAFC;font-size:0.875rem;font-family:var(--font-body);outline:none;">
+            <button id="vc-shopify-inline-connect" style="padding:11px 18px;background:linear-gradient(135deg,#7C3AED,#A855F7);border:none;border-radius:10px;color:#fff;font-size:0.875rem;font-weight:700;cursor:pointer;font-family:var(--font-body);display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              Connect Shopify Store
+            </button>
+            <div style="font-size:0.72rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:2px;">Secure OAuth via Shopify — we never see your password.</div>
+          </div>
         </div>`;
+        const connectBtn = document.getElementById('vc-shopify-inline-connect');
+        const domainInput = document.getElementById('vc-shopify-inline-domain');
+        const kickOff = () => {
+          const raw = (domainInput?.value || '').trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+          if (!raw) {
+            if (domainInput) {
+              domainInput.style.borderColor = '#EF4444';
+              domainInput.focus();
+              setTimeout(() => { domainInput.style.borderColor = 'rgba(139,92,246,0.3)'; }, 1500);
+            }
+            return;
+          }
+          if (connectBtn) {
+            connectBtn.disabled = true;
+            connectBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Redirecting to Shopify…';
+          }
+          const authUrl = `${API}/api/shopify/auth?email=${encodeURIComponent(clientEmail)}&hash=${encodeURIComponent(clientHash)}&shop=${encodeURIComponent(raw)}`;
+          window.location.href = authUrl;
+        };
+        connectBtn?.addEventListener('click', kickOff);
+        domainInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') kickOff(); });
         return;
       }
       grid.innerHTML = unique.map(p => {
