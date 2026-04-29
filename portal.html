@@ -3553,6 +3553,23 @@
             }, 300);
             window.history.replaceState({}, '', window.location.pathname);
           }
+          // 2026-04-28 (SOC-8) — Upload-Post redirects here with
+          // ?social_connected=true after the Instagram (or other social)
+          // OAuth completes. When the flow runs as a TOP-LEVEL redirect
+          // (popup blocked, mobile, etc.), the popup postMessage path
+          // in connectViaUploadPost() doesn't see the completion — we
+          // handle it here by polling the new /api/social/connection-status
+          // endpoint until instagram.connected flips to true, then
+          // refreshing clientData and showing a success toast. Behavior
+          // is a no-op when the popup flow already resolved (the poll
+          // sees connected=true on the first tick and exits).
+          if (urlParams.get('social_connected') === 'true') {
+            if (typeof startSocialConnectionPolling === 'function') {
+              startSocialConnectionPolling({ reason: 'post-oauth' });
+            }
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+
           // Merchant launched the app from Shopify admin (?shop=...&shopify_prompt=1):
           // jump to Settings and prefill the store domain so they only click Connect once.
           const shopifyPrompt = urlParams.get('shopify_prompt') === '1' || urlParams.has('shop');
@@ -9095,6 +9112,104 @@
       _shopifyPollTimer = setInterval(tick, 5000);
     }
     window.startShopifyConnectionPolling = startShopifyConnectionPolling;
+
+    // 2026-04-28 (SOC-8) — post-OAuth poll for Upload-Post Instagram
+    // connect. Mirrors the Shopify SOC-6 pattern. Fires in two cases:
+    //   1. ?social_connected=true on page load (top-level redirect from
+    //      Upload-Post — popup blocked / mobile / deep-link back)
+    //   2. After a successful popup flow in connectViaUploadPost, as a
+    //      belt-and-suspenders refresh that picks up the truth from
+    //      the new /api/social/connection-status endpoint if the
+    //      popup's postMessage got eaten.
+    //
+    // Cap: 24 ticks × 5 s = 2 min. Dedupe-safe. Resolves the moment
+    // instagram.connected === true comes back from the endpoint.
+    let _socialPollTimer = null;
+    let _socialPollCount = 0;
+    function startSocialConnectionPolling(opts) {
+      if (_socialPollTimer) return;
+      _socialPollCount = 0;
+      const MAX = 24;
+      const reason = (opts && opts.reason) || 'post-oauth';
+      const tick = async () => {
+        _socialPollCount++;
+        try {
+          const r = await fetch(`${API}/api/social/connection-status`, {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+          });
+          if (r.ok) {
+            const s = await r.json().catch(() => ({}));
+            const ig = (s && s.instagram) || null;
+            if (ig && ig.connected) {
+              clearInterval(_socialPollTimer);
+              _socialPollTimer = null;
+              // Refresh clientData so Settings, Inbox, Analytics views
+              // all see the new connection state without a full reload.
+              try {
+                const fresh = await fetch(`${API}/api/client-data`, {
+                  headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+                });
+                if (fresh.ok) clientData = await fresh.json();
+              } catch { /* non-fatal */ }
+              if (typeof rerenderCurrentPage === 'function') rerenderCurrentPage();
+              if (typeof showToast === 'function') {
+                showToast('Instagram connected' + (ig.handle ? ' — @' + ig.handle : ''));
+              }
+              return;
+            }
+          }
+        } catch { /* transient — keep polling */ }
+        if (_socialPollCount >= MAX) {
+          clearInterval(_socialPollTimer);
+          _socialPollTimer = null;
+          if (reason === 'post-oauth' && typeof showToast === 'function') {
+            showToast('Instagram connection is taking longer than expected. Refresh to check.', 'warning');
+          }
+        }
+      };
+      tick();
+      _socialPollTimer = setInterval(tick, 5000);
+    }
+    window.startSocialConnectionPolling = startSocialConnectionPolling;
+
+    // SOC-8 helper: per-platform Instagram connect kicked off via the
+    // new /api/social/connect/instagram endpoint. Calls the endpoint,
+    // opens the returned connect URL in a popup, and starts the poll
+    // once the popup is open so the UI reflects the connection state
+    // as soon as Upload-Post finishes its OAuth.
+    //
+    // Also exposed on window so inline handlers in HTML can call it.
+    // The existing connectInstagramOAuth() / connectViaUploadPost()
+    // flows continue to work unchanged — this is an additional,
+    // simpler entry point for anywhere the app only cares about IG.
+    async function connectInstagramViaSoc8() {
+      if (!clientEmail || !clientHash) { if (typeof showToast === 'function') showToast('Please log in first.'); return; }
+      try {
+        const r = await fetch(`${API}/api/social/connect/instagram`, {
+          method: 'POST',
+          headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.ok || !data.connectUrl) {
+          if (typeof showToast === 'function') showToast(data.error || 'Could not start Instagram connect.');
+          return;
+        }
+        const w = 760, h = 780;
+        const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
+        const popup = window.open(data.connectUrl, 'soc8_ig_connect', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`);
+        if (!popup) {
+          // Popup blocked — fall back to top-level redirect. Upload-Post
+          // will redirect back to portal.html?social_connected=true where
+          // the poll above takes over.
+          window.location.href = data.connectUrl;
+          return;
+        }
+        startSocialConnectionPolling({ reason: 'popup-open' });
+      } catch (e) {
+        if (typeof showToast === 'function') showToast('Could not start Instagram connect.');
+      }
+    }
+    window.connectInstagramViaSoc8 = connectInstagramViaSoc8;
 
     /** Load first page of studio catalog after login so Content Studio regen has products without opening Marketing Studio first. */
     async function prefetchStudioCatalogSilently() {
