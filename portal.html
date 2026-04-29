@@ -9211,6 +9211,109 @@
     }
     window.connectInstagramViaSoc8 = connectInstagramViaSoc8;
 
+    // 2026-04-29 (SOC-9) — QA-gated video generation entry point.
+    // Kicks off a CONTENT_GENERATION_JOBS row on the server via
+    // POST /api/studio/generate-video-v2, then polls
+    // GET /api/studio/job/:jobId every 5 s to surface per-gate progress.
+    //
+    // Callers pass { imageUrl, productTitle, template, model, onStatus, onComplete, onError }.
+    // onStatus is invoked each poll with the job snapshot so the UI can show
+    // the current gate ("generating", "qa_running", "qa_passed", "qa_failed",
+    // "error"). onComplete fires once qa_pass=true with the finished job.
+    // onError fires on terminal fails (qa_failed after max attempts, or error).
+    //
+    // Cap: 60 polls × 5 s = 5 min. Gate 1 pHash/SSIM + dual-vision + Gate 3
+    // ffmpeg analysis usually resolve in under 2 min; 5 min is the hard ceiling.
+    //
+    // The existing submitVideoGeneration() entry point is unchanged — SOC-9
+    // is additive so QA-gated paths opt-in by calling this function.
+    async function submitVideoGenerationQA(opts) {
+      const options = opts || {};
+      const body = {
+        imageUrl: options.imageUrl || options.image_url || '',
+        productTitle: options.productTitle || options.product_title || '',
+        productPrice: options.productPrice || '',
+        template: options.template || 'stop_scroll_hook',
+        model: options.model || 'higgsfield-kling-3-pro',
+        max_attempts: options.max_attempts || 2,
+      };
+      if (!body.imageUrl) {
+        if (options.onError) options.onError(new Error('imageUrl required'));
+        else if (typeof showToast === 'function') showToast('Please select a product image first.');
+        return null;
+      }
+      let startResp;
+      try {
+        const r = await fetch(`${API}/api/studio/generate-video-v2`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-client-email': clientEmail,
+            'x-client-hash': clientHash,
+          },
+          body: JSON.stringify(body),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.ok || !data.jobId) {
+          if (options.onError) options.onError(new Error(data.error || `HTTP ${r.status}`));
+          else if (typeof showToast === 'function') showToast(data.error || 'Could not start video generation.');
+          return null;
+        }
+        startResp = data;
+      } catch (e) {
+        if (options.onError) options.onError(e);
+        else if (typeof showToast === 'function') showToast('Could not start video generation.');
+        return null;
+      }
+
+      const jobId = startResp.jobId;
+      if (options.onStatus) {
+        try { options.onStatus({ jobId, status: 'queued', attempt_number: 0, max_attempts: body.max_attempts }); } catch {}
+      }
+
+      // Poll loop — 5 s tick, 60 iter cap.
+      const MAX_POLLS = 60;
+      let polls = 0;
+      return new Promise((resolve) => {
+        const timer = setInterval(async () => {
+          polls++;
+          try {
+            const r = await fetch(`${API}/api/studio/job/${encodeURIComponent(jobId)}`, {
+              headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+            });
+            if (!r.ok) {
+              if (r.status === 403 || r.status === 404) {
+                clearInterval(timer);
+                if (options.onError) options.onError(new Error('Job not found or forbidden'));
+                return resolve(null);
+              }
+              return; // transient, keep polling
+            }
+            const data = await r.json();
+            const job = data?.job;
+            if (!job) return;
+            if (options.onStatus) { try { options.onStatus(job); } catch {} }
+            if (job.status === 'qa_passed' || job.status === 'done') {
+              clearInterval(timer);
+              if (options.onComplete) options.onComplete(job);
+              return resolve(job);
+            }
+            if (job.status === 'qa_failed' || job.status === 'error') {
+              clearInterval(timer);
+              if (options.onError) options.onError(new Error(job.failure_reason || 'Generation failed.'));
+              return resolve(job);
+            }
+          } catch { /* keep polling */ }
+          if (polls >= MAX_POLLS) {
+            clearInterval(timer);
+            if (options.onError) options.onError(new Error('Job is taking longer than expected. Refresh to check status.'));
+            resolve(null);
+          }
+        }, 5000);
+      });
+    }
+    window.submitVideoGenerationQA = submitVideoGenerationQA;
+
     /** Load first page of studio catalog after login so Content Studio regen has products without opening Marketing Studio first. */
     async function prefetchStudioCatalogSilently() {
       if (!clientEmail || !clientHash) return;
