@@ -27,9 +27,17 @@
  * If your base uses different names, set:
  *   SOC10_ERROR_LOG_FIELD_MESSAGE, SOC10_ERROR_LOG_FIELD_DETAILS,
  *   SOC10_ERROR_LOG_FIELD_SOURCE, SOC10_ERROR_LOG_FIELD_CREATED_AT
+ *
+ * BIS v1.1 (SOC-7):
+ *   AIRTABLE_BRAND_DNA_TABLE (default BRAND_DNA_VERSIONS) — create via node scripts/soc7-schema.js
+ *   PERPLEXITY_API_KEY — brand synthesis (pplxChatJson)
+ *   PERPLEXITY_MODEL (optional, default sonar)
+ *   SHOPIFY_ADMIN_TOKEN (optional) — live Shopify catalog when client has shopify_domain
+ *   SOC7_ENSURE_BRAND_DNA_TABLE=1 — auto-create table on boot (ensureBrandDnaTableExists)
  */
 
 const http = require('http');
+const path = require('path');
 const { randomUUID } = require('crypto');
 
 const AIRTABLE_BASE = process.env.AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE;
@@ -43,6 +51,10 @@ const TBL_CLIENTS = process.env.AIRTABLE_CLIENTS_TABLE || 'CLIENTS';
 const TBL_CONTENT = process.env.AIRTABLE_CONTENT_TABLE || 'CONTENT';
 const TBL_JOBS = process.env.AIRTABLE_PUBLISH_JOBS_TABLE || 'PUBLISH_JOBS';
 const TBL_ERRORS = process.env.AIRTABLE_ERROR_LOG_TABLE || 'ERROR_LOG';
+const TBL_BRAND_DNA = process.env.AIRTABLE_BRAND_DNA_TABLE || 'BRAND_DNA_VERSIONS';
+
+const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY;
+const PERPLEXITY_MODEL = process.env.PERPLEXITY_MODEL || 'sonar';
 
 const ERR_FIELD_MESSAGE = process.env.SOC10_ERROR_LOG_FIELD_MESSAGE || 'message';
 const ERR_FIELD_DETAILS = process.env.SOC10_ERROR_LOG_FIELD_DETAILS || 'details';
@@ -129,6 +141,697 @@ function pickPrimaryPublishPlatform(clientFields, snapshot) {
     if (connected.includes(plat)) return plat;
   }
   return 'instagram';
+}
+
+// ---------------------------------------------------------------------------
+// BIS v1.1 — Brand Intelligence (SOC-7)
+// ---------------------------------------------------------------------------
+
+const BIS_DEBOUNCE_MS = 60 * 60 * 1000;
+const BIS_FETCH_TIMEOUT_MS = 8000;
+
+const BIS_DIM_KEYS = [
+  'dim1_voice',
+  'dim2_aesthetic',
+  'dim3_buyer_motivation',
+  'dim4_cultural_position',
+  'dim5_customer_relationship',
+  'dim6_stakes_model',
+  'dim7_product_relationship',
+  'dim8_tribal_markers',
+  'dim9_trust_architecture',
+  'dim10_evolution_vector',
+];
+
+function applyConfidenceGate(dimension, value, confidence) {
+  const c = typeof confidence === 'number' && !Number.isNaN(confidence) ? confidence : 0;
+  const phase2 = new Set([
+    'dim6_stakes_model',
+    'dim8_tribal_markers',
+    'dim9_trust_architecture',
+    'dim10_evolution_vector',
+  ]);
+  if (phase2.has(dimension)) {
+    return { mode: 'B', value: null, confidence: c, threshold: null };
+  }
+  let threshold = 0.8;
+  if (dimension === 'hero_product') threshold = 0.8;
+  if (dimension === 'dim3_buyer_motivation' || dimension === 'dim4_cultural_position') threshold = 0.8;
+  if (
+    dimension === 'dim1_voice' ||
+    dimension === 'dim2_aesthetic' ||
+    dimension === 'dim5_customer_relationship' ||
+    dimension === 'dim7_product_relationship'
+  ) {
+    threshold = 0.8;
+  }
+  const hasValue = value !== undefined && value !== null;
+  const modeA = hasValue && c >= threshold;
+  return {
+    mode: modeA ? 'A' : 'B',
+    value: modeA ? value : null,
+    confidence: c,
+    threshold,
+  };
+}
+
+function getModeBUnlockCondition(dimension) {
+  const map = {
+    dim6_stakes_model: 'Your primary buying trigger will populate after 10 published videos',
+    dim8_tribal_markers: 'Your brand vocabulary fingerprint will emerge after 20 published videos',
+    dim9_trust_architecture:
+      'Your trust signals will be identified after your Brand tab content is reviewed',
+    dim10_evolution_vector: 'Your brand trajectory will be visible after 90 days of activity',
+  };
+  return map[dimension] || 'This signal unlocks as we gather more brand activity';
+}
+
+function stripHtmlToText(html) {
+  const s = String(html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+async function fetchWithTimeout(url, opts = {}, timeoutMs = BIS_FETCH_TIMEOUT_MS) {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...opts, signal: ac.signal });
+    return res;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/** Lightweight color/font heuristics from image URLs (detectBackgroundType-style). */
+function detectImageAssetSignals(imageUrls) {
+  const urls = (imageUrls || []).filter((u) => typeof u === 'string' && /^https:\/\//.test(u)).slice(0, 12);
+  let dark = 0;
+  let light = 0;
+  for (const u of urls) {
+    const lower = u.toLowerCase();
+    if (/black|charcoal|navy|midnight|#0{3,6}|rgb\(0/.test(lower)) dark++;
+    if (/white|cream|ivory|#f[f0-9]{5}|pastel|soft/i.test(lower)) light++;
+  }
+  return {
+    sources: urls.slice(0, 5),
+    summary:
+      dark > light + 2
+        ? 'dark-dominant product imagery'
+        : light > dark + 2
+          ? 'light-bright product imagery'
+          : 'mixed product imagery palette',
+  };
+}
+
+async function getClientCatalog(clientFields) {
+  const domain = String(clientFields?.shopify_domain || clientFields?.shop_domain || '')
+    .trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '');
+  const token = process.env.SHOPIFY_ADMIN_TOKEN || process.env.SHOPIFY_ACCESS_TOKEN;
+  const products = [];
+  if (!domain || !token) {
+    return { products, shopifyDomain: domain, source: 'stub' };
+  }
+  try {
+    const url = `https://${domain}/admin/api/2024-01/products.json?limit=50&fields=id,title,body_html,handle,images,variants`;
+    const res = await fetchWithTimeout(url, {
+      headers: { 'X-Shopify-Access-Token': token, Accept: 'application/json' },
+    });
+    if (!res.ok) return { products, shopifyDomain: domain, source: 'shopify_error' };
+    const data = await res.json();
+    const rows = data.products || [];
+    rows.forEach((p, idx) => {
+      const v0 = (p.variants && p.variants[0]) || {};
+      const price = parseFloat(v0.price) || 0;
+      const imgs = Array.isArray(p.images) ? p.images.map((i) => i.src).filter(Boolean) : [];
+      products.push({
+        id: String(p.id),
+        name: p.title,
+        title: p.title,
+        description: stripHtmlToText(p.body_html || ''),
+        price,
+        reviewCount: 0,
+        listingPosition: idx + 1,
+        imageUrls: imgs,
+        sku: v0.sku ? String(v0.sku) : '',
+      });
+    });
+    return { products, shopifyDomain: domain, source: 'shopify' };
+  } catch {
+    return { products, shopifyDomain: domain, source: 'shopify_exception' };
+  }
+}
+
+function scoreHeroProduct(products) {
+  if (!products.length) return { hero: null, confidence: 0 };
+  const prices = products.map((p) => p.price || 0).filter((n) => n > 0);
+  const maxP = prices.length ? Math.max(...prices) : 1;
+  let best = null;
+  let bestScore = -1;
+  for (const p of products) {
+    const rc = p.reviewCount || 0;
+    const pos = p.listingPosition || 999;
+    const invPos = 1 / Math.max(1, pos);
+    const priceNorm = maxP > 0 ? (p.price || 0) / maxP : 0;
+    const score = rc * 0.4 + invPos * 0.3 + priceNorm * 0.3;
+    if (score > bestScore) {
+      bestScore = score;
+      best = p;
+    }
+  }
+  const rc = best.reviewCount || 0;
+  const conf = Math.min(0.8, rc > 10 ? 0.8 : rc * 0.08);
+  return { hero: best, confidence: conf };
+}
+
+function pricePositioningFromCatalog(products) {
+  const prices = products.map((p) => p.price || 0).filter((n) => n > 0);
+  if (!prices.length) return { band: 'mid', confidence: 0.5 };
+  const sorted = [...prices].sort((a, b) => a - b);
+  const mid = sorted[Math.floor(sorted.length / 2)];
+  let band = 'mid';
+  if (mid < 30) band = 'budget';
+  else if (mid > 150) band = 'premium';
+  return { band, confidence: 0.9 };
+}
+
+async function pplxChatJson(systemPrompt, userContent) {
+  if (!PERPLEXITY_API_KEY) {
+    throw new Error('PERPLEXITY_API_KEY is not configured');
+  }
+  const body = {
+    model: PERPLEXITY_MODEL,
+    max_tokens: 4096,
+    temperature: 0.2,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userContent },
+    ],
+  };
+  const res = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = {};
+  }
+  if (!res.ok) {
+    const err = new Error(data.error?.message || `Perplexity HTTP ${res.status}`);
+    err.body = data;
+    throw err;
+  }
+  const raw = data.choices?.[0]?.message?.content || '';
+  const cleaned = String(raw)
+    .trim()
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '');
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    return {};
+  }
+}
+
+function buildBisSynthesisPrompt(ingestionBundle) {
+  return `You are a brand strategist. Return ONLY valid JSON. No markdown. No hedging language.
+
+If insufficient evidence for a dimension, set confidence below 0.70 for that dimension. Do not guess.
+
+Required JSON shape:
+{
+  "dim1_voice": {
+    "authority_approachability": { "value": 0.0-1.0, "confidence": 0.0-1.0 },
+    "polished_raw": { "value": 0.0-1.0, "confidence": 0.0-1.0 },
+    "earnest_ironic": { "value": 0.0-1.0, "confidence": 0.0-1.0 },
+    "warm_cool": { "value": 0.0-1.0, "confidence": 0.0-1.0 }
+  },
+  "dim2_aesthetic": {
+    "maximalist_minimalist": { "value": 0.0-1.0, "confidence": 0.0-1.0 },
+    "saturated_muted": { "value": 0.0-1.0, "confidence": 0.0-1.0 },
+    "vintage_futuristic": { "value": 0.0-1.0, "confidence": 0.0-1.0 }
+  },
+  "dim3_buyer_motivation": {
+    "primary": { "label": "string", "weight": 0.0-1.0, "confidence": 0.0-1.0 },
+    "secondary": { "label": "string", "weight": 0.0-1.0, "confidence": 0.0-1.0 }
+  },
+  "dim4_cultural_position": { "value": "Leader|Adopter|Refiner|Resistor|Niche", "confidence": 0.0-1.0 },
+  "dim5_customer_relationship": {
+    "value": "Authority→Pupil|Friend→Friend|Insider→Insider|Performer→Audience|Servant→Customer",
+    "confidence": 0.0-1.0
+  },
+  "dim7_product_relationship": {
+    "value": "Hero|Tool|Symbol|Companion|Statement|Trophy|one of the seven",
+    "confidence": 0.0-1.0
+  },
+  "brand_vocabulary": ["up to 10 strings"],
+  "banned_phrases": ["strings"],
+  "competitor_gaps": ["strings"],
+  "confidence_scores": {
+    "dim1_voice": 0.0-1.0,
+    "dim2_aesthetic": 0.0-1.0,
+    "dim3_buyer_motivation": 0.0-1.0,
+    "dim4_cultural_position": 0.0-1.0,
+    "dim5_customer_relationship": 0.0-1.0,
+    "dim7_product_relationship": 0.0-1.0
+  }
+}
+
+INGESTED DATA (truncated):\n${JSON.stringify(ingestionBundle).slice(0, 90000)}`;
+}
+
+function wrapDimPayload(gate, rawValue, sources) {
+  const base = { value: gate.mode === 'A' ? rawValue : null, confidence: gate.confidence, sources: sources || [], mode: gate.mode };
+  return base;
+}
+
+function emptyModeBUnlocks() {
+  const o = {};
+  for (const d of BIS_DIM_KEYS) o[d] = getModeBUnlockCondition(d);
+  return o;
+}
+
+async function listBrandDnaVersionsForClient(clientRecordId) {
+  const esc = escapeFormulaString(clientRecordId);
+  const formula = `{client_id}='${esc}'`;
+  const q = new URLSearchParams({
+    filterByFormula: formula,
+    pageSize: '100',
+    'sort[0][field]': 'version',
+    'sort[0][direction]': 'desc',
+  });
+  const json = await airtableFetch(`/${encodeURIComponent(TBL_BRAND_DNA)}?${q}`);
+  return json.records || [];
+}
+
+async function getLatestBrandDnaRecord(clientRecordId) {
+  const recs = await listBrandDnaVersionsForClient(clientRecordId);
+  return recs[0] || null;
+}
+
+async function runBrandDnaIngestion(clientId, options = {}) {
+  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) {
+    throw new Error('Airtable is not configured');
+  }
+  const clientRec = await airtableFetch(`/${encodeURIComponent(TBL_CLIENTS)}/${encodeURIComponent(clientId)}`);
+  const clientFields = clientRec.fields || {};
+  const triggeredBy = String(options.triggeredBy || 'manual_refresh').slice(0, 80);
+
+  const existing = await getLatestBrandDnaRecord(clientId);
+  if (existing?.fields?.created_at) {
+    const t = new Date(existing.fields.created_at).getTime();
+    if (!Number.isNaN(t) && Date.now() - t < BIS_DEBOUNCE_MS) {
+      const dna = brandDnaRecordToClientObject(existing);
+      return { ok: true, debounced: true, version: dna.version, dna, modeBDimensions: dna.modeBDimensions || [] };
+    }
+  }
+
+  const catalogPromise = getClientCatalog(clientFields);
+  const shopDomain = String(clientFields.shopify_domain || '')
+    .trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '');
+  const siteUrl = shopDomain ? `https://${shopDomain}` : '';
+  const sitePromise = siteUrl
+    ? fetchWithTimeout(siteUrl, { headers: { Accept: 'text/html' } }).catch(() => null)
+    : Promise.resolve(null);
+
+  const competitorUrls = (Array.isArray(options.competitorUrls) ? options.competitorUrls : [])
+    .map((u) => String(u || '').trim())
+    .filter((u) => /^https:\/\//.test(u))
+    .slice(0, 3);
+  const compPromises = competitorUrls.map((u) =>
+    fetchWithTimeout(u, { headers: { Accept: 'text/html' } }).catch(() => null),
+  );
+
+  const settled = await Promise.allSettled([catalogPromise, sitePromise, ...compPromises]);
+  const catalogResult = settled[0].status === 'fulfilled' ? settled[0].value : { products: [], shopifyDomain: '', source: 'error' };
+  const products = catalogResult.products || [];
+  const imageUrls = products.flatMap((p) => p.imageUrls || []).slice(0, 30);
+  const assetSignals = detectImageAssetSignals(imageUrls);
+
+  let siteText = '';
+  if (settled[1].status === 'fulfilled' && settled[1].value && settled[1].value.ok) {
+    const html = await settled[1].value.text().catch(() => '');
+    siteText = stripHtmlToText(html).slice(0, 12000);
+  }
+
+  const sourcesUsed = [];
+  if (siteUrl) sourcesUsed.push(siteUrl);
+  competitorUrls.forEach((u, i) => {
+    const r = settled[2 + i];
+    if (r && r.status === 'fulfilled' && r.value && r.value.ok) sourcesUsed.push(u);
+  });
+
+  const competitorSnippets = [];
+  for (let i = 0; i < competitorUrls.length; i++) {
+    const r = settled[2 + i];
+    if (r && r.status === 'fulfilled' && r.value && r.value.ok) {
+      const txt = await r.value.text().catch(() => '');
+      competitorSnippets.push({ url: competitorUrls[i], text: stripHtmlToText(txt).slice(0, 8000) });
+    }
+  }
+
+  const { hero, confidence: heroConfRaw } = scoreHeroProduct(products);
+  const { band: priceBand, confidence: priceConf } = pricePositioningFromCatalog(products);
+
+  const heroGate = applyConfidenceGate('hero_product', hero ? { name: hero.name || hero.title, sku: hero.sku || '' } : null, heroConfRaw);
+  const heroProductJson = wrapDimPayload(
+    heroGate,
+    heroGate.mode === 'A' ? { name: hero.name, sku: hero.sku || '', confidence: heroConfRaw, sources: hero.imageUrls?.slice(0, 3) || [] } : null,
+    hero?.imageUrls || [],
+  );
+
+  const ingestionBundle = {
+    catalog: products.slice(0, 40).map((p) => ({
+      name: p.name,
+      price: p.price,
+      description: (p.description || '').slice(0, 500),
+      listingPosition: p.listingPosition,
+    })),
+    storefrontText: siteText.slice(0, 12000),
+    competitorSnippets,
+    assetSignals,
+    price_positioning_guess: priceBand,
+  };
+
+  let synth = {};
+  try {
+    synth = await pplxChatJson(
+      'Return only valid JSON. No hedging language. If insufficient evidence for a dimension, set confidence below 0.70. Do not guess.',
+      buildBisSynthesisPrompt(ingestionBundle),
+    );
+  } catch (e) {
+    synth = {};
+  }
+
+  const confScores = synth.confidence_scores || {};
+  const dimGates = {};
+  const modeBDimensions = [];
+  const modeAKeys = [];
+
+  const d1 = dimGates.dim1_voice = applyConfidenceGate('dim1_voice', synth.dim1_voice, confScores.dim1_voice ?? 0.5);
+  const d2 = dimGates.dim2_aesthetic = applyConfidenceGate('dim2_aesthetic', synth.dim2_aesthetic, confScores.dim2_aesthetic ?? 0.5);
+  const d3 = dimGates.dim3_buyer_motivation = applyConfidenceGate(
+    'dim3_buyer_motivation',
+    synth.dim3_buyer_motivation,
+    confScores.dim3_buyer_motivation ?? 0.5,
+  );
+  const d4 = dimGates.dim4_cultural_position = applyConfidenceGate(
+    'dim4_cultural_position',
+    synth.dim4_cultural_position,
+    confScores.dim4_cultural_position ?? 0.5,
+  );
+  const d5 = dimGates.dim5_customer_relationship = applyConfidenceGate(
+    'dim5_customer_relationship',
+    synth.dim5_customer_relationship,
+    confScores.dim5_customer_relationship ?? 0.5,
+  );
+  const d7 = dimGates.dim7_product_relationship = applyConfidenceGate(
+    'dim7_product_relationship',
+    synth.dim7_product_relationship,
+    confScores.dim7_product_relationship ?? 0.5,
+  );
+
+  if (d1.mode === 'B') modeBDimensions.push('dim1_voice');
+  else modeAKeys.push('dim1_voice');
+  if (d2.mode === 'B') modeBDimensions.push('dim2_aesthetic');
+  else modeAKeys.push('dim2_aesthetic');
+  if (d3.mode === 'B') modeBDimensions.push('dim3_buyer_motivation');
+  else modeAKeys.push('dim3_buyer_motivation');
+  if (d4.mode === 'B') modeBDimensions.push('dim4_cultural_position');
+  else modeAKeys.push('dim4_cultural_position');
+  if (d5.mode === 'B') modeBDimensions.push('dim5_customer_relationship');
+  else modeAKeys.push('dim5_customer_relationship');
+  if (d7.mode === 'B') modeBDimensions.push('dim7_product_relationship');
+  else modeAKeys.push('dim7_product_relationship');
+
+  const phase2Keys = ['dim6_stakes_model', 'dim8_tribal_markers', 'dim9_trust_architecture', 'dim10_evolution_vector'];
+  for (const pk of phase2Keys) {
+    modeBDimensions.push(pk);
+    dimGates[pk] = applyConfidenceGate(pk, null, 0);
+  }
+  const g6 = dimGates.dim6_stakes_model;
+  const g8 = dimGates.dim8_tribal_markers;
+  const g9 = dimGates.dim9_trust_architecture;
+  const g10 = dimGates.dim10_evolution_vector;
+
+  const confidenceSummary = {};
+  for (const k of BIS_DIM_KEYS) {
+    confidenceSummary[k] = dimGates[k] ? dimGates[k].confidence : 0;
+  }
+  confidenceSummary.hero_product = heroGate.confidence;
+  confidenceSummary.price_positioning = priceConf;
+
+  const modeBUnlocks = emptyModeBUnlocks();
+  for (const k of BIS_DIM_KEYS) {
+    const g = dimGates[k] || applyConfidenceGate(k, null, 0);
+    if (g.mode === 'B') {
+      /* keep default unlock string */
+    } else {
+      delete modeBUnlocks[k];
+    }
+  }
+  if (heroGate.mode === 'B') modeBUnlocks.hero_product = 'Connect Shopify reviews or run another analysis to sharpen hero detection';
+
+  const prevMax = existing?.fields?.version != null ? Number(existing.fields.version) : 0;
+  const version = (Number.isFinite(prevMax) ? prevMax : 0) + 1;
+
+  const eventEntry = {
+    type: 'brand_dna_ingested',
+    version,
+    dimensions_mode_a: modeAKeys.filter((k) => !phase2Keys.includes(k)),
+    dimensions_mode_b: [...new Set(modeBDimensions)],
+    triggered_by: triggeredBy,
+    timestamp: new Date().toISOString(),
+  };
+  const eventLog = JSON.stringify([eventEntry]);
+
+  const fields = {
+    client_id: clientId,
+    version,
+    triggered_by: triggeredBy,
+    created_at: new Date().toISOString(),
+    dim1_voice: JSON.stringify(wrapDimPayload(d1, synth.dim1_voice, sourcesUsed)),
+    dim2_aesthetic: JSON.stringify(wrapDimPayload(d2, synth.dim2_aesthetic, sourcesUsed)),
+    dim3_buyer_motivation: JSON.stringify(wrapDimPayload(d3, synth.dim3_buyer_motivation, sourcesUsed)),
+    dim4_cultural_position: JSON.stringify(wrapDimPayload(d4, synth.dim4_cultural_position, sourcesUsed)),
+    dim5_customer_relationship: JSON.stringify(wrapDimPayload(d5, synth.dim5_customer_relationship, sourcesUsed)),
+    dim6_stakes_model: JSON.stringify(wrapDimPayload(g6, null, [])),
+    dim7_product_relationship: JSON.stringify(wrapDimPayload(d7, synth.dim7_product_relationship, sourcesUsed)),
+    dim8_tribal_markers: JSON.stringify(wrapDimPayload(g8, null, [])),
+    dim9_trust_architecture: JSON.stringify(wrapDimPayload(g9, null, [])),
+    dim10_evolution_vector: JSON.stringify(wrapDimPayload(g10, null, [])),
+    hero_product: JSON.stringify(heroProductJson),
+    price_positioning: priceBand,
+    brand_vocabulary: JSON.stringify(Array.isArray(synth.brand_vocabulary) ? synth.brand_vocabulary.slice(0, 20) : []),
+    banned_phrases: JSON.stringify(Array.isArray(synth.banned_phrases) ? synth.banned_phrases : []),
+    competitor_gaps: JSON.stringify(Array.isArray(synth.competitor_gaps) ? synth.competitor_gaps : []),
+    confidence_summary: JSON.stringify(confidenceSummary),
+    mode_b_unlocks: JSON.stringify(modeBUnlocks),
+    sources_used: JSON.stringify([...sourcesUsed, ...assetSignals.sources.map((u) => `image:${u}`)]),
+    event_bus_log: eventLog,
+  };
+
+  const created = await airtableFetch(`/${encodeURIComponent(TBL_BRAND_DNA)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields }),
+  });
+
+  const dna = brandDnaRecordToClientObject({ id: created.id, fields: { ...fields } });
+  const changes = [];
+  if (existing?.fields) {
+    const prev = existing.fields;
+    if (String(prev.price_positioning) !== String(fields.price_positioning)) {
+      changes.push({ field: 'price_positioning', from: prev.price_positioning, to: fields.price_positioning });
+    }
+    if (String(prev.hero_product || '') !== String(fields.hero_product || '')) {
+      changes.push({ field: 'hero_product', from: 'previous', to: 'updated' });
+    }
+  }
+  return { ok: true, version, dna, modeBDimensions: [...new Set(modeBDimensions)], changes };
+}
+
+function parseJsonField(raw, fallback) {
+  if (raw == null || raw === '') return fallback;
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(String(raw));
+  } catch {
+    return fallback;
+  }
+}
+
+function brandDnaRecordToClientObject(rec) {
+  if (!rec) return null;
+  const f = rec.fields || {};
+  const modeBDimensions = [];
+  const dims = {};
+  for (const key of BIS_DIM_KEYS) {
+    const parsed = parseJsonField(f[key], { mode: 'B', value: null, confidence: 0, sources: [] });
+    dims[key] = parsed;
+    if (parsed.mode === 'B') modeBDimensions.push(key);
+  }
+  const hero = parseJsonField(f.hero_product, { mode: 'B', value: null, confidence: 0, sources: [] });
+  if (hero.mode === 'B') modeBDimensions.push('hero_product');
+
+  return {
+    id: rec.id,
+    version: f.version,
+    triggered_by: f.triggered_by,
+    created_at: f.created_at,
+    dims,
+    hero_product: hero,
+    price_positioning: f.price_positioning || null,
+    brand_vocabulary: parseJsonField(f.brand_vocabulary, []),
+    banned_phrases: parseJsonField(f.banned_phrases, []),
+    competitor_gaps: parseJsonField(f.competitor_gaps, []),
+    confidence_summary: parseJsonField(f.confidence_summary, {}),
+    mode_b_unlocks: parseJsonField(f.mode_b_unlocks, {}),
+    sources_used: parseJsonField(f.sources_used, []),
+    event_bus_log: parseJsonField(f.event_bus_log, []),
+    modeBDimensions: [...new Set(modeBDimensions)],
+  };
+}
+
+/** Latest row: Mode A slices for prompt wiring (generation). */
+async function getBrandDnaForClient(clientRecordId) {
+  const rec = await getLatestBrandDnaRecord(clientRecordId);
+  if (!rec) return null;
+  const full = brandDnaRecordToClientObject(rec);
+  const modeA = {};
+  for (const k of BIS_DIM_KEYS) {
+    if (full.dims[k]?.mode === 'A') modeA[k] = full.dims[k].value;
+  }
+  if (full.hero_product?.mode === 'A') modeA.hero_product = full.hero_product.value;
+  modeA.price_positioning = full.price_positioning;
+  modeA.brand_vocabulary = Array.isArray(full.brand_vocabulary) ? full.brand_vocabulary : [];
+  modeA.banned_phrases = Array.isArray(full.banned_phrases) ? full.banned_phrases : [];
+  modeA.competitor_gaps = Array.isArray(full.competitor_gaps) ? full.competitor_gaps : [];
+  modeA.version = full.version;
+  return modeA;
+}
+
+function buildStopScrollHookPrompt(basePrompt, brandDnaModeA) {
+  const d = brandDnaModeA || {};
+  const parts = [String(basePrompt || '').trim()];
+  if (!parts[0]) parts[0] = 'Create a high-retention short-form hook.';
+
+  if (d.dim1_voice) {
+    parts.push(
+      `Caption tone (voice spectrum JSON): align pacing and diction with this voice profile: ${JSON.stringify(d.dim1_voice).slice(0, 1200)}`,
+    );
+  }
+  if (d.dim3_buyer_motivation) {
+    parts.push(
+      `Hook angle & CTA structure: lead with motivations and weighting: ${JSON.stringify(d.dim3_buyer_motivation).slice(0, 800)}`,
+    );
+  }
+  if (d.dim5_customer_relationship) {
+    parts.push(
+      `POV / address style (customer relationship): ${JSON.stringify(d.dim5_customer_relationship).slice(0, 400)}`,
+    );
+  }
+  if (d.dim7_product_relationship) {
+    parts.push(`Product framing: ${JSON.stringify(d.dim7_product_relationship).slice(0, 400)}`);
+  }
+  if (Array.isArray(d.brand_vocabulary) && d.brand_vocabulary.length) {
+    parts.push(`Prefer these brand vocabulary terms where natural: ${d.brand_vocabulary.slice(0, 12).join(', ')}`);
+  }
+  if (Array.isArray(d.banned_phrases) && d.banned_phrases.length) {
+    parts.push(`Avoid these phrases entirely: ${d.banned_phrases.slice(0, 20).join(', ')}`);
+  }
+  if (d.hero_product && (d.hero_product.name || d.hero_product.title)) {
+    const hn = d.hero_product.name || d.hero_product.title;
+    parts.push(`Hero product focus when relevant: ${hn}`);
+  }
+  if (d.price_positioning) {
+    parts.push(`Price band context: ${d.price_positioning}`);
+  }
+  return parts.filter(Boolean).join('\n\n');
+}
+
+/**
+ * Ensure BRAND_DNA_VERSIONS table exists (idempotent).
+ */
+async function ensureBrandDnaTableExists() {
+  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) return false;
+  const listUrl = `${AIRTABLE_META}/${encodeURIComponent(AIRTABLE_BASE)}/tables`;
+  const listRes = await fetch(listUrl, { headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` } });
+  const listJson = await listRes.json().catch(() => ({}));
+  if (!listRes.ok) return false;
+  if ((listJson.tables || []).some((t) => t.name === TBL_BRAND_DNA)) {
+    console.log(`[soc7-schema] Table "${TBL_BRAND_DNA}" already exists.`);
+    return true;
+  }
+  const schemaPath = path.join(__dirname, 'scripts', 'soc7-schema.js');
+  const { getBrandDnaVersionsTableDefinition } = require(schemaPath);
+  const body = getBrandDnaVersionsTableDefinition(TBL_BRAND_DNA);
+  const createRes = await fetch(listUrl, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const createJson = await createRes.json().catch(() => ({}));
+  if (!createRes.ok) {
+    console.error('[soc7-schema] create failed', createRes.status, createJson);
+    return false;
+  }
+  console.log('[soc7-schema] Created', createJson.name, createJson.id);
+  return true;
+}
+
+function mountBrandDnaRoutes(app, options = {}) {
+  const vc = options.verifyClient || verifyClient();
+  app.post('/api/brand-dna/run', vc, async (req, res, next) => {
+    try {
+      const clientRec = req.soc10Client;
+      const competitorUrls = req.body?.competitorUrls;
+      const out = await runBrandDnaIngestion(clientRec.id, {
+        competitorUrls,
+        triggeredBy: req.body?.triggeredBy || 'manual_refresh',
+      });
+      res.json({ ok: true, ...out });
+    } catch (e) {
+      next(e);
+    }
+  });
+  app.get('/api/brand-dna/latest', vc, async (req, res, next) => {
+    try {
+      const rec = await getLatestBrandDnaRecord(req.soc10Client.id);
+      if (!rec) return res.json({ exists: false });
+      res.json({ exists: true, dna: brandDnaRecordToClientObject(rec) });
+    } catch (e) {
+      next(e);
+    }
+  });
+  app.get('/api/brand-dna/versions', vc, async (req, res, next) => {
+    try {
+      const recs = await listBrandDnaVersionsForClient(req.soc10Client.id);
+      const list = recs.map((r) => ({
+        version: r.fields?.version,
+        created_at: r.fields?.created_at,
+        triggered_by: r.fields?.triggered_by,
+        id: r.id,
+      }));
+      res.json({ versions: list });
+    } catch (e) {
+      next(e);
+    }
+  });
 }
 
 async function publishPostViaUploadPost({ videoUrl, caption, user, platform = 'instagram' }) {
@@ -536,6 +1239,8 @@ function mountSoc10PublishRoutes(app, options = {}) {
   const logErr = options.logAdminError || null;
   if (logErr) _injectedLogAdminError = logErr;
 
+  mountBrandDnaRoutes(app, options);
+
   app.get('/api/publish/jobs/:contentId', vc, async (req, res, next) => {
     try {
       const contentId = String(req.params.contentId || '').trim();
@@ -629,20 +1334,86 @@ async function handleGetPublishJobHttp(req, res, contentId) {
   return json(res, 200, { job: jobRowToJson(job) });
 }
 
+async function authClientFromHeaders(req) {
+  const email = String(req.headers['x-client-email'] || '').trim();
+  const hash = String(req.headers['x-client-hash'] || '').trim();
+  if (!email || !hash) return null;
+  return findClientByAuth(email, hash);
+}
+
+async function handleBrandDnaRunHttp(req, res) {
+  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) {
+    return json(res, 503, { error: 'Airtable is not configured' });
+  }
+  const clientRec = await authClientFromHeaders(req);
+  if (!clientRec) return json(res, 401, { error: 'Unauthorized' });
+  let body = {};
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    body = {};
+  }
+  try {
+    const out = await runBrandDnaIngestion(clientRec.id, {
+      competitorUrls: body.competitorUrls,
+      triggeredBy: body.triggeredBy || 'manual_refresh',
+    });
+    return json(res, 200, out);
+  } catch (e) {
+    return json(res, 500, { ok: false, error: e.message || 'ingestion_failed' });
+  }
+}
+
+async function handleBrandDnaLatestHttp(req, res) {
+  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) {
+    return json(res, 503, { error: 'Airtable is not configured' });
+  }
+  const clientRec = await authClientFromHeaders(req);
+  if (!clientRec) return json(res, 401, { error: 'Unauthorized' });
+  const rec = await getLatestBrandDnaRecord(clientRec.id);
+  if (!rec) return json(res, 200, { exists: false });
+  return json(res, 200, { exists: true, dna: brandDnaRecordToClientObject(rec) });
+}
+
+async function handleBrandDnaVersionsHttp(req, res) {
+  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) {
+    return json(res, 503, { error: 'Airtable is not configured' });
+  }
+  const clientRec = await authClientFromHeaders(req);
+  if (!clientRec) return json(res, 401, { error: 'Unauthorized' });
+  const recs = await listBrandDnaVersionsForClient(clientRec.id);
+  const list = recs.map((r) => ({
+    version: r.fields?.version,
+    created_at: r.fields?.created_at,
+    triggered_by: r.fields?.triggered_by,
+    id: r.id,
+  }));
+  return json(res, 200, { versions: list });
+}
+
 function createServer() {
   return http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://${req.headers.host}`);
-    const path = url.pathname.replace(/\/+$/, '') || '/';
+    const pathname = url.pathname.replace(/\/+$/, '') || '/';
     try {
-      if (req.method === 'POST' && path === '/api/approve-post') {
+      if (req.method === 'POST' && pathname === '/api/approve-post') {
         return await handleApprovePost(req, res);
       }
-      if (req.method === 'GET' && path.startsWith('/api/publish/jobs/')) {
-        const parts = path.split('/').filter(Boolean);
+      if (req.method === 'GET' && pathname.startsWith('/api/publish/jobs/')) {
+        const parts = pathname.split('/').filter(Boolean);
         const id = parts[parts.length - 1];
         return await handleGetPublishJobHttp(req, res, id);
       }
-      if (req.method === 'GET' && path === '/health') {
+      if (req.method === 'POST' && pathname === '/api/brand-dna/run') {
+        return await handleBrandDnaRunHttp(req, res);
+      }
+      if (req.method === 'GET' && pathname === '/api/brand-dna/latest') {
+        return await handleBrandDnaLatestHttp(req, res);
+      }
+      if (req.method === 'GET' && pathname === '/api/brand-dna/versions') {
+        return await handleBrandDnaVersionsHttp(req, res);
+      }
+      if (req.method === 'GET' && pathname === '/health') {
         return json(res, 200, { ok: true });
       }
       res.writeHead(404);
@@ -745,6 +1516,7 @@ async function ensurePublishJobsTableExists() {
 module.exports = {
   createServer,
   mountSoc10PublishRoutes,
+  mountBrandDnaRoutes,
   verifyClient,
   soc10KickoffPublishAfterApprove,
   resolveUploadPostSnapshot,
@@ -761,12 +1533,30 @@ module.exports = {
       await ensurePublishJobsTableExists();
     }
   },
+  applyConfidenceGate,
+  getModeBUnlockCondition,
+  runBrandDnaIngestion,
+  getBrandDnaForClient,
+  buildStopScrollHookPrompt,
+  ensureBrandDnaTableExists,
+  maybeEnsureBrandDnaTable: async () => {
+    if (process.env.SOC7_ENSURE_BRAND_DNA_TABLE === '1') {
+      await ensureBrandDnaTableExists();
+    }
+  },
 };
 
 if (require.main === module) {
   const argv = process.argv.slice(2);
   if (argv[0] === 'ensure-table') {
     ensurePublishJobsTableExists()
+      .then((ok) => process.exit(ok ? 0 : 1))
+      .catch((e) => {
+        console.error(e);
+        process.exit(1);
+      });
+  } else if (argv[0] === 'ensure-soc7-table') {
+    ensureBrandDnaTableExists()
       .then((ok) => process.exit(ok ? 0 : 1))
       .catch((e) => {
         console.error(e);
