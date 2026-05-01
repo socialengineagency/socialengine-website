@@ -1,4 +1,5 @@
 node_modules/
+scripts/mediapipe-models/
 playwright-report/
 test-results/
 .playwright/

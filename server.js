@@ -34,10 +34,18 @@
  *   PERPLEXITY_MODEL (optional, default sonar)
  *   SHOPIFY_ADMIN_TOKEN (optional) — live Shopify catalog when client has shopify_domain
  *   SOC7_ENSURE_BRAND_DNA_TABLE=1 — auto-create table on boot (ensureBrandDnaTableExists)
+ *
+ * QA Gate 2 (anatomy):
+ *   GATE2_MODE=auto|mediapipe|ffmpeg_proxy — auto probes MediaPipe once at boot
+ *   GATE2_SMOKE_VIDEO_URL=https://... — optional; logs one runGate2AnatomyCheck at startup
+ *   Railway / Nixpacks: install ffmpeg + ffprobe; optional canvas native deps for Gate 2 proxy
  */
 
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const { execFile } = require('child_process');
 const { randomUUID } = require('crypto');
 
 const AIRTABLE_BASE = process.env.AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE;
@@ -63,6 +71,480 @@ const ERR_FIELD_CREATED = process.env.SOC10_ERROR_LOG_FIELD_CREATED_AT || 'creat
 
 const AIRTABLE_API = 'https://api.airtable.com/v0';
 const AIRTABLE_META = 'https://api.airtable.com/v0/meta/bases';
+
+/** QA Gate 2 — anatomy check. See GATE2_MODE (mediapipe | ffmpeg_proxy | auto). */
+const HAND_LANDMARKER_MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+
+let _gate2CapabilityCache = null;
+let _gate2SmokeDone = false;
+
+function getFfmpegBin() {
+  return process.env.FFMPEG_PATH || 'ffmpeg';
+}
+
+function getFfprobeBin() {
+  return process.env.FFPROBE_PATH || 'ffprobe';
+}
+
+function execFileP(cmd, args, opts = {}) {
+  return new Promise((resolve, reject) => {
+    execFile(cmd, args, { maxBuffer: 20 * 1024 * 1024, ...opts }, (err, stdout, stderr) => {
+      if (err) {
+        err.stderr = stderr;
+        err.stdout = stdout;
+        return reject(err);
+      }
+      resolve({ stdout, stderr });
+    });
+  });
+}
+
+async function ensureHandLandmarkerModelFile(destPath) {
+  if (fs.existsSync(destPath)) return destPath;
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  const https = await import('https');
+  await new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(destPath);
+    https
+      .get(HAND_LANDMARKER_MODEL_URL, (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error('model download HTTP ' + res.statusCode));
+          return;
+        }
+        res.pipe(file);
+        file.on('finish', () => file.close(() => resolve()));
+      })
+      .on('error', reject);
+  });
+  return destPath;
+}
+
+async function probeMediaPipeHandLandmarker() {
+  try {
+    const { FilesetResolver, HandLandmarker } = require('@mediapipe/tasks-vision');
+    const wasmDir = path.join(__dirname, 'node_modules', '@mediapipe', 'tasks-vision', 'wasm');
+    const modelPath = await ensureHandLandmarkerModelFile(
+      path.join(__dirname, 'scripts', 'mediapipe-models', 'hand_landmarker.task'),
+    );
+    const vision = await FilesetResolver.forVisionTasks('file:' + path.resolve(wasmDir) + path.sep);
+    const lm = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: { modelAssetPath: modelPath, delegate: 'CPU' },
+      numHands: 2,
+      runningMode: 'IMAGE',
+    });
+    lm.close();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveGate2Mode() {
+  if (_gate2CapabilityCache) return _gate2CapabilityCache;
+  const forced = String(process.env.GATE2_MODE || '').trim().toLowerCase();
+  if (forced === 'ffmpeg_proxy') {
+    _gate2CapabilityCache = { mode: 'ffmpeg_proxy', mediapipeOk: false };
+    return _gate2CapabilityCache;
+  }
+  if (forced === 'mediapipe') {
+    const ok = await probeMediaPipeHandLandmarker();
+    _gate2CapabilityCache = { mode: ok ? 'mediapipe' : 'ffmpeg_proxy', mediapipeOk: ok };
+    if (!ok) {
+      console.warn('[GATE2] GATE2_MODE=mediapipe but MediaPipe init failed — using ffmpeg_proxy');
+    }
+    return _gate2CapabilityCache;
+  }
+  const ok = await probeMediaPipeHandLandmarker();
+  _gate2CapabilityCache = { mode: ok ? 'mediapipe' : 'ffmpeg_proxy', mediapipeOk: ok };
+  return _gate2CapabilityCache;
+}
+
+function getGate2ModeForHealth() {
+  if (!_gate2CapabilityCache) return { gate2Mode: 'skipped', gate2MediaPipeProbe: null };
+  return {
+    gate2Mode: _gate2CapabilityCache.mode,
+    gate2MediaPipeProbe: _gate2CapabilityCache.mediapipeOk,
+  };
+}
+
+async function ffprobeDurationSeconds(videoUrl) {
+  const { stdout } = await execFileP(getFfprobeBin(), [
+    '-v',
+    'error',
+    '-show_entries',
+    'format=duration',
+    '-of',
+    'default=noprint_wrappers=1:nokey=1',
+    videoUrl,
+  ]);
+  const d = parseFloat(String(stdout).trim());
+  return Number.isFinite(d) && d > 0 ? d : 5;
+}
+
+async function extractVideoFrameToFile(videoUrl, outPath, timeSec) {
+  await execFileP(getFfmpegBin(), [
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-ss',
+    String(timeSec),
+    '-i',
+    videoUrl,
+    '-frames:v',
+    '1',
+    '-q:v',
+    '2',
+    outPath,
+  ]);
+}
+
+function isSkinPixelRgb(r, g, b) {
+  const mx = Math.max(r, g, b);
+  const mn = Math.min(r, g, b);
+  if (mx < 60) return false;
+  if (r < 95 || g < 40 || b < 20) return false;
+  if (mx - mn < 15) return false;
+  if (Math.abs(r - g) > 15 || r - b <= 45) return false;
+  return true;
+}
+
+function grayAt(data, w, x, y) {
+  const i = (y * w + x) * 4;
+  return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+}
+
+function edgeMeanInRect(data, w, h, x0, y0, x1, y1, step) {
+  let sum = 0;
+  let n = 0;
+  const xStart = Math.max(1, x0);
+  const yStart = Math.max(1, y0);
+  const xEnd = Math.min(w - 2, x1);
+  const yEnd = Math.min(h - 2, y1);
+  for (let y = yStart; y <= yEnd; y += step) {
+    for (let x = xStart; x <= xEnd; x += step) {
+      const gx = grayAt(data, w, x + 1, y) - grayAt(data, w, x - 1, y);
+      const gy = grayAt(data, w, x, y + 1) - grayAt(data, w, x, y - 1);
+      sum += Math.sqrt(gx * gx + gy * gy);
+      n++;
+    }
+  }
+  return n ? sum / n : 0;
+}
+
+/**
+ * FFmpeg-proxy anatomy heuristics on a single RGBA frame (canvas ImageData.data).
+ */
+function analyzeFrameAnatomyProxy(data, w, h) {
+  const cropH = Math.max(8, Math.floor(h * 0.25));
+  const cropY = h - cropH;
+  const extEdgeMean = edgeMeanInRect(data, w, h, 0, cropY, w - 1, h - 1, 2);
+  const fullEdgeMean = edgeMeanInRect(data, w, h, 0, 0, w - 1, h - 1, 4);
+  const skinXs = [];
+  const skinYs = [];
+  for (let y = cropY; y < h; y += 2) {
+    for (let x = 0; x < w; x += 2) {
+      const i = (y * w + x) * 4;
+      if (isSkinPixelRgb(data[i], data[i + 1], data[i + 2])) {
+        skinXs.push(x);
+        skinYs.push(y - cropY);
+      }
+    }
+  }
+  let fragmented = false;
+  if (skinXs.length >= 40) {
+    const mx = skinXs.reduce((a, b) => a + b, 0) / skinXs.length;
+    const my = skinYs.reduce((a, b) => a + b, 0) / skinYs.length;
+    const vx = skinXs.reduce((acc, x) => acc + (x - mx) * (x - mx), 0) / skinXs.length;
+    const vy = skinYs.reduce((acc, y) => acc + (y - my) * (y - my), 0) / skinYs.length;
+    const std = Math.sqrt(vx + vy);
+    const thresh = 0.4 * Math.max(w, cropH);
+    fragmented = std > thresh;
+  }
+  const edgeDistortion = extEdgeMean > 180 && fullEdgeMean < 60;
+  return { edgeDistortion, fragmented, extEdgeMean, fullEdgeMean };
+}
+
+async function runGate2FfmpegProxy(videoUrl, humanDetected) {
+  if (!humanDetected) {
+    return {
+      score: 1,
+      pass: true,
+      skipped: true,
+      reason: 'no_human_detected',
+      detail: { frames_checked: 0, frames_flagged: 0, flags: [] },
+    };
+  }
+  console.warn('[GATE2] Using ffmpeg-proxy (MediaPipe unavailable in this environment)');
+  const { createCanvas, loadImage } = require('canvas');
+  const dur = await ffprobeDurationSeconds(videoUrl);
+  const times = [0.1, 0.3, 0.5, 0.7, 0.9].map((p) => Math.min(dur * p, Math.max(0, dur - 0.05)));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gate2-'));
+  const flags = [];
+  let flagged = 0;
+  try {
+    for (let fi = 0; fi < times.length; fi++) {
+      const t = times[fi];
+      const pngPath = path.join(tmpDir, `f${fi}.png`);
+      await extractVideoFrameToFile(videoUrl, pngPath, t);
+      const img = await loadImage(pngPath);
+      const w = img.width;
+      const h = img.height;
+      const canvas = createCanvas(w, h);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, w, h);
+      const a = analyzeFrameAnatomyProxy(imageData.data, w, h);
+      const reasons = [];
+      if (a.edgeDistortion) reasons.push('extremity_edge_distortion');
+      if (a.fragmented) reasons.push('skin_region_fragmentation');
+      if (reasons.length) {
+        flagged++;
+        flags.push({ frame: fi, time: t, reasons, metrics: { extEdgeMean: a.extEdgeMean, fullEdgeMean: a.fullEdgeMean } });
+      }
+    }
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch (_) {}
+  }
+  const total = times.length;
+  const score = Math.max(0, 1 - flagged / total);
+  const pass = score >= 0.6;
+  return {
+    score,
+    pass,
+    skipped: false,
+    detail: { frames_checked: total, frames_flagged: flagged, flags },
+  };
+}
+
+function handLandmarksCollapsed(landmarks, frameW, frameH) {
+  if (!landmarks || landmarks.length < 21) return false;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const lm of landmarks) {
+    const x = lm.x * frameW;
+    const y = lm.y * frameH;
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+  }
+  const r = Math.max(maxX - minX, maxY - minY) / 2;
+  return r <= 15;
+}
+
+const POSE_CRITICAL_IDX = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26];
+
+function poseLandmarksImplausible(poseLandmarks) {
+  if (!poseLandmarks || poseLandmarks.length < 27) return false;
+  let low = 0;
+  for (const idx of POSE_CRITICAL_IDX) {
+    const lm = poseLandmarks[idx];
+    if (lm && typeof lm.visibility === 'number' && lm.visibility < 0.35) low++;
+  }
+  return low > 4;
+}
+
+async function runGate2MediaPipe(videoUrl, humanDetected) {
+  if (!humanDetected) {
+    return {
+      score: 1,
+      pass: true,
+      skipped: true,
+      reason: 'no_human_detected',
+      detail: { frames_checked: 0, frames_flagged: 0, flags: [] },
+    };
+  }
+  const { FilesetResolver, HandLandmarker, PoseLandmarker } = require('@mediapipe/tasks-vision');
+  const wasmDir = path.join(__dirname, 'node_modules', '@mediapipe', 'tasks-vision', 'wasm');
+  const handModel = await ensureHandLandmarkerModelFile(
+    path.join(__dirname, 'scripts', 'mediapipe-models', 'hand_landmarker.task'),
+  );
+  const poseModel = await ensurePoseLandmarkerModelFile(
+    path.join(__dirname, 'scripts', 'mediapipe-models', 'pose_landmarker_lite.task'),
+  );
+  const vision = await FilesetResolver.forVisionTasks('file:' + path.resolve(wasmDir) + path.sep);
+  const handLm = await HandLandmarker.createFromOptions(vision, {
+    baseOptions: { modelAssetPath: handModel, delegate: 'CPU' },
+    numHands: 2,
+    runningMode: 'IMAGE',
+  });
+  const poseLm = await PoseLandmarker.createFromOptions(vision, {
+    baseOptions: { modelAssetPath: poseModel, delegate: 'CPU' },
+    runningMode: 'IMAGE',
+    numPoses: 1,
+  });
+  const { createCanvas, loadImage } = require('canvas');
+  const dur = await ffprobeDurationSeconds(videoUrl);
+  const times = [0.1, 0.3, 0.5, 0.7, 0.9].map((p) => Math.min(dur * p, Math.max(0, dur - 0.05)));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gate2mp-'));
+  const flags = [];
+  let flagged = 0;
+  try {
+    for (let fi = 0; fi < times.length; fi++) {
+      const t = times[fi];
+      const pngPath = path.join(tmpDir, `f${fi}.png`);
+      await extractVideoFrameToFile(videoUrl, pngPath, t);
+      const img = await loadImage(pngPath);
+      const w = img.width;
+      const h = img.height;
+      const canvas = createCanvas(w, h);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, w, h);
+      const reasons = [];
+      const handRes = handLm.detect(imageData);
+      const hands = handRes?.landmarks || [];
+      for (let hi = 0; hi < hands.length; hi++) {
+        if (handLandmarksCollapsed(hands[hi], w, h)) {
+          reasons.push(`hand_melted:${hi}`);
+        }
+      }
+      const poseRes = poseLm.detect(imageData);
+      const pl = poseRes?.landmarks?.[0];
+      if (poseLandmarksImplausible(pl)) {
+        reasons.push('pose_low_visibility');
+      }
+      if (reasons.length) {
+        flagged++;
+        flags.push({ frame: fi, time: t, reasons });
+      }
+    }
+  } finally {
+    try {
+      handLm.close();
+      poseLm.close();
+    } catch (_) {}
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch (_) {}
+  }
+  const total = times.length;
+  const score = Math.max(0, 1 - flagged / total);
+  const pass = score >= 0.6;
+  return {
+    score,
+    pass,
+    skipped: false,
+    detail: { frames_checked: total, frames_flagged: flagged, flags },
+  };
+}
+
+const POSE_MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+
+async function ensurePoseLandmarkerModelFile(destPath) {
+  if (fs.existsSync(destPath)) return destPath;
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  const https = await import('https');
+  await new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(destPath);
+    https
+      .get(POSE_MODEL_URL, (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error('pose model HTTP ' + res.statusCode));
+          return;
+        }
+        res.pipe(file);
+        file.on('finish', () => file.close(() => resolve()));
+      })
+      .on('error', reject);
+  });
+  return destPath;
+}
+
+/**
+ * Gate 2 — anatomy / limb integrity. Uses MediaPipe when available, else ffmpeg+canvas proxy.
+ * @param {string} videoUrl
+ * @param {boolean} humanDetected
+ */
+async function runGate2AnatomyCheck(videoUrl, humanDetected) {
+  await resolveGate2Mode();
+  const mode = _gate2CapabilityCache.mode;
+  if (mode === 'mediapipe') {
+    try {
+      await ensurePoseLandmarkerModelFile(
+        path.join(__dirname, 'scripts', 'mediapipe-models', 'pose_landmarker_lite.task'),
+      );
+      return await runGate2MediaPipe(videoUrl, humanDetected);
+    } catch (e) {
+      console.warn('[GATE2] MediaPipe path failed at runtime, falling back to ffmpeg-proxy:', e.message);
+      return await runGate2FfmpegProxy(videoUrl, humanDetected);
+    }
+  }
+  return await runGate2FfmpegProxy(videoUrl, humanDetected);
+}
+
+/**
+ * Multi-gate QA pipeline (reference). Gate 2 is always scored when humanDetected is true.
+ */
+async function runQAGatePipeline({ videoUrl, humanDetected = true } = {}) {
+  const gate1 = { name: 'gate1', skipped: true, note: 'stub — implement pHash/SSIM on API host' };
+  const gate2 = await runGate2AnatomyCheck(videoUrl, !!humanDetected);
+  const gate3 = { name: 'gate3', skipped: true, note: 'stub — implement ffmpeg analysis on API host' };
+  const weights = { gate1: 0.35, gate2: 0.35, gate3: 0.3 };
+  let score = 0;
+  let denom = 0;
+  if (!gate1.skipped && typeof gate1.score === 'number') {
+    score += gate1.score * weights.gate1;
+    denom += weights.gate1;
+  }
+  if (!gate2.skipped && typeof gate2.score === 'number') {
+    score += gate2.score * weights.gate2;
+    denom += weights.gate2;
+  } else if (gate2.skipped) {
+    score += 1 * weights.gate2;
+    denom += weights.gate2;
+  }
+  if (!gate3.skipped && typeof gate3.score === 'number') {
+    score += gate3.score * weights.gate3;
+    denom += weights.gate3;
+  }
+  const combined = denom > 0 ? score / denom : 1;
+  const passed = combined >= 0.6 && gate2.pass !== false;
+  return { combined, passed, gates: { gate1, gate2, gate3 } };
+}
+
+async function maybeSmokeTestGate2() {
+  if (_gate2SmokeDone) return;
+  const url = String(process.env.GATE2_SMOKE_VIDEO_URL || '').trim();
+  if (!url || !/^https?:\/\//.test(url)) return;
+  _gate2SmokeDone = true;
+  try {
+    const r = await runGate2AnatomyCheck(url, true);
+    console.log('[GATE2] smoke test result:', JSON.stringify({ score: r.score, pass: r.pass, skipped: r.skipped }));
+  } catch (e) {
+    console.warn('[GATE2] smoke test failed:', e.message);
+  }
+}
+
+async function getGate2HealthPayload() {
+  await resolveGate2Mode();
+  return {
+    ...getGate2ModeForHealth(),
+    gate2EnvHint:
+      'Set GATE2_MODE=ffmpeg_proxy to skip MediaPipe probe on boot, or GATE2_MODE=mediapipe to prefer MediaPipe (falls back to ffmpeg_proxy if init fails).',
+  };
+}
+
+async function handleAdminHealthHttp(req, res) {
+  const g2 = await getGate2HealthPayload();
+  const payload = {
+    ok: true,
+    ...g2,
+    airtable: { ok: !!(AIRTABLE_BASE && AIRTABLE_TOKEN), status: AIRTABLE_BASE ? 'configured' : 'missing' },
+    fingerprint: process.env.RAILWAY_DEPLOYMENT_ID || process.env.HOSTNAME || 'local',
+    crons: {},
+    queueDepth: { pending: 0, processing: 0, failed24h: 0 },
+    errorCount24h: 0,
+  };
+  return json(res, 200, payload);
+}
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -1413,6 +1895,9 @@ function createServer() {
       if (req.method === 'GET' && pathname === '/api/brand-dna/versions') {
         return await handleBrandDnaVersionsHttp(req, res);
       }
+      if (req.method === 'GET' && pathname === '/admin/api/health') {
+        return await handleAdminHealthHttp(req, res);
+      }
       if (req.method === 'GET' && pathname === '/health') {
         return json(res, 200, { ok: true });
       }
@@ -1517,6 +2002,10 @@ module.exports = {
   createServer,
   mountSoc10PublishRoutes,
   mountBrandDnaRoutes,
+  runGate2AnatomyCheck,
+  runQAGatePipeline,
+  resolveGate2Mode,
+  getGate2HealthPayload,
   verifyClient,
   soc10KickoffPublishAfterApprove,
   resolveUploadPostSnapshot,
@@ -1566,6 +2055,11 @@ if (require.main === module) {
     const port = Number(process.env.PORT || 8787);
     createServer().listen(port, () => {
       console.log(`SOC-10 server listening on :${port}`);
+      setImmediate(() => {
+        resolveGate2Mode()
+          .then(() => maybeSmokeTestGate2())
+          .catch(() => {});
+      });
     });
   }
 }
