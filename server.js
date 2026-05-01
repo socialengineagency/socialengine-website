@@ -60,6 +60,7 @@ const TBL_CONTENT = process.env.AIRTABLE_CONTENT_TABLE || 'CONTENT';
 const TBL_JOBS = process.env.AIRTABLE_PUBLISH_JOBS_TABLE || 'PUBLISH_JOBS';
 const TBL_ERRORS = process.env.AIRTABLE_ERROR_LOG_TABLE || 'ERROR_LOG';
 const TBL_BRAND_DNA = process.env.AIRTABLE_BRAND_DNA_TABLE || 'BRAND_DNA_VERSIONS';
+const TBL_GENERATIONS = process.env.AIRTABLE_GENERATIONS_TABLE || 'GENERATIONS';
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY;
 const PERPLEXITY_MODEL = process.env.PERPLEXITY_MODEL || 'sonar';
@@ -71,6 +72,20 @@ const ERR_FIELD_CREATED = process.env.SOC10_ERROR_LOG_FIELD_CREATED_AT || 'creat
 
 const AIRTABLE_API = 'https://api.airtable.com/v0';
 const AIRTABLE_META = 'https://api.airtable.com/v0/meta/bases';
+
+const PORTAL_BASE_URL = (process.env.PORTAL_BASE_URL || 'https://www.socialengine.agency/portal.html').replace(/\/+$/, '');
+const ONBOARDING_SAMPLE_IMAGE_URL =
+  process.env.ONBOARDING_SAMPLE_IMAGE_URL ||
+  'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&q=80';
+
+/** In-process cron heartbeats (reference server). Production: merge with your CRON_HEARTBEAT. */
+const CRON_CADENCE_MS = { onboarding_lifecycle: 30 * 60 * 1000 };
+const CRON_HEARTBEAT = {
+  onboarding_lifecycle: { lastRun: 0, lastDurationMs: 0, status: 'never', postsGenerated: 0 },
+};
+
+/** In-memory studio job stubs for portal onboarding (reference server). */
+const __studioJobs = new Map();
 
 /** QA Gate 2 — anatomy check. See GATE2_MODE (mediapipe | ffmpeg_proxy | auto). */
 const HAND_LANDMARKER_MODEL_URL =
@@ -539,7 +554,7 @@ async function handleAdminHealthHttp(req, res) {
     ...g2,
     airtable: { ok: !!(AIRTABLE_BASE && AIRTABLE_TOKEN), status: AIRTABLE_BASE ? 'configured' : 'missing' },
     fingerprint: process.env.RAILWAY_DEPLOYMENT_ID || process.env.HOSTNAME || 'local',
-    crons: {},
+    crons: { ...CRON_HEARTBEAT },
     queueDepth: { pending: 0, processing: 0, failed24h: 0 },
     errorCount24h: 0,
   };
@@ -739,7 +754,7 @@ async function getClientCatalog(clientFields) {
     return { products, shopifyDomain: domain, source: 'stub' };
   }
   try {
-    const url = `https://${domain}/admin/api/2024-01/products.json?limit=50&fields=id,title,body_html,handle,images,variants`;
+    const url = `https://${domain}/admin/api/2024-01/products.json?limit=50&fields=id,title,body_html,handle,product_type,images,variants`;
     const res = await fetchWithTimeout(url, {
       headers: { 'X-Shopify-Access-Token': token, Accept: 'application/json' },
     });
@@ -754,6 +769,8 @@ async function getClientCatalog(clientFields) {
         id: String(p.id),
         name: p.title,
         title: p.title,
+        handle: p.handle ? String(p.handle) : '',
+        product_type: p.product_type ? String(p.product_type) : '',
         description: stripHtmlToText(p.body_html || ''),
         price,
         reviewCount: 0,
@@ -1316,6 +1333,62 @@ function mountBrandDnaRoutes(app, options = {}) {
   });
 }
 
+async function getOnboardingStatePayload(clientRec) {
+  const f = clientRec.fields || {};
+  const step = Number(f.onboarding_step ?? 0) || 0;
+  const completed = f.onboarding_completed === true;
+  let generationCount = 0;
+  try {
+    generationCount = await countGenerationsForClient(clientRec.id);
+  } catch {
+    generationCount = 0;
+  }
+  let hasBrandDna = false;
+  try {
+    const dna = await getLatestBrandDnaRecord(clientRec.id);
+    hasBrandDna = !!dna;
+  } catch {
+    hasBrandDna = false;
+  }
+  return {
+    step,
+    completed,
+    firstVideoGeneratedAt: f.first_video_generated_at || null,
+    firstVideoPublishedAt: f.first_video_published_at || null,
+    generationCount,
+    hasBrandDna,
+  };
+}
+
+function mountOnboardingRoutes(app, options = {}) {
+  const vc = options.verifyClient || verifyClient();
+  app.post('/api/onboarding/step', vc, async (req, res, next) => {
+    try {
+      const step = Number(req.body?.step);
+      if (!Number.isFinite(step) || step < 0 || step > 5) {
+        return res.status(400).json({ error: 'step must be 0–5' });
+      }
+      const patch = { onboarding_step: step };
+      if (step >= 5) patch.onboarding_completed = true;
+      await patchClientRecord(req.soc10Client.id, patch);
+      res.json({ ok: true, step });
+    } catch (e) {
+      next(e);
+    }
+  });
+  app.get('/api/onboarding/state', vc, async (req, res, next) => {
+    try {
+      const fresh = await airtableFetch(
+        `/${encodeURIComponent(TBL_CLIENTS)}/${encodeURIComponent(req.soc10Client.id)}`,
+      );
+      const payload = await getOnboardingStatePayload(fresh);
+      res.json(payload);
+    } catch (e) {
+      next(e);
+    }
+  });
+}
+
 async function publishPostViaUploadPost({ videoUrl, caption, user, platform = 'instagram' }) {
   if (!UPLOAD_POST_KEY) {
     const err = new Error('UPLOAD_POST_API_KEY is not configured');
@@ -1396,6 +1469,300 @@ async function findClientByAuth(email, hash) {
   const json = await airtableFetch(`/${encodeURIComponent(TBL_CLIENTS)}?${q}`);
   const rec = json.records?.[0];
   return rec || null;
+}
+
+async function findClientByEmail(email) {
+  const emailEsc = escapeFormulaString(String(email || '').trim().toLowerCase());
+  const formula = `LOWER({contact_email})='${emailEsc}'`;
+  const q = new URLSearchParams({ filterByFormula: formula, maxRecords: '1' });
+  const json = await airtableFetch(`/${encodeURIComponent(TBL_CLIENTS)}?${q}`);
+  return json.records?.[0] || null;
+}
+
+async function patchClientRecord(recordId, fields) {
+  return airtableFetch(`/${encodeURIComponent(TBL_CLIENTS)}/${encodeURIComponent(recordId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields }),
+  });
+}
+
+function parseOnboardingEmailsSent(raw) {
+  try {
+    if (raw == null || raw === '') return [];
+    const v = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(v) ? v.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function onboardingSignupTime(fields) {
+  const d = fields?.onboarding_date || fields?.created_at || fields?.signup_date;
+  if (!d) return null;
+  const t = new Date(d).getTime();
+  return Number.isNaN(t) ? null : t;
+}
+
+async function sendTransactionalEmail({ to, subject, html, text }) {
+  const fn = globalThis.__SE_SEND_EMAIL__;
+  if (typeof fn === 'function') {
+    await fn({ to, subject, html, text });
+    return;
+  }
+  const url = process.env.EMAIL_WEBHOOK_URL || process.env.SENDGRID_WEBHOOK_URL;
+  if (url) {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, subject, html, text }),
+    });
+    return;
+  }
+  console.log('[onboarding-email]', { to, subject, text: text || subject });
+}
+
+async function appendOnboardingEmailSent(clientRecordId, type) {
+  const rec = await airtableFetch(`/${encodeURIComponent(TBL_CLIENTS)}/${encodeURIComponent(clientRecordId)}`);
+  const prev = parseOnboardingEmailsSent(rec.fields?.onboarding_emails_sent);
+  if (prev.includes(type)) return;
+  prev.push(type);
+  await patchClientRecord(clientRecordId, { onboarding_emails_sent: JSON.stringify(prev) });
+}
+
+/**
+ * Call from POST /api/studio/generate-video-v2 when a generation completes for a client.
+ * Sets first_video_generated_at and onboarding_step = 5 when first video.
+ */
+async function logGeneration(clientRecordId) {
+  if (!clientRecordId || !AIRTABLE_BASE || !AIRTABLE_TOKEN) return;
+  try {
+    const rec = await airtableFetch(`/${encodeURIComponent(TBL_CLIENTS)}/${encodeURIComponent(clientRecordId)}`);
+    const f = rec.fields || {};
+    if (f.first_video_generated_at) return;
+    const now = new Date().toISOString();
+    await patchClientRecord(clientRecordId, {
+      first_video_generated_at: now,
+      onboarding_step: 5,
+    });
+  } catch (e) {
+    console.warn('[onboarding] logGeneration failed', e.message);
+  }
+}
+
+async function recordFirstVideoPublishedIfNeeded(clientRecordId) {
+  if (!clientRecordId || !AIRTABLE_BASE || !AIRTABLE_TOKEN) return;
+  try {
+    const rec = await airtableFetch(`/${encodeURIComponent(TBL_CLIENTS)}/${encodeURIComponent(clientRecordId)}`);
+    const f = rec.fields || {};
+    if (f.first_video_published_at) return;
+    await patchClientRecord(clientRecordId, {
+      first_video_published_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.warn('[onboarding] recordFirstVideoPublishedIfNeeded failed', e.message);
+  }
+}
+
+async function countGenerationsForClient(clientRecordId) {
+  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) return 0;
+  const esc = escapeFormulaString(clientRecordId);
+  const formulas = [
+    `{client}='${esc}'`,
+    `{Client}='${esc}'`,
+    `FIND('${esc}', ARRAYJOIN({clients}))`,
+  ];
+  for (const formula of formulas) {
+    try {
+      let total = 0;
+      let nextOffset = '';
+      for (;;) {
+        const q = new URLSearchParams({
+          filterByFormula: formula,
+          pageSize: '100',
+        });
+        if (nextOffset) q.set('offset', nextOffset);
+        const json = await airtableFetch(`/${encodeURIComponent(TBL_GENERATIONS)}?${q}`);
+        const recs = json.records || [];
+        total += recs.length;
+        if (!json.offset) break;
+        nextOffset = String(json.offset);
+      }
+      return total;
+    } catch {
+      /* try next formula */
+    }
+  }
+  return 0;
+}
+
+async function handleStripeCheckoutCompleted(session) {
+  const meta = session?.metadata || {};
+  let clientId = meta.airtable_client_id || meta.client_id || session.client_reference_id;
+  let clientRec = null;
+  if (clientId && /^rec[a-z0-9]{14,}$/i.test(String(clientId).trim())) {
+    try {
+      clientRec = await airtableFetch(
+        `/${encodeURIComponent(TBL_CLIENTS)}/${encodeURIComponent(String(clientId).trim())}`,
+      );
+    } catch {
+      clientRec = null;
+    }
+  }
+  const custEmail = session.customer_email || session.customer_details?.email;
+  if (!clientRec && custEmail) {
+    clientRec = await findClientByEmail(custEmail);
+  }
+  if (!clientRec) return;
+  const cur = Number(clientRec.fields?.onboarding_step ?? 0) || 0;
+  if (cur < 1) {
+    await patchClientRecord(clientRec.id, { onboarding_step: 1 });
+  }
+}
+
+async function handleStripeWebhookHttp(req, res) {
+  let raw = '';
+  try {
+    raw = await new Promise((resolve, reject) => {
+      let buf = '';
+      req.on('data', (c) => {
+        buf += c;
+        if (buf.length > 5e6) {
+          reject(new Error('payload too large'));
+          req.destroy();
+        }
+      });
+      req.on('end', () => resolve(buf));
+      req.on('error', reject);
+    });
+  } catch {
+    return json(res, 400, { error: 'invalid body' });
+  }
+  let event;
+  try {
+    event = JSON.parse(raw);
+  } catch {
+    return json(res, 400, { error: 'invalid json' });
+  }
+  if (event.type === 'checkout.session.completed') {
+    await handleStripeCheckoutCompleted(event.data?.object || {});
+  }
+  return json(res, 200, { received: true });
+}
+
+async function runOnboardingLifecycleCron() {
+  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) return;
+  const start = Date.now();
+  const formula = 'OR({onboarding_completed}=BLANK(),{onboarding_completed}=FALSE())';
+  let offset = 0;
+  const processed = [];
+  for (;;) {
+    const q = new URLSearchParams({
+      filterByFormula: formula,
+      pageSize: '50',
+      offset: String(offset),
+    });
+    let json;
+    try {
+      json = await airtableFetch(`/${encodeURIComponent(TBL_CLIENTS)}?${q}`);
+    } catch (e) {
+      console.warn('[onboarding_lifecycle] list clients failed', e.message);
+      break;
+    }
+    const recs = json.records || [];
+    for (const rec of recs) {
+      processed.push(rec.id);
+      const f = rec.fields || {};
+      const sent = new Set(parseOnboardingEmailsSent(f.onboarding_emails_sent));
+      const signup = onboardingSignupTime(f);
+      const now = Date.now();
+      const email = String(f.contact_email || '').trim();
+      const shop = String(f.shopify_domain || '').trim();
+      const firstGen = f.first_video_generated_at;
+      const firstPub = f.first_video_published_at;
+      const shopConnected = !!shop;
+      const hoursSince = signup ? (now - signup) / (1000 * 60 * 60) : 9999;
+
+      if (!sent.has('shopify_connected') && shopConnected && !firstGen && hoursSince > 1 && email) {
+        const cat = await getClientCatalog(f);
+        const top = (cat.products || [])
+          .slice()
+          .sort((a, b) => (b.price || 0) - (a.price || 0))
+          .slice(0, 3)
+          .map((p) => p.name || p.title)
+          .filter(Boolean);
+        const lines = top.length ? top.map((n) => `<li>${String(n).replace(/</g, '')}</li>`).join('') : '<li>Your catalog</li>';
+        const html = `<p>Your store is connected — here's what we found:</p><ul>${lines}</ul><p>SocialEngine turns these products into scroll-stopping short videos automatically.</p><p><a href="${PORTAL_BASE_URL}?tab=create">Generate your first video →</a></p>`;
+        await sendTransactionalEmail({
+          to: email,
+          subject: 'Your store is connected — here\'s what we found',
+          html,
+          text: `Top products: ${top.join(', ')}. Open Create: ${PORTAL_BASE_URL}?tab=create`,
+        });
+        await appendOnboardingEmailSent(rec.id, 'shopify_connected');
+        continue;
+      }
+
+      if (!sent.has('nudge_24h') && !firstGen && signup && now - signup > 24 * 60 * 60 * 1000 && email) {
+        const html = `<p>You're minutes away from your first AI video.</p><p>Pick a product and we handle the rest — no templates to configure.</p><p><img src="${ONBOARDING_SAMPLE_IMAGE_URL}" alt="Sample" width="560" style="max-width:100%;border-radius:8px"/></p><p><a href="${PORTAL_BASE_URL}?tab=create">Generate now →</a></p>`;
+        await sendTransactionalEmail({
+          to: email,
+          subject: 'Ready to make your first video?',
+          html,
+          text: `Generate now: ${PORTAL_BASE_URL}?tab=create`,
+        });
+        await appendOnboardingEmailSent(rec.id, 'nudge_24h');
+        continue;
+      }
+
+      if (!sent.has('nudge_publish') && firstGen && !firstPub && email) {
+        const genAt = new Date(firstGen).getTime();
+        if (!Number.isNaN(genAt) && now - genAt > 48 * 60 * 60 * 1000) {
+          const html = `<p>Your video is ready — approve and publish to Instagram in one tap.</p><p><a href="${PORTAL_BASE_URL}?tab=content">Publish to Instagram →</a></p>`;
+          await sendTransactionalEmail({
+            to: email,
+            subject: 'Your video is waiting to be published',
+            html,
+            text: `Publish: ${PORTAL_BASE_URL}?tab=content`,
+          });
+          await appendOnboardingEmailSent(rec.id, 'nudge_publish');
+          continue;
+        }
+      }
+
+      if (!sent.has('reengagement_7d') && !firstGen && signup && now - signup > 7 * 24 * 60 * 60 * 1000 && email) {
+        const cat = await getClientCatalog(f);
+        const niche =
+          (cat.products || [])
+            .map((p) => p.product_type || p.type || '')
+            .find((x) => String(x).trim()) || 'your category';
+        const shopName = f.business_name || shop || 'your brand';
+        const html = `<p>Here's what AI-powered brands are generating this week in <strong>${String(niche).replace(/</g, '')}</strong>.</p><p>Your catalog is ready — let SocialEngine ship your first reel.</p><p><a href="${PORTAL_BASE_URL}?tab=create">See what SocialEngine can do for ${String(shopName).replace(/</g, '')} →</a></p>`;
+        await sendTransactionalEmail({
+          to: email,
+          subject: 'Here\'s what AI-powered brands are generating this week',
+          html,
+          text: `Open SocialEngine: ${PORTAL_BASE_URL}?tab=create`,
+        });
+        await appendOnboardingEmailSent(rec.id, 'reengagement_7d');
+      }
+    }
+    if (!json.offset) break;
+    offset = json.offset;
+  }
+  CRON_HEARTBEAT.onboarding_lifecycle.lastRun = Date.now();
+  CRON_HEARTBEAT.onboarding_lifecycle.lastDurationMs = Date.now() - start;
+  CRON_HEARTBEAT.onboarding_lifecycle.status = 'ok';
+  CRON_HEARTBEAT.onboarding_lifecycle.postsGenerated = processed.length;
+}
+
+function startOnboardingLifecycleScheduler() {
+  setInterval(() => {
+    runOnboardingLifecycleCron().catch((e) => {
+      CRON_HEARTBEAT.onboarding_lifecycle.status = 'error';
+      console.warn('[onboarding_lifecycle]', e.message);
+    });
+  }, CRON_CADENCE_MS.onboarding_lifecycle);
 }
 
 async function getContentRecordFixed(postId) {
@@ -1536,6 +1903,7 @@ async function runPublishJob(
           error: '',
         });
         await patchContentRecord(contentRecordId, { status: 'Published' });
+        await recordFirstVideoPublishedIfNeeded(clientRecordId);
         return { ok: true, postId: result.postId };
       }
       const is5xx = result.status >= 500 && result.status < 600;
@@ -1722,6 +2090,7 @@ function mountSoc10PublishRoutes(app, options = {}) {
   if (logErr) _injectedLogAdminError = logErr;
 
   mountBrandDnaRoutes(app, options);
+  mountOnboardingRoutes(app, options);
 
   app.get('/api/publish/jobs/:contentId', vc, async (req, res, next) => {
     try {
@@ -1873,6 +2242,77 @@ async function handleBrandDnaVersionsHttp(req, res) {
   return json(res, 200, { versions: list });
 }
 
+const DEMO_VIDEO_URL =
+  'https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4';
+
+async function handleStudioProductsHttp(req, res) {
+  const clientRec = await authClientFromHeaders(req);
+  if (!clientRec) return json(res, 401, { error: 'Unauthorized' });
+  const cat = await getClientCatalog(clientRec.fields || {});
+  let products = (cat.products || []).slice();
+  products.sort((a, b) => {
+    const la = String(a.imageUrls?.[0] || '').length;
+    const lb = String(b.imageUrls?.[0] || '').length;
+    return lb - la;
+  });
+  const mapped = products.slice(0, 50).map((p) => ({
+    id: p.id,
+    title: p.name || p.title,
+    price: p.price,
+    primary_image: (p.imageUrls && p.imageUrls[0]) || '',
+    product_url: p.product_url || '',
+    handle: p.handle || '',
+    product_type: p.product_type || '',
+  }));
+  return json(res, 200, { products: mapped, catalog_source: cat.source || 'stub' });
+}
+
+async function handleStudioGenerateV2Http(req, res) {
+  const clientRec = await authClientFromHeaders(req);
+  if (!clientRec) return json(res, 401, { error: 'Unauthorized' });
+  let body = {};
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    body = {};
+  }
+  const jobId = randomUUID();
+  const started = Date.now();
+  __studioJobs.set(jobId, {
+    status: 'queued',
+    attempt_number: 0,
+    max_attempts: 2,
+    clientRecordId: clientRec.id,
+    productTitle: body.productTitle || '',
+    template: body.template || 'stop_scroll_hook',
+  });
+  setTimeout(() => {
+    const j = __studioJobs.get(jobId);
+    if (j) j.status = 'qa_running';
+  }, 800);
+  setTimeout(async () => {
+    const j = __studioJobs.get(jobId);
+    if (!j) return;
+    j.status = 'qa_passed';
+    j.output_video_url = DEMO_VIDEO_URL;
+    j.elapsed_ms = Date.now() - started;
+    try {
+      await logGeneration(j.clientRecordId);
+    } catch (_) {}
+  }, 4200);
+  return json(res, 200, { ok: true, jobId });
+}
+
+async function handleStudioJobHttp(req, res, jobId) {
+  const clientRec = await authClientFromHeaders(req);
+  if (!clientRec) return json(res, 401, { error: 'Unauthorized' });
+  const job = __studioJobs.get(jobId);
+  if (!job || job.clientRecordId !== clientRec.id) {
+    return json(res, 404, { error: 'Job not found' });
+  }
+  return json(res, 200, { job });
+}
+
 function createServer() {
   return http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://${req.headers.host}`);
@@ -1897,6 +2337,46 @@ function createServer() {
       }
       if (req.method === 'GET' && pathname === '/admin/api/health') {
         return await handleAdminHealthHttp(req, res);
+      }
+      if (req.method === 'POST' && pathname === '/api/webhooks/stripe') {
+        return await handleStripeWebhookHttp(req, res);
+      }
+      if (req.method === 'GET' && pathname === '/api/studio/products') {
+        return await handleStudioProductsHttp(req, res);
+      }
+      if (req.method === 'POST' && pathname === '/api/studio/generate-video-v2') {
+        return await handleStudioGenerateV2Http(req, res);
+      }
+      if (req.method === 'GET' && pathname.startsWith('/api/studio/job/')) {
+        const jid = pathname.split('/').filter(Boolean).pop();
+        return await handleStudioJobHttp(req, res, jid);
+      }
+      if (req.method === 'POST' && pathname === '/api/onboarding/step') {
+        const clientRec = await authClientFromHeaders(req);
+        if (!clientRec) return json(res, 401, { error: 'Unauthorized' });
+        let body = {};
+        try {
+          body = await readJsonBody(req);
+        } catch {
+          body = {};
+        }
+        const step = Number(body.step);
+        if (!Number.isFinite(step) || step < 0 || step > 5) {
+          return json(res, 400, { error: 'step must be 0–5' });
+        }
+        const patch = { onboarding_step: step };
+        if (step >= 5) patch.onboarding_completed = true;
+        await patchClientRecord(clientRec.id, patch);
+        return json(res, 200, { ok: true, step });
+      }
+      if (req.method === 'GET' && pathname === '/api/onboarding/state') {
+        const clientRec = await authClientFromHeaders(req);
+        if (!clientRec) return json(res, 401, { error: 'Unauthorized' });
+        const fresh = await airtableFetch(
+          `/${encodeURIComponent(TBL_CLIENTS)}/${encodeURIComponent(clientRec.id)}`,
+        );
+        const payload = await getOnboardingStatePayload(fresh);
+        return json(res, 200, payload);
       }
       if (req.method === 'GET' && pathname === '/health') {
         return json(res, 200, { ok: true });
@@ -2002,6 +2482,11 @@ module.exports = {
   createServer,
   mountSoc10PublishRoutes,
   mountBrandDnaRoutes,
+  mountOnboardingRoutes,
+  logGeneration,
+  CRON_CADENCE_MS,
+  CRON_HEARTBEAT,
+  runOnboardingLifecycleCron,
   runGate2AnatomyCheck,
   runQAGatePipeline,
   resolveGate2Mode,
@@ -2055,7 +2540,9 @@ if (require.main === module) {
     const port = Number(process.env.PORT || 8787);
     createServer().listen(port, () => {
       console.log(`SOC-10 server listening on :${port}`);
+      startOnboardingLifecycleScheduler();
       setImmediate(() => {
+        runOnboardingLifecycleCron().catch(() => {});
         resolveGate2Mode()
           .then(() => maybeSmokeTestGate2())
           .catch(() => {});

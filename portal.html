@@ -2112,6 +2112,58 @@
       outline-offset: 2px;
     }
 
+    .se-onboarding-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200000;
+      background: rgba(10, 15, 28, 0.96);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .se-onboarding-card {
+      width: min(560px, 100%);
+      background: linear-gradient(165deg, rgba(22, 34, 55, 0.98), rgba(10, 15, 28, 0.99));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 28px 26px 24px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+    }
+    .se-onboarding-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 18px; }
+    .se-onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+    .se-onboarding-dot--active { background: #7C3AED; box-shadow: 0 0 10px rgba(124,58,237,0.5); }
+    .se-onboarding-progress {
+      position: relative;
+      height: 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      margin: 16px 0 20px;
+    }
+    .se-onboarding-progress__bar {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 0%;
+      background: linear-gradient(90deg, #7C3AED, #A78BFA);
+      border-radius: 6px;
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .se-onboarding-product {
+      border: 2px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .se-onboarding-product--sel {
+      border-color: rgba(124,58,237,0.85);
+      box-shadow: 0 0 0 1px rgba(124,58,237,0.35);
+    }
+    #se-getting-started-card { position: relative; }
+
     /* ── Global page transitions ── */
     .dash-content > * {
       animation: fadeInUp 0.3s ease-out;
@@ -2397,6 +2449,7 @@
 
     <!-- DASHBOARD VIEW -->
     <div class="dashboard" id="dashboard-view">
+      <div id="se-onboarding-overlay" class="se-onboarding-overlay" style="display:none;" aria-hidden="true"></div>
       <aside class="dash-sidebar" id="dash-sidebar">
         <a href="index.html" class="dash-sidebar__logo">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="8" stroke="currentColor" stroke-width="2.5"/><circle cx="11" cy="16" r="3" fill="currentColor"/><circle cx="21" cy="10" r="2.5" fill="currentColor" opacity="0.6"/><circle cx="21" cy="22" r="2.5" fill="currentColor" opacity="0.6"/><line x1="13.5" y1="14.5" x2="19" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="13.5" y1="17.5" x2="19" y2="21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -2809,6 +2862,377 @@
       };
       return fetch(url, { ...init, headers });
     }
+
+    /** Full-page redirect to Shopify OAuth (used by Settings and onboarding). */
+    let _shopifyOAuthInFlight = false;
+    function redirectShopifyOAuth(domainRaw) {
+      if (!clientEmail || !clientHash) {
+        showToast('Please sign in again.', 'error');
+        return;
+      }
+      const raw = String(domainRaw || '')
+        .trim()
+        .replace(/^https?:\/\//i, '')
+        .replace(/\/$/, '')
+        .trim();
+      if (!raw) {
+        alert('Please enter your Shopify store domain.');
+        return;
+      }
+      if (_shopifyOAuthInFlight) return;
+      _shopifyOAuthInFlight = true;
+      const goBtn = document.getElementById('shopify-oauth-go') || document.getElementById('shopify-oauth-reconnect-go');
+      if (goBtn) {
+        goBtn.disabled = true;
+        goBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Connecting...';
+      }
+      const authUrl = `${API}/api/shopify/auth?email=${encodeURIComponent(clientEmail)}&hash=${encodeURIComponent(clientHash)}&shop=${encodeURIComponent(raw)}`;
+      window.location.href = authUrl;
+    }
+
+    // ━━━ Onboarding (first video < 5 min) ━━━
+    const SE_ONBOARDING_LS = 'se_onboarding_seen_pending';
+    let _onboardingUi = { step: 1, selectedProduct: null, job: null, genStart: 0, messagesTimer: null, progressTimer: null };
+    let _gettingStartedPoll = null;
+    let _lastGsSnapshot = '';
+
+    function seConfettiAt(el) {
+      if (!el) return;
+      const c = document.createElement('canvas');
+      c.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3;border-radius:12px;';
+      el.style.position = el.style.position || 'relative';
+      el.appendChild(c);
+      const ctx = c.getContext('2d');
+      const w = el.clientWidth || 300;
+      const h = el.clientHeight || 120;
+      c.width = w; c.height = h;
+      const parts = [];
+      for (let i = 0; i < 22; i++) {
+        parts.push({
+          x: w / 2,
+          y: h / 3,
+          vx: (Math.random() - 0.5) * 6,
+          vy: -Math.random() * 8 - 2,
+          g: 0.18 + Math.random() * 0.08,
+          life: 40 + Math.random() * 20,
+          col: `hsl(${260 + Math.random() * 60},85%,${55 + Math.random() * 20}%)`,
+        });
+      }
+      let f = 0;
+      function tick() {
+        f++;
+        ctx.clearRect(0, 0, w, h);
+        for (const p of parts) {
+          p.vy += p.g;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life--;
+          if (p.life > 0) {
+            ctx.fillStyle = p.col;
+            ctx.globalAlpha = Math.min(1, p.life / 25);
+            ctx.fillRect(p.x, p.y, 3, 3);
+          }
+        }
+        ctx.globalAlpha = 1;
+        if (f < 55) requestAnimationFrame(tick);
+        else c.remove();
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function seApplyNavFromUrl() {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const tab = (p.get('tab') || '').toLowerCase();
+        if (tab === 'create') document.querySelector('[data-nav=video-studio]')?.click();
+        if (tab === 'content') document.querySelector('[data-nav=content]')?.click();
+      } catch (_) {}
+    }
+
+    async function fetchOnboardingState() {
+      const r = await apiFetch('/api/onboarding/state');
+      if (!r.ok) return null;
+      return r.json();
+    }
+
+    async function postOnboardingStep(step) {
+      try {
+        await apiFetch('/api/onboarding/step', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ step }),
+        });
+      } catch (_) {}
+    }
+
+    function seFirstPendingWithVideo() {
+      const posts = clientData?.content || [];
+      return posts.find((p) => {
+        const st = String(p.status || '');
+        const pend = ['Pending', 'Draft', 'Ready for Review'].includes(st);
+        const v = p.video_url && String(p.video_url).startsWith('http');
+        return pend && v;
+      }) || null;
+    }
+
+    function seCloseOnboardingComplete() {
+      const ov = document.getElementById('se-onboarding-overlay');
+      if (ov) { ov.style.display = 'none'; ov.setAttribute('aria-hidden', 'true'); ov.innerHTML = ''; }
+      try { localStorage.removeItem(SE_ONBOARDING_LS); } catch (_) {}
+      postOnboardingStep(5).catch(() => {});
+      if (activeNav === 'dashboard' && clientData) renderDashboard(clientData, true);
+      seApplyNavFromUrl();
+    }
+
+    function seRenderGettingStartedCard(st) {
+      const slot = document.getElementById('se-getting-started-slot');
+      if (!slot || !st) return;
+      const gen = !!st.firstVideoGeneratedAt;
+      const pub = !!st.firstVideoPublishedAt;
+      const brand = !!st.hasBrandDna;
+      const gc = Math.min(5, Math.max(0, Number(st.generationCount) || 0));
+      const g5 = gc >= 5;
+      const done = [gen, pub, brand, g5].filter(Boolean).length;
+      const all = gen && pub && brand && g5;
+      const snap = JSON.stringify({ gen, pub, brand, g5, gc });
+      if (snap !== _lastGsSnapshot) {
+        const prev = _lastGsSnapshot ? JSON.parse(_lastGsSnapshot) : {};
+        if (gen && !prev.gen) seConfettiAt(slot);
+        if (pub && !prev.pub) seConfettiAt(slot);
+        if (brand && !prev.brand) seConfettiAt(slot);
+        if (g5 && !prev.g5) seConfettiAt(slot);
+        _lastGsSnapshot = snap;
+      }
+      slot.innerHTML = `
+        <div id="se-getting-started-card" style="margin-bottom:20px;padding:18px 20px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);border-radius:14px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div>
+              <div style="font-size:0.9rem;font-weight:800;color:#fff;">Getting started</div>
+              <div style="font-size:0.72rem;color:rgba(148,163,184,0.85);margin-top:4px;">${done} / 4 complete</div>
+            </div>
+            ${all ? `<button type="button" id="se-gs-dismiss" aria-label="Dismiss" style="flex-shrink:0;width:32px;height:32px;border:none;border-radius:8px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);cursor:pointer;font-size:1.1rem;line-height:1;">×</button>` : ''}
+          </div>
+          <ul style="list-style:none;padding:0;margin:14px 0 0;font-size:0.8rem;color:rgba(226,232,240,0.92);">
+            <li style="margin:8px 0;display:flex;gap:8px;align-items:flex-start;"><span>${gen ? '✅' : '⬜'}</span><span><strong>Generated your first video</strong></span></li>
+            <li style="margin:8px 0;display:flex;gap:8px;align-items:flex-start;"><span>${pub ? '✅' : '⬜'}</span><span><strong>Publish to Instagram</strong>${pub ? '' : ' — <a href="#" onclick="event.preventDefault();document.querySelector(\'[data-nav=content]\').click();" style="color:#A78BFA;">Approve a video and publish</a> from Pending'}</span></li>
+            <li style="margin:8px 0;display:flex;gap:8px;align-items:flex-start;"><span>${brand ? '✅' : '⬜'}</span><span><strong>Analyze your brand</strong>${brand ? '' : ' — <a href="#" onclick="event.preventDefault();document.querySelector(\'[data-nav=brand-voice]\').click();" style="color:#A78BFA;">Open Brand</a>'}</span></li>
+            <li style="margin:8px 0;display:flex;gap:8px;align-items:flex-start;"><span>${g5 ? '✅' : '⬜'}</span><span><strong>Generate 5 videos</strong> — ${gc} / 5</span></li>
+          </ul>
+        </div>`;
+      document.getElementById('se-gs-dismiss')?.addEventListener('click', () => { slot.innerHTML = ''; if (_gettingStartedPoll) clearInterval(_gettingStartedPoll); });
+    }
+
+    function seStartGettingStartedPoll() {
+      if (_gettingStartedPoll) clearInterval(_gettingStartedPoll);
+      _gettingStartedPoll = setInterval(async () => {
+        const slot = document.getElementById('se-getting-started-slot');
+        if (!slot || !slot.innerHTML.trim()) { clearInterval(_gettingStartedPoll); _gettingStartedPoll = null; return; }
+        try {
+          const st = await fetchOnboardingState();
+          if (st) seRenderGettingStartedCard(st);
+        } catch (_) {}
+      }, 30000);
+    }
+
+    function seOnboardingDots() {
+      const s = _onboardingUi.step;
+      return [1,2,3,4,5].map((n) =>
+        `<span class="se-onboarding-dot${n === s ? ' se-onboarding-dot--active' : ''}"></span>`
+      ).join('');
+    }
+
+    async function seRenderOnboardingScreen() {
+      const ov = document.getElementById('se-onboarding-overlay');
+      if (!ov) return;
+      const c = clientData?.client || {};
+      const shopOk = !!(c.shopify_domain && String(c.shopify_domain).trim());
+      const urlP = new URLSearchParams(window.location.search);
+      if (shopOk && _onboardingUi.step === 2) { _onboardingUi.step = 3; await postOnboardingStep(3); }
+      if (urlP.get('shopify_connected') === 'true' && _onboardingUi.step <= 3) {
+        _onboardingUi.step = 3;
+        await postOnboardingStep(3);
+      }
+
+      let body = '';
+      if (_onboardingUi.step === 1) {
+        body = `
+          <h2 style="font-family:var(--font-display);font-size:1.35rem;font-weight:800;color:#fff;margin:0 0 10px;line-height:1.25;">Let's generate your first video in the next 5 minutes.</h2>
+          <p style="font-size:0.88rem;color:rgba(148,163,184,0.9);line-height:1.55;margin:0 0 22px;">No templates to configure. No settings to tweak. Just your products, turned into scroll-stopping video.</p>
+          <button type="button" id="se-ob-go1" style="width:100%;padding:14px 18px;border:none;border-radius:10px;background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#0A1628;font-weight:800;font-size:0.9rem;cursor:pointer;font-family:var(--font-body);">Let's go →</button>`;
+      } else if (_onboardingUi.step === 2) {
+        body = `
+          <h2 style="font-family:var(--font-display);font-size:1.25rem;font-weight:800;color:#fff;margin:0 0 8px;">First, connect your Shopify store.</h2>
+          <p style="font-size:0.85rem;color:rgba(148,163,184,0.9);line-height:1.5;margin:0 0 16px;">We need this to make videos of your actual products — not stock footage. Your products.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+            <div style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);text-align:center;font-size:0.72rem;color:rgba(148,163,184,0.85);">Generic stock video<div style="height:72px;margin-top:8px;border-radius:8px;background:rgba(255,255,255,0.06);"></div></div>
+            <div style="padding:12px;border-radius:10px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.25);text-align:center;font-size:0.72rem;color:#C4B5FD;">Your product, moving<div style="height:72px;margin-top:8px;border-radius:8px;background:rgba(124,58,237,0.15);"></div></div>
+          </div>
+          <label style="display:block;font-size:0.72rem;font-weight:700;color:rgba(148,163,184,0.9);margin:0 0 6px;">Shopify store</label>
+          <input type="text" id="se-ob-shopify-domain" placeholder="yourstore.myshopify.com" autocomplete="off" style="width:100%;box-sizing:border-box;padding:11px 14px;margin-bottom:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#e2e8f0;font-size:0.85rem;outline:none;font-family:var(--font-body);" />
+          <button type="button" id="se-ob-shopify" style="width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#0A1628;font-weight:800;font-size:0.88rem;cursor:pointer;">Connect Shopify Store →</button>`;
+      } else if (_onboardingUi.step === 3) {
+        const r = await apiFetch('/api/studio/products?limit=6&page=1');
+        const j = r.ok ? await r.json().catch(() => ({})) : {};
+        const prods = (j.products || []).slice(0, 6);
+        const grid = prods.length ? prods.map((p) => {
+          const id = String(p.id || '').replace(/"/g, '');
+          const img = String(p.primary_image || '').replace(/"/g, '&quot;');
+          const t = String(p.title || 'Product').replace(/</g, '');
+          const sel = _onboardingUi.selectedProduct && String(_onboardingUi.selectedProduct.id) === id ? ' se-onboarding-product--sel' : '';
+          return `<div class="se-onboarding-product${sel}" data-ob-pid="${id}" data-ob-title="${t.replace(/"/g, '&quot;')}" data-ob-img="${img}" style="aspect-ratio:1;background:rgba(0,0,0,0.25);">
+            ${img ? `<img src="${img}" alt="" style="width:100%;height:100%;object-fit:cover;">` : '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#64748b;">No image</div>'}
+            <div style="padding:6px 8px;font-size:0.68rem;color:#e2e8f0;background:rgba(0,0,0,0.45);">${t.slice(0, 42)}</div>
+          </div>`;
+        }).join('') : '<div style="font-size:0.8rem;color:#94a3b8;">No products yet — connect Shopify or add products in your store.</div>';
+        body = `
+          <h2 style="font-size:1.2rem;font-weight:800;color:#fff;margin:0 0 8px;">Pick the product you most want to promote.</h2>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 16px;">${grid}</div>
+          <button type="button" id="se-ob-gen" ${!_onboardingUi.selectedProduct ? 'disabled' : ''} style="width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#0A1628;font-weight:800;font-size:0.88rem;cursor:pointer;opacity:${_onboardingUi.selectedProduct ? 1 : 0.45};">Generate Video →</button>`;
+      } else if (_onboardingUi.step === 4) {
+        body = `
+          <h2 style="font-size:1.15rem;font-weight:800;color:#fff;margin:0 0 6px;">Creating your first video…</h2>
+          <div id="se-ob-status" style="font-size:0.78rem;color:rgba(167,139,250,0.95);min-height:1.4em;margin-bottom:10px;">Analyzing your product photography…</div>
+          <div class="se-onboarding-progress"><div class="se-onboarding-progress__bar" id="se-ob-pbar"></div></div>`;
+      } else if (_onboardingUi.step === 5) {
+        const url = _onboardingUi.job?.output_video_url || '';
+        const sec = _onboardingUi.job?.elapsed_ms ? Math.max(1, Math.round(_onboardingUi.job.elapsed_ms / 1000)) : '—';
+        body = `
+          <h2 style="font-size:1.2rem;font-weight:800;color:#fff;margin:0 0 6px;">Your first SocialEngine video.</h2>
+          <p style="font-size:0.82rem;color:rgba(148,163,184,0.9);margin:0 0 14px;">Generated in ${sec} seconds. Ready to publish.</p>
+          ${url ? `<video src="${url.replace(/"/g, '')}" autoplay muted loop playsinline style="width:100%;max-height:280px;border-radius:12px;background:#000;"></video>` : ''}
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+            <button type="button" id="se-ob-approve" style="padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#0A1628;font-weight:800;cursor:pointer;">Approve &amp; Publish to Instagram →</button>
+            <button type="button" id="se-ob-pending" style="padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#e2e8f0;font-weight:600;cursor:pointer;">Save to Pending →</button>
+          </div>`;
+      }
+      ov.innerHTML = `<div class="se-onboarding-card"><div class="se-onboarding-dots">${seOnboardingDots()}</div>${body}</div>`;
+      ov.style.display = 'flex';
+      ov.setAttribute('aria-hidden', 'false');
+
+      document.getElementById('se-ob-go1')?.addEventListener('click', async () => {
+        _onboardingUi.step = 2;
+        await postOnboardingStep(2);
+        seRenderOnboardingScreen();
+      });
+      document.getElementById('se-ob-shopify')?.addEventListener('click', () => {
+        const dom = (document.getElementById('se-ob-shopify-domain')?.value || '').trim();
+        redirectShopifyOAuth(dom);
+      });
+      document.getElementById('se-ob-shopify-domain')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const dom = (document.getElementById('se-ob-shopify-domain')?.value || '').trim();
+          redirectShopifyOAuth(dom);
+        }
+      });
+      ov.querySelectorAll('.se-onboarding-product').forEach((el) => {
+        el.addEventListener('click', () => {
+          _onboardingUi.selectedProduct = {
+            id: el.getAttribute('data-ob-pid'),
+            title: el.getAttribute('data-ob-title'),
+            imageUrl: el.getAttribute('data-ob-img'),
+          };
+          seRenderOnboardingScreen();
+        });
+      });
+      document.getElementById('se-ob-gen')?.addEventListener('click', async () => {
+        if (!_onboardingUi.selectedProduct) return;
+        _onboardingUi.step = 4;
+        _onboardingUi.genStart = Date.now();
+        await postOnboardingStep(4);
+        await seRenderOnboardingScreen();
+        const msgs = [
+          'Analyzing your product photography…',
+          'Building your video script…',
+          'Selecting the best AI model for your product…',
+          'Rendering with AI… almost there…',
+        ];
+        let mi = 0;
+        const stEl = document.getElementById('se-ob-status');
+        const bar = document.getElementById('se-ob-pbar');
+        if (_onboardingUi.messagesTimer) clearInterval(_onboardingUi.messagesTimer);
+        _onboardingUi.messagesTimer = setInterval(() => {
+          mi = (mi + 1) % msgs.length;
+          if (stEl) stEl.textContent = msgs[mi];
+        }, 4000);
+        if (_onboardingUi.progressTimer) clearInterval(_onboardingUi.progressTimer);
+        let pct = 5;
+        _onboardingUi.progressTimer = setInterval(() => {
+          pct = Math.min(95, pct + 4 + Math.random() * 6);
+          if (bar) bar.style.width = pct + '%';
+        }, 400);
+        try {
+          const job = await submitVideoGenerationQA({
+            imageUrl: _onboardingUi.selectedProduct.imageUrl,
+            productTitle: _onboardingUi.selectedProduct.title,
+            template: 'stop_scroll_hook',
+          });
+          if (_onboardingUi.messagesTimer) clearInterval(_onboardingUi.messagesTimer);
+          if (_onboardingUi.progressTimer) clearInterval(_onboardingUi.progressTimer);
+          if (bar) bar.style.width = '100%';
+          _onboardingUi.job = job;
+          _onboardingUi.step = 5;
+          await postOnboardingStep(5);
+          await seRenderOnboardingScreen();
+        } catch (e) {
+          if (_onboardingUi.messagesTimer) clearInterval(_onboardingUi.messagesTimer);
+          if (_onboardingUi.progressTimer) clearInterval(_onboardingUi.progressTimer);
+          showToast('Video generation failed — try again from Create', 'error');
+          _onboardingUi.step = 3;
+          seRenderOnboardingScreen();
+        }
+      });
+      document.getElementById('se-ob-approve')?.addEventListener('click', async () => {
+        const post = seFirstPendingWithVideo();
+        if (!post) {
+          showToast('Approve a pending video from Content, then publish.');
+          seCloseOnboardingComplete();
+          document.querySelector('[data-nav=content]')?.click();
+          return;
+        }
+        try {
+          const r = await fetch(`${API}/api/approve-post`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ postId: post.id, clientEmail, clientHash }),
+          });
+          await r.json().catch(() => ({}));
+        } catch (_) {}
+        seCloseOnboardingComplete();
+      });
+      document.getElementById('se-ob-pending')?.addEventListener('click', () => {
+        seCloseOnboardingComplete();
+      });
+    }
+
+    async function maybeOpenOnboardingAfterLogin() {
+      if (typeof isPreview === 'function' && isPreview()) return;
+      try {
+        localStorage.setItem(SE_ONBOARDING_LS, '1');
+      } catch (_) {}
+      let st;
+      try {
+        st = await fetchOnboardingState();
+      } catch (_) {
+        st = null;
+      }
+      try { localStorage.removeItem(SE_ONBOARDING_LS); } catch (_) {}
+      if (!st || st.completed) return;
+      if (Number(st.step) >= 5) return;
+      if (st.firstVideoGeneratedAt) {
+        const p = seFirstPendingWithVideo();
+        _onboardingUi.step = 5;
+        _onboardingUi.job = {
+          output_video_url: (p && p.video_url) || '',
+          elapsed_ms: 0,
+        };
+      } else {
+        _onboardingUi.step = Math.max(1, Math.min(4, Number(st.step) || 1));
+        if ((clientData?.client?.shopify_domain) && _onboardingUi.step === 2) _onboardingUi.step = 3;
+      }
+      await seRenderOnboardingScreen();
+    }
+
     const STRIPE_LINK = 'https://buy.stripe.com/fZufZh5CH0vC6oocx1cQU03';
 
     const PLAN_CONFIG = {
@@ -3544,6 +3968,7 @@
           updateSidebarCredits();
           setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
           window.scrollTo(0, 0);
+          setTimeout(() => { maybeOpenOnboardingAfterLogin(); }, 80);
 
           // Handle Shopify OAuth return
           const urlParams = new URLSearchParams(window.location.search);
@@ -3813,6 +4238,7 @@
 
       content.innerHTML = `
         ${previewBanner}
+        <div id="se-getting-started-slot"></div>
         ${archetype ? `<div class="brand-archetype-banner">
           <div class="brand-archetype-banner__icon">🎭</div>
           <div>
@@ -7367,21 +7793,10 @@
 
       setTimeout(() => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
-        // OAuth Shopify connect button
-        let _shopifyOAuthInFlight = false;
+        // OAuth Shopify connect button (shared redirect with onboarding)
         function startShopifyOAuth(inputId) {
-          if (_shopifyOAuthInFlight) return;
           const domain = (document.getElementById(inputId)?.value || '').trim();
-          if (!domain) { alert('Please enter your Shopify store domain.'); return; }
-          _shopifyOAuthInFlight = true;
-          const goBtn = document.getElementById('shopify-oauth-go') || document.getElementById('shopify-oauth-reconnect-go');
-          if (goBtn) {
-            goBtn.disabled = true;
-            goBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Connecting...';
-          }
-          const raw = domain.replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
-          const authUrl = `${API}/api/shopify/auth?email=${encodeURIComponent(clientEmail)}&hash=${encodeURIComponent(clientHash)}&shop=${encodeURIComponent(raw)}`;
-          window.location.href = authUrl;
+          redirectShopifyOAuth(domain);
         }
         document.getElementById('shopify-oauth-go')?.addEventListener('click', () => startShopifyOAuth('shopify-oauth-domain'));
         document.getElementById('shopify-oauth-domain')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') startShopifyOAuth('shopify-oauth-domain'); });
@@ -10775,6 +11190,11 @@
   window.filterMSProducts = filterMSProducts;
   window.renderAIStudio = renderAIStudio;
   window.renderAdStudio = renderAdStudio;
+  window.redirectShopifyOAuth = redirectShopifyOAuth;
+  window.seCloseOnboardingComplete = seCloseOnboardingComplete;
+  window.seRenderOnboardingScreen = seRenderOnboardingScreen;
+  window.postOnboardingStep = postOnboardingStep;
+  window.maybeOpenOnboardingAfterLogin = maybeOpenOnboardingAfterLogin;
 
     // ━━━ Direct OAuth Connect Functions ━━━
     function _seRemoveConnectBanner() {
