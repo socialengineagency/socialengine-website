@@ -1,15 +1,32 @@
 /**
- * SOC-10 reference API: Approve → Publish via Upload-Post.
+ * SOC-10 — Approve → Publish (Upload-Post) for the API repo.
  *
- * Merge these routes into the production Railway `server.js` (or mount this
- * module). Expected env (adjust names to match your deployment):
+ * Ported from socialengine-website PR #35. Merge into the main Express `server.js`:
  *
- *   AIRTABLE_BASE_ID, AIRTABLE_PAT (Bearer token)
- *   AIRTABLE_CLIENTS_TABLE, AIRTABLE_CONTENT_TABLE, AIRTABLE_PUBLISH_JOBS_TABLE, AIRTABLE_ERROR_LOG_TABLE
- *   UPLOAD_POST_API_KEY — Upload-Post "Apikey" value
+ *   const soc10 = require('./server'); // or ./lib/soc10-publish.js after move
+ *   soc10.mountSoc10PublishRoutes(app, { verifyClient, logAdminError });
  *
- * CLIENTS row must include `upload_post_username` (Upload-Post profile key)
- * when publishing should run after approve.
+ * Inside your existing POST /api/approve-post (or /api/content/approve), after
+ * you persist "Approved" and have `clientRecord` + `contentRecord` Airtable shapes
+ * `{ id, fields }`, call:
+ *
+ *   const kick = await soc10.soc10KickoffPublishAfterApprove({
+ *     clientRecord,
+ *     contentRecord,
+ *     editedCaption,
+ *   });
+ *   return res.json({ ...yourPayload, ...kick });
+ *
+ * Environment (same as reference PR #35):
+ *   AIRTABLE_BASE_ID | AIRTABLE_BASE, AIRTABLE_PAT | AIRTABLE_SECRET_API_TOKEN
+ *   AIRTABLE_CLIENTS_TABLE (default CLIENTS), AIRTABLE_CONTENT_TABLE (CONTENT),
+ *   AIRTABLE_PUBLISH_JOBS_TABLE (PUBLISH_JOBS), AIRTABLE_ERROR_LOG_TABLE (ERROR_LOG)
+ *   UPLOAD_POST_API_KEY
+ *
+ * ERROR_LOG field names default to message, details, source, created_at (PR #35).
+ * If your base uses different names, set:
+ *   SOC10_ERROR_LOG_FIELD_MESSAGE, SOC10_ERROR_LOG_FIELD_DETAILS,
+ *   SOC10_ERROR_LOG_FIELD_SOURCE, SOC10_ERROR_LOG_FIELD_CREATED_AT
  */
 
 const http = require('http');
@@ -27,7 +44,13 @@ const TBL_CONTENT = process.env.AIRTABLE_CONTENT_TABLE || 'CONTENT';
 const TBL_JOBS = process.env.AIRTABLE_PUBLISH_JOBS_TABLE || 'PUBLISH_JOBS';
 const TBL_ERRORS = process.env.AIRTABLE_ERROR_LOG_TABLE || 'ERROR_LOG';
 
+const ERR_FIELD_MESSAGE = process.env.SOC10_ERROR_LOG_FIELD_MESSAGE || 'message';
+const ERR_FIELD_DETAILS = process.env.SOC10_ERROR_LOG_FIELD_DETAILS || 'details';
+const ERR_FIELD_SOURCE = process.env.SOC10_ERROR_LOG_FIELD_SOURCE || 'source';
+const ERR_FIELD_CREATED = process.env.SOC10_ERROR_LOG_FIELD_CREATED_AT || 'created_at';
+
 const AIRTABLE_API = 'https://api.airtable.com/v0';
+const AIRTABLE_META = 'https://api.airtable.com/v0/meta/bases';
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -60,10 +83,6 @@ function escapeFormulaString(s) {
   return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
-/**
- * Build the Upload-Post–shaped snapshot used by the portal (`upload_post_connection`).
- * Override field names via env UP_POST_ACCOUNTS_JSON_FIELD if you store JSON on CLIENTS.
- */
 function resolveUploadPostSnapshot(clientFields) {
   const raw =
     clientFields?.upload_post_accounts_json ||
@@ -112,16 +131,7 @@ function pickPrimaryPublishPlatform(clientFields, snapshot) {
   return 'instagram';
 }
 
-/**
- * POST video to Upload-Post. `user` is the Upload-Post profile key (same as upload_post_username).
- * Returns { ok, status, body, postId } where postId is best-effort from response JSON.
- */
-async function publishPostViaUploadPost({
-  videoUrl,
-  caption,
-  user,
-  platform = 'instagram',
-}) {
+async function publishPostViaUploadPost({ videoUrl, caption, user, platform = 'instagram' }) {
   if (!UPLOAD_POST_KEY) {
     const err = new Error('UPLOAD_POST_API_KEY is not configured');
     err.status = 500;
@@ -160,23 +170,34 @@ async function publishPostViaUploadPost({
   return { ok: res.ok, status: res.status, body, postId: postId != null ? String(postId) : null };
 }
 
-async function logAdminError(payload) {
-  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) return;
-  try {
-    const fields = {
-      message: String(payload.message || payload.error || 'Publish error').slice(0, 8000),
-      details: typeof payload.details === 'string' ? payload.details : JSON.stringify(payload.details || {}),
-      source: String(payload.source || 'publish'),
-      created_at: new Date().toISOString(),
-    };
-    await airtableFetch(`/${encodeURIComponent(TBL_ERRORS)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields }),
-    });
-  } catch (e) {
-    console.error('[ERROR_LOG]', e.message);
-  }
+/** Override by passing `logAdminError` into `mountSoc10PublishRoutes`. */
+function createDefaultLogAdminError() {
+  return async function logAdminError(payload) {
+    if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) return;
+    try {
+      const fields = {
+        [ERR_FIELD_MESSAGE]: String(payload.message || payload.error || 'Publish error').slice(0, 8000),
+        [ERR_FIELD_DETAILS]:
+          typeof payload.details === 'string' ? payload.details : JSON.stringify(payload.details || {}),
+        [ERR_FIELD_SOURCE]: String(payload.source || 'publish'),
+        [ERR_FIELD_CREATED]: new Date().toISOString(),
+      };
+      await airtableFetch(`/${encodeURIComponent(TBL_ERRORS)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields }),
+      });
+    } catch (e) {
+      console.error('[ERROR_LOG]', e.message);
+    }
+  };
+}
+
+let _injectedLogAdminError = null;
+
+function logAdminError(payload) {
+  const fn = _injectedLogAdminError || createDefaultLogAdminError();
+  return fn(payload);
 }
 
 async function findClientByAuth(email, hash) {
@@ -288,20 +309,22 @@ async function findLatestJobForContent(clientRecordId, contentRecordId) {
   q.append('sort[0][field]', 'created_at');
   q.append('sort[0][direction]', 'desc');
   const json = await airtableFetch(`/${encodeURIComponent(TBL_JOBS)}?${q}`);
-  const rec = json.records?.[0];
-  return rec || null;
+  return json.records?.[0] || null;
 }
 
-async function runPublishJob({
-  jobRecordId,
-  jobId,
-  clientRecordId,
-  contentRecordId,
-  videoUrl,
-  caption,
-  uploadUser,
-  platform,
-}) {
+async function runPublishJob(
+  {
+    jobRecordId,
+    jobId,
+    clientRecordId,
+    contentRecordId,
+    videoUrl,
+    caption,
+    uploadUser,
+    platform,
+  },
+  logErr = logAdminError,
+) {
   const delays = [1000, 2000, 4000];
   let lastResponse = null;
   let lastErr = null;
@@ -356,12 +379,87 @@ async function runPublishJob({
       ? JSON.stringify(lastResponse).slice(0, 95000)
       : '',
   });
-  await logAdminError({
+  await logErr({
     message: `Publish job failed: ${jobId}`,
     details: { contentRecordId, clientRecordId, error: errText, response: lastResponse },
     source: 'publish_upload_post',
   });
   return { ok: false };
+}
+
+/**
+ * After approve is persisted: optionally enqueue Upload-Post publish.
+ * @param {{ clientRecord: { id: string, fields: object }, contentRecord: { id: string, fields: object }, editedCaption?: string }} params
+ * @returns {Promise<{ publishStarted: boolean, publish?: { job_id: string, content_id: string, platform: string } }>}
+ */
+async function soc10KickoffPublishAfterApprove({ clientRecord, contentRecord, editedCaption } = {}) {
+  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) {
+    return { publishStarted: false };
+  }
+  const clientFields = clientRecord?.fields || {};
+  const clientRecordId = clientRecord?.id;
+  const contentFields = contentRecord?.fields || {};
+  const contentRecordId = contentRecord?.id;
+  if (!clientRecordId || !contentRecordId) return { publishStarted: false };
+
+  const uploadUsername = String(clientFields.upload_post_username || '').trim();
+  const snapshot = resolveUploadPostSnapshot(clientFields);
+  const platform = pickPrimaryPublishPlatform(clientFields, snapshot);
+  const videoUrl = String(contentVideoUrl(contentFields)).trim();
+  const caption = contentCaption(
+    { ...contentFields, ...(editedCaption != null ? { caption: editedCaption } : {}) },
+    editedCaption,
+  );
+
+  const canPublish =
+    uploadUsername &&
+    videoUrl.startsWith('https://') &&
+    ['instagram', 'tiktok', 'facebook'].includes(platform);
+
+  if (!canPublish) {
+    return { publishStarted: false };
+  }
+
+  const jobId = randomUUID();
+  const now = new Date().toISOString();
+  const jobCreate = await createPublishJob({
+    job_id: jobId,
+    client_id: clientRecordId,
+    content_id: contentRecordId,
+    platform,
+    status: 'queued',
+    attempt_number: 0,
+    created_at: now,
+    upload_post_response: '',
+    post_id: '',
+    published_at: '',
+    error: '',
+  });
+  const jobRecordId = jobCreate.id;
+  const logErr = _injectedLogAdminError || createDefaultLogAdminError();
+
+  runPublishJob(
+    {
+      jobRecordId,
+      jobId,
+      clientRecordId,
+      contentRecordId,
+      videoUrl,
+      caption,
+      uploadUser: uploadUsername,
+      platform,
+    },
+    logErr,
+  ).catch((e) => console.error('[publish async]', e));
+
+  return {
+    publishStarted: true,
+    publish: {
+      job_id: jobId,
+      content_id: contentRecordId,
+      platform,
+    },
+  };
 }
 
 function readJsonBody(req) {
@@ -395,6 +493,67 @@ function json(res, status, obj) {
   res.end(body);
 }
 
+/** Default verifyClient: x-client-email + x-client-hash → `req.soc10Client` */
+function verifyClient() {
+  return async function verifyClientMiddleware(req, res, next) {
+    try {
+      if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) {
+        return res.status(503).json({ error: 'Airtable is not configured' });
+      }
+      const email = String(req.headers['x-client-email'] || '').trim();
+      const hash = String(req.headers['x-client-hash'] || '').trim();
+      if (!email || !hash) {
+        return res.status(401).json({ error: 'Missing x-client-email or x-client-hash' });
+      }
+      const clientRec = await findClientByAuth(email, hash);
+      if (!clientRec) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      req.soc10Client = clientRec;
+      next();
+    } catch (e) {
+      next(e);
+    }
+  };
+}
+
+function jobRowToJson(job) {
+  if (!job) return null;
+  const f = job.fields || {};
+  return {
+    id: job.id,
+    ...f,
+    upload_post_response: f.upload_post_response ?? null,
+  };
+}
+
+/**
+ * @param {object} app — Express app (`app.get(...)`)
+ * @param {{ verifyClient?: function, logAdminError?: function }} [options]
+ */
+function mountSoc10PublishRoutes(app, options = {}) {
+  const vc = options.verifyClient || verifyClient();
+  const logErr = options.logAdminError || null;
+  if (logErr) _injectedLogAdminError = logErr;
+
+  app.get('/api/publish/jobs/:contentId', vc, async (req, res, next) => {
+    try {
+      const contentId = String(req.params.contentId || '').trim();
+      const clientRec = req.soc10Client;
+      const resolved = await getContentRecordFixed(contentId);
+      if (!resolved) return res.status(404).json({ error: 'Content not found' });
+      if (!contentBelongsToClient(clientRec.id, resolved.fields || {})) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+      const job = await findLatestJobForContent(clientRec.id, resolved.id);
+      return res.json({ job: jobRowToJson(job) });
+    } catch (e) {
+      next(e);
+    }
+  });
+}
+
+/** Standalone approve (reference) — production should use `soc10KickoffPublishAfterApprove` inside your route. */
 async function handleApprovePost(req, res) {
   if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) {
     return json(res, 503, { error: 'Airtable is not configured' });
@@ -418,91 +577,37 @@ async function handleApprovePost(req, res) {
   if (!clientRec) {
     return json(res, 401, { error: 'Unauthorized' });
   }
-  const clientFields = clientRec.fields || {};
-  const clientRecordId = clientRec.id;
-
   const contentRec = await getContentRecordFixed(postId);
   if (!contentRec) {
     return json(res, 404, { error: 'Content not found' });
   }
-  const contentFields = contentRec.fields || {};
-  const contentRecordId = contentRec.id;
-  if (!contentBelongsToClient(clientRecordId, contentFields)) {
+  if (!contentBelongsToClient(clientRec.id, contentRec.fields || {})) {
     return json(res, 403, { error: 'Forbidden' });
   }
 
+  const contentFields = contentRec.fields || {};
   const approvedStatus = contentFields.status === 'Scheduled' ? 'Scheduled' : 'Approved';
-  await patchContentRecord(contentRecordId, {
+  await patchContentRecord(contentRec.id, {
     status: approvedStatus,
     ...(editedCaption != null && String(editedCaption).trim()
       ? { caption: String(editedCaption).trim() }
       : {}),
   });
 
-  const uploadUsername = String(clientFields.upload_post_username || '').trim();
-  const snapshot = resolveUploadPostSnapshot(clientFields);
-  const platform = pickPrimaryPublishPlatform(clientFields, snapshot);
-  const videoUrl = String(contentVideoUrl(contentFields)).trim();
-  const caption = contentCaption(
-    { ...contentFields, ...(editedCaption != null ? { caption: editedCaption } : {}) },
+  const kick = await soc10KickoffPublishAfterApprove({
+    clientRecord: clientRec,
+    contentRecord: contentRec,
     editedCaption,
-  );
-
-  const canPublish =
-    uploadUsername &&
-    videoUrl.startsWith('http') &&
-    ['instagram', 'tiktok', 'facebook'].includes(platform);
-
-  if (!canPublish) {
-    return json(res, 200, {
-      success: true,
-      status: approvedStatus,
-      publishStarted: false,
-    });
-  }
-
-  const jobId = randomUUID();
-  const now = new Date().toISOString();
-  const jobCreate = await createPublishJob({
-    job_id: jobId,
-    client_id: clientRecordId,
-    content_id: contentRecordId,
-    platform,
-    status: 'queued',
-    attempt_number: 0,
-    created_at: now,
-    upload_post_response: '',
-    post_id: '',
-    published_at: '',
-    error: '',
   });
-  const jobRecordId = jobCreate.id;
-
-  /** Fire-and-forget so the HTTP response returns quickly */
-  runPublishJob({
-    jobRecordId,
-    jobId,
-    clientRecordId,
-    contentRecordId,
-    videoUrl,
-    caption,
-    uploadUser: uploadUsername,
-    platform,
-  }).catch((e) => console.error('[publish async]', e));
 
   return json(res, 200, {
     success: true,
     status: approvedStatus,
-    publishStarted: true,
-    publish: {
-      job_id: jobId,
-      content_id: contentRecordId,
-      platform,
-    },
+    ...kick,
   });
 }
 
-async function handleGetPublishJob(req, res, contentId) {
+async function handleGetPublishJobHttp(req, res, contentId) {
   if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) {
     return json(res, 503, { error: 'Airtable is not configured' });
   }
@@ -520,26 +625,8 @@ async function handleGetPublishJob(req, res, contentId) {
   if (!contentBelongsToClient(clientRec.id, resolved.fields || {})) {
     return json(res, 403, { error: 'Forbidden' });
   }
-
   const job = await findLatestJobForContent(clientRec.id, resolved.id);
-  if (!job) {
-    return json(res, 200, { job: null });
-  }
-  const f = job.fields || {};
-  return json(res, 200, {
-    job: {
-      job_id: f.job_id || null,
-      client_id: f.client_id || null,
-      content_id: f.content_id || null,
-      platform: f.platform || null,
-      status: f.status || null,
-      post_id: f.post_id || null,
-      attempt_number: f.attempt_number ?? null,
-      created_at: f.created_at || null,
-      published_at: f.published_at || null,
-      error: f.error || null,
-    },
-  });
+  return json(res, 200, { job: jobRowToJson(job) });
 }
 
 function createServer() {
@@ -553,7 +640,7 @@ function createServer() {
       if (req.method === 'GET' && path.startsWith('/api/publish/jobs/')) {
         const parts = path.split('/').filter(Boolean);
         const id = parts[parts.length - 1];
-        return await handleGetPublishJob(req, res, id);
+        return await handleGetPublishJobHttp(req, res, id);
       }
       if (req.method === 'GET' && path === '/health') {
         return json(res, 200, { ok: true });
@@ -567,16 +654,128 @@ function createServer() {
   });
 }
 
+/**
+ * Ensure PUBLISH_JOBS exists (Meta API). Requires schema.bases:write on the token.
+ * Idempotent: if the table name is already taken, logs and returns false.
+ */
+async function ensurePublishJobsTableExists() {
+  if (!AIRTABLE_BASE || !AIRTABLE_TOKEN) {
+    console.error('[soc10-schema] Missing AIRTABLE_BASE_ID and AIRTABLE_PAT');
+    return false;
+  }
+  const listUrl = `${AIRTABLE_META}/${encodeURIComponent(AIRTABLE_BASE)}/tables`;
+  const listRes = await fetch(listUrl, {
+    headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
+  });
+  const listJson = await listRes.json().catch(() => ({}));
+  if (!listRes.ok) {
+    console.error('[soc10-schema] list tables failed', listRes.status, listJson);
+    return false;
+  }
+  const wantName = TBL_JOBS;
+  if ((listJson.tables || []).some((t) => t.name === wantName)) {
+    console.log(`[soc10-schema] Table "${wantName}" already exists.`);
+    return true;
+  }
+
+  const body = {
+    name: wantName,
+    description: 'Tracks Upload-Post publish attempts after merchant approval (SOC-10).',
+    fields: [
+      { name: 'job_id', type: 'singleLineText' },
+      { name: 'client_id', type: 'singleLineText' },
+      { name: 'content_id', type: 'singleLineText' },
+      {
+        name: 'platform',
+        type: 'singleSelect',
+        options: {
+          choices: [
+            { name: 'instagram', color: 'purpleBright' },
+            { name: 'tiktok', color: 'cyanBright' },
+            { name: 'facebook', color: 'blueBright' },
+          ],
+        },
+      },
+      {
+        name: 'status',
+        type: 'singleSelect',
+        options: {
+          choices: [
+            { name: 'queued', color: 'grayBright' },
+            { name: 'publishing', color: 'yellowBright' },
+            { name: 'published', color: 'greenBright' },
+            { name: 'failed', color: 'redBright' },
+          ],
+        },
+      },
+      { name: 'upload_post_response', type: 'multilineText' },
+      { name: 'post_id', type: 'singleLineText' },
+      { name: 'attempt_number', type: 'number', options: { precision: 0 } },
+      {
+        name: 'created_at',
+        type: 'dateTime',
+        options: { timeZone: 'utc', dateFormat: { name: 'iso' }, timeFormat: { name: '24hour' } },
+      },
+      {
+        name: 'published_at',
+        type: 'dateTime',
+        options: { timeZone: 'utc', dateFormat: { name: 'iso' }, timeFormat: { name: '24hour' } },
+      },
+      { name: 'error', type: 'multilineText' },
+    ],
+  };
+
+  const createRes = await fetch(listUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${AIRTABLE_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  const createJson = await createRes.json().catch(() => ({}));
+  if (!createRes.ok) {
+    console.error('[soc10-schema] create table failed', createRes.status, createJson);
+    return false;
+  }
+  console.log('[soc10-schema] Created table', createJson.name || wantName, 'id:', createJson.id);
+  return true;
+}
+
 module.exports = {
   createServer,
+  mountSoc10PublishRoutes,
+  verifyClient,
+  soc10KickoffPublishAfterApprove,
   resolveUploadPostSnapshot,
   publishPostViaUploadPost,
   runPublishJob,
+  findClientByAuth,
+  getContentRecordFixed,
+  contentBelongsToClient,
+  findLatestJobForContent,
+  ensurePublishJobsTableExists,
+  /** Call from API startup if you want auto-create without shell script */
+  maybeEnsurePublishJobsTable: async () => {
+    if (process.env.SOC10_ENSURE_PUBLISH_JOBS_TABLE === '1') {
+      await ensurePublishJobsTableExists();
+    }
+  },
 };
 
 if (require.main === module) {
-  const port = Number(process.env.PORT || 8787);
-  createServer().listen(port, () => {
-    console.log(`SOC-10 server listening on :${port}`);
-  });
+  const argv = process.argv.slice(2);
+  if (argv[0] === 'ensure-table') {
+    ensurePublishJobsTableExists()
+      .then((ok) => process.exit(ok ? 0 : 1))
+      .catch((e) => {
+        console.error(e);
+        process.exit(1);
+      });
+  } else {
+    const port = Number(process.env.PORT || 8787);
+    createServer().listen(port, () => {
+      console.log(`SOC-10 server listening on :${port}`);
+    });
+  }
 }
