@@ -5229,13 +5229,17 @@
       btn.style.opacity = '0.7';
 
       try {
+        const basePrompt = creativeDir || '';
+        const enrichedPrompt = typeof buildStopScrollHookPrompt === 'function'
+          ? buildStopScrollHookPrompt(basePrompt, getBrandDnaForClient())
+          : basePrompt;
         const res = await fetch(`${API}/api/studio/generate-video`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
           body: JSON.stringify({
             imageUrl: vsUploadedImageUrl,
             productTitle: productName,
-            prompt: creativeDir || '',
+            prompt: enrichedPrompt,
             vibeId: vsSelectedTemplate || undefined,
             model: model,
             aspectRatio: aspect,
@@ -6025,6 +6029,296 @@
       showToast('Report downloaded!');
     }
 
+    // ━━━ BIS v1.1 — Brand Intelligence (SOC-7) ━━━
+    let _bisVersionList = [];
+    function _escBis(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
+    async function fetchBrandDnaLatest() {
+      const r = await apiFetch('/api/brand-dna/latest');
+      return r.json();
+    }
+    async function fetchBrandDnaVersions() {
+      const r = await apiFetch('/api/brand-dna/versions');
+      const j = await r.json().catch(() => ({}));
+      return Array.isArray(j.versions) ? j.versions : [];
+    }
+    function getBrandDnaForClient() {
+      return window.__SE_BRAND_DNA_MODE_A || null;
+    }
+    function buildStopScrollHookPrompt(basePrompt, brandDnaModeA) {
+      const d = brandDnaModeA || getBrandDnaForClient() || {};
+      const parts = [String(basePrompt || '').trim()];
+      if (!parts[0]) parts[0] = 'Create a high-retention short-form hook.';
+      if (d.dim1_voice) {
+        parts.push('Caption tone (voice spectrum): align diction and pacing with this JSON profile: ' + JSON.stringify(d.dim1_voice).slice(0, 1200));
+      }
+      if (d.dim3_buyer_motivation) {
+        parts.push('Hook angle & CTA structure from buyer motivations: ' + JSON.stringify(d.dim3_buyer_motivation).slice(0, 800));
+      }
+      if (d.dim5_customer_relationship) {
+        parts.push('POV / address style (customer relationship): ' + JSON.stringify(d.dim5_customer_relationship).slice(0, 400));
+      }
+      if (d.dim7_product_relationship) {
+        parts.push('Product framing: ' + JSON.stringify(d.dim7_product_relationship).slice(0, 400));
+      }
+      if (Array.isArray(d.brand_vocabulary) && d.brand_vocabulary.length) {
+        parts.push('Prefer these vocabulary terms when natural: ' + d.brand_vocabulary.slice(0, 12).join(', '));
+      }
+      if (Array.isArray(d.banned_phrases) && d.banned_phrases.length) {
+        parts.push('Avoid entirely: ' + d.banned_phrases.slice(0, 20).join(', '));
+      }
+      if (d.hero_product && (d.hero_product.name || d.hero_product.title)) {
+        parts.push('Hero product when relevant: ' + (d.hero_product.name || d.hero_product.title));
+      }
+      if (d.price_positioning) {
+        parts.push('Price band context: ' + d.price_positioning);
+      }
+      return parts.filter(Boolean).join('\n\n');
+    }
+    window.getBrandDnaForClient = getBrandDnaForClient;
+    window.buildStopScrollHookPrompt = buildStopScrollHookPrompt;
+
+    function _bisHeroBadge(conf) {
+      const c = typeof conf === 'number' ? conf : 0;
+      if (c >= 0.75) return 'Strong signal';
+      if (c >= 0.5) return 'Good signal';
+      return 'Early signal';
+    }
+
+    function _bisVoiceSlidersHtml(dim1) {
+      const v = dim1 && typeof dim1 === 'object' ? dim1 : {};
+      const axes = [
+        { key: 'authority_approachability', left: 'Authority', right: 'Approachability' },
+        { key: 'polished_raw', left: 'Polished', right: 'Raw' },
+        { key: 'earnest_ironic', left: 'Earnest', right: 'Ironic' },
+        { key: 'warm_cool', left: 'Warm', right: 'Cool' },
+      ];
+      return axes.map((ax) => {
+        const node = v[ax.key];
+        const val = node && typeof node.value === 'number' ? Math.max(0, Math.min(1, node.value)) : 0.5;
+        const pct = Math.round(val * 100);
+        return `<div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:rgba(148,163,184,0.65);margin-bottom:4px;"><span>${_escBis(ax.left)}</span><span>${_escBis(ax.right)}</span></div>
+          <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;position:relative;">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,rgba(124,58,237,0.2),rgba(124,58,237,0.55));border-radius:3px;"></div>
+            <div style="position:absolute;left:${pct}%;top:-3px;width:11px;height:11px;border-radius:50%;background:#7C3AED;border:2px solid #0A1628;transform:translateX(-50%);"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function _bisMotivationBars(dim3) {
+      const m = dim3 && typeof dim3 === 'object' ? dim3 : {};
+      const p = m.primary || {};
+      const s = m.secondary || {};
+      const pw = Math.round((typeof p.weight === 'number' ? p.weight : 0.6) * 100);
+      const sw = Math.max(0, 100 - pw);
+      return `<div style="display:grid;gap:8px;">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#e2e8f0;margin-bottom:4px;"><span>${_escBis(p.label || 'Primary')}</span><span>${pw}%</span></div>
+          <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pw}%;background:linear-gradient(90deg,#7C3AED,#A78BFA);"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#94a3b8;margin-bottom:4px;"><span>${_escBis(s.label || 'Secondary')}</span><span>${sw}%</span></div>
+          <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${sw}%;background:rgba(124,58,237,0.25);"></div></div>
+        </div>
+      </div>`;
+    }
+
+    function _bisDimLabel(key) {
+      const map = {
+        dim1_voice: 'Voice spectrum',
+        dim2_aesthetic: 'Aesthetic DNA',
+        dim3_buyer_motivation: 'Buyer motivation',
+        dim4_cultural_position: 'Cultural position',
+        dim5_customer_relationship: 'Customer relationship',
+        dim6_stakes_model: 'Stakes model',
+        dim7_product_relationship: 'Product relationship',
+        dim8_tribal_markers: 'Tribal markers',
+        dim9_trust_architecture: 'Trust architecture',
+        dim10_evolution_vector: 'Evolution vector',
+      };
+      return map[key] || key;
+    }
+
+    function renderBrandIntelligenceHtml(dna) {
+      const unlocks = dna?.mode_b_unlocks && typeof dna.mode_b_unlocks === 'object' ? dna.mode_b_unlocks : {};
+      const dims = dna?.dims || {};
+      const modeB = Array.isArray(dna?.modeBDimensions) ? dna.modeBDimensions : [];
+      const chips = (arr) => (Array.isArray(arr) ? arr : []).slice(0, 24).map((w) =>
+        `<span style="display:inline-flex;padding:5px 10px;border-radius:100px;font-size:0.72rem;font-weight:600;border:1px solid rgba(124,58,237,0.25);background:rgba(124,58,237,0.08);color:#C4B5FD;">${_escBis(w)}</span>`
+      ).join('');
+      const bannedChips = (arr) => (Array.isArray(arr) ? arr : []).slice(0, 24).map((w) =>
+        `<span style="display:inline-flex;padding:5px 10px;border-radius:100px;font-size:0.72rem;font-weight:600;border:1px solid rgba(248,113,113,0.25);background:rgba(248,113,113,0.08);color:#FCA5A5;">${_escBis(w)}</span>`
+      ).join('');
+
+      const d1 = dims.dim1_voice?.mode === 'A' ? dims.dim1_voice.value : null;
+      const d2 = dims.dim2_aesthetic?.mode === 'A' ? dims.dim2_aesthetic.value : null;
+      const d3 = dims.dim3_buyer_motivation?.mode === 'A' ? dims.dim3_buyer_motivation.value : null;
+      const d4 = dims.dim4_cultural_position?.mode === 'A' ? dims.dim4_cultural_position.value : null;
+      const d5 = dims.dim5_customer_relationship?.mode === 'A' ? dims.dim5_customer_relationship.value : null;
+      const d7 = dims.dim7_product_relationship?.mode === 'A' ? dims.dim7_product_relationship.value : null;
+      const hero = dna?.hero_product?.mode === 'A' ? dna.hero_product.value : null;
+      const price = dna?.price_positioning || '';
+
+      const modeAHtml = `
+        ${d1 ? `<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:12px;">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(167,139,250,0.9);margin-bottom:10px;">Voice spectrum</div>
+          ${_bisVoiceSlidersHtml(d1)}
+        </div>` : ''}
+        ${d3 ? `<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:12px;">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(167,139,250,0.9);margin-bottom:10px;">Buyer motivation</div>
+          ${_bisMotivationBars(d3)}
+        </div>` : ''}
+        ${hero ? `<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div><div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(167,139,250,0.9);margin-bottom:6px;">Hero product</div>
+          <div style="font-size:0.95rem;font-weight:700;color:#fff;">${_escBis(hero.name || hero.title || '—')}</div></div>
+          <span style="padding:6px 12px;border-radius:100px;font-size:0.68rem;font-weight:700;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);color:#C4B5FD;">${_escBis(_bisHeroBadge(dna.hero_product?.confidence))}</span>
+        </div>` : ''}
+        ${price ? `<div style="margin-bottom:12px;"><span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(148,163,184,0.7);margin-right:8px;">Price positioning</span>
+          <span style="display:inline-flex;padding:6px 12px;border-radius:8px;font-size:0.75rem;font-weight:700;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;text-transform:capitalize;">${_escBis(price)}</span></div>` : ''}
+        ${dna?.brand_vocabulary?.length ? `<div style="margin-bottom:12px;"><div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(167,139,250,0.9);margin-bottom:8px;">Brand vocabulary</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${chips(dna.brand_vocabulary)}</div></div>` : ''}
+        ${dna?.banned_phrases?.length ? `<div style="margin-bottom:12px;"><div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(248,113,113,0.85);margin-bottom:8px;">Banned phrases</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${bannedChips(dna.banned_phrases)}</div></div>` : ''}
+        ${d2 ? `<div style="font-size:0.75rem;color:rgba(148,163,184,0.85);margin-bottom:8px;"><strong style="color:#cbd5e1;">Aesthetic DNA</strong> — ${_escBis(JSON.stringify(d2).slice(0, 400))}</div>` : ''}
+        ${d4 ? `<div style="font-size:0.75rem;color:rgba(148,163,184,0.85);margin-bottom:8px;"><strong style="color:#cbd5e1;">Cultural position</strong> — ${_escBis(typeof d4 === 'object' ? (d4.value || JSON.stringify(d4)) : d4)}</div>` : ''}
+        ${d5 ? `<div style="font-size:0.75rem;color:rgba(148,163,184,0.85);margin-bottom:8px;"><strong style="color:#cbd5e1;">Customer relationship</strong> — ${_escBis(typeof d5 === 'object' ? (d5.value || JSON.stringify(d5)) : d5)}</div>` : ''}
+        ${d7 ? `<div style="font-size:0.75rem;color:rgba(148,163,184,0.85);margin-bottom:8px;"><strong style="color:#cbd5e1;">Product relationship</strong> — ${_escBis(typeof d7 === 'object' ? (d7.value || JSON.stringify(d7)) : d7)}</div>` : ''}
+      `;
+
+      const modeBHtml = modeB.filter((k) => k.startsWith('dim')).map((k) => {
+        const msg = unlocks[k] || 'Unlocks as your brand signal strengthens.';
+        return `<div style="padding:12px 14px;border-radius:10px;border:1px dashed rgba(255,255,255,0.12);background:rgba(255,255,255,0.02);opacity:0.88;margin-bottom:8px;">
+          <div style="font-size:0.78rem;font-weight:700;color:rgba(226,232,240,0.85);margin-bottom:4px;">${_escBis(_bisDimLabel(k))}</div>
+          <div style="font-size:0.72rem;color:rgba(148,163,184,0.85);line-height:1.45;">${_escBis(msg)}</div>
+        </div>`;
+      }).join('');
+
+      const ver = dna?.version;
+      const created = dna?.created_at ? new Date(dna.created_at) : null;
+      const rel = created && !Number.isNaN(created.getTime()) ? created.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      const trig = dna?.triggered_by || '';
+      const versionPill = ver != null
+        ? `<button type="button" id="bis-version-btn" style="margin-left:auto;padding:4px 10px;border-radius:100px;font-size:0.68rem;font-weight:600;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(226,232,240,0.85);cursor:pointer;">v${ver}${rel ? ' · ' + rel : ''}${trig ? ' · ' + _escBis(trig.replace(/_/g, ' ')) : ''}</button>`
+        : '';
+
+      return `
+        <div style="margin:24px 0 20px;padding:1px;border-radius:16px;background:linear-gradient(135deg,rgba(124,58,237,0.35),rgba(59,130,246,0.15));">
+          <div style="border-radius:15px;background:linear-gradient(165deg,rgba(15,23,42,0.98),rgba(10,15,28,0.98));padding:20px 22px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+              <div style="font-size:0.8rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#A78BFA;">Brand Intelligence</div>
+              ${versionPill}
+            </div>
+            ${modeAHtml || '<div style="font-size:0.8rem;color:rgba(148,163,184,0.75);">No high-confidence dimensions yet — run an analysis below.</div>'}
+            ${modeBHtml ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);"><div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(148,163,184,0.55);margin-bottom:8px;">Still calibrating</div>${modeBHtml}</div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    function renderBrandIntelligenceEmptyHtml() {
+      return `
+        <div style="margin:24px 0 20px;padding:22px;border-radius:16px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);">
+          <div style="font-size:0.8rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#A78BFA;margin-bottom:6px;">Brand Intelligence</div>
+          <p style="font-size:0.85rem;color:var(--color-text-muted);margin:0 0 16px;max-width:520px;line-height:1.55;">We ingest your Shopify catalog, storefront, and optional competitors to build a 10-dimension Brand Vector. Phase 2 dimensions stay locked until your activity unlocks them.</p>
+          <div style="display:grid;gap:8px;margin-bottom:14px;">
+            <input type="url" id="bis-comp-1" placeholder="Competitor URL (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.2);color:#fff;font-size:0.8rem;box-sizing:border-box;" />
+            <input type="url" id="bis-comp-2" placeholder="Competitor URL (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.2);color:#fff;font-size:0.8rem;box-sizing:border-box;" />
+            <input type="url" id="bis-comp-3" placeholder="Competitor URL (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.2);color:#fff;font-size:0.8rem;box-sizing:border-box;" />
+          </div>
+          <button type="button" id="bis-analyze-btn" style="padding:12px 22px;border-radius:10px;border:none;background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#0A1628;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:var(--font-body);">Analyze Your Brand</button>
+          <div id="bis-run-status" style="margin-top:12px;font-size:0.75rem;color:rgba(148,163,184,0.75);min-height:1.2em;"></div>
+        </div>`;
+    }
+
+    async function mountBrandIntelligencePanel() {
+      const root = document.getElementById('bis-brand-root');
+      if (!root) return;
+      root.innerHTML = '<div style="font-size:0.8rem;color:rgba(148,163,184,0.7);">Loading Brand Intelligence…</div>';
+      try {
+        const j = await fetchBrandDnaLatest();
+        if (j.exists && j.dna) {
+          window.__SE_BRAND_DNA_MODE_A = await (async () => {
+            const d = j.dna;
+            const out = {};
+            const keys = ['dim1_voice','dim2_aesthetic','dim3_buyer_motivation','dim4_cultural_position','dim5_customer_relationship','dim7_product_relationship'];
+            keys.forEach((k) => { if (d.dims?.[k]?.mode === 'A') out[k] = d.dims[k].value; });
+            if (d.hero_product?.mode === 'A') out.hero_product = d.hero_product.value;
+            out.brand_vocabulary = d.brand_vocabulary;
+            out.banned_phrases = d.banned_phrases;
+            out.competitor_gaps = d.competitor_gaps;
+            out.price_positioning = d.price_positioning;
+            out.version = d.version;
+            return out;
+          })();
+          root.innerHTML = renderBrandIntelligenceHtml(j.dna) + `
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+              <button type="button" id="bis-refresh-btn" style="padding:10px 18px;border-radius:10px;border:1px solid rgba(124,58,237,0.35);background:rgba(124,58,237,0.08);color:#C4B5FD;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:var(--font-body);">Refresh analysis</button>
+            </div>
+            <div id="bis-refresh-diff" style="font-size:0.72rem;color:rgba(148,163,184,0.8);min-height:1em;"></div>`;
+          _bisVersionList = await fetchBrandDnaVersions();
+          document.getElementById('bis-version-btn')?.addEventListener('click', () => {
+            if (!_bisVersionList.length) { showToast('No version history yet'); return; }
+            const lines = _bisVersionList.map((v) => `v${v.version} — ${v.created_at || ''} — ${(v.triggered_by || '').replace(/_/g, ' ')}`).join('\n');
+            alert(lines);
+          });
+          document.getElementById('bis-refresh-btn')?.addEventListener('click', async () => {
+            if (!confirm('Run a fresh Brand Intelligence analysis? This uses a paid AI call.')) return;
+            const st = document.getElementById('bis-refresh-diff');
+            if (st) st.textContent = 'Running analysis…';
+            try {
+              const prev = j.dna;
+              const r = await apiFetch('/api/brand-dna/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ competitorUrls: [] }) });
+              const out = await r.json();
+              if (!r.ok || !out.ok) throw new Error(out.error || 'failed');
+              const changes = out.changes || [];
+              if (st) {
+                st.textContent = changes.length
+                  ? 'Changes: ' + changes.map((c) => c.field).join(', ')
+                  : 'Analysis complete — see updated panels above.';
+              }
+              await mountBrandIntelligencePanel();
+            } catch {
+              if (st) st.textContent = 'Refresh failed — try again.';
+              showToast('Brand analysis failed', 'error');
+            }
+          });
+        } else {
+          window.__SE_BRAND_DNA_MODE_A = null;
+          root.innerHTML = renderBrandIntelligenceEmptyHtml();
+          document.getElementById('bis-analyze-btn')?.addEventListener('click', async () => {
+            const urls = [1, 2, 3].map((n) => document.getElementById('bis-comp-' + n)?.value?.trim()).filter(Boolean);
+            const status = document.getElementById('bis-run-status');
+            const btn = document.getElementById('bis-analyze-btn');
+            if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; }
+            const steps = ['Ingesting your Shopify catalog…', 'Analyzing voice and positioning…', 'Building your Brand Intelligence…'];
+            let i = 0;
+            if (status) status.textContent = steps[0];
+            const tick = setInterval(() => { i = Math.min(i + 1, steps.length - 1); if (status) status.textContent = steps[i]; }, 2200);
+            try {
+              const r = await apiFetch('/api/brand-dna/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ competitorUrls: urls, triggeredBy: 'manual_refresh' }),
+              });
+              const out = await r.json();
+              clearInterval(tick);
+              if (!r.ok || !out.ok) throw new Error(out.error || 'failed');
+              showToast(out.debounced ? 'Using recent analysis (within the last hour).' : 'Brand Intelligence ready.');
+              await mountBrandIntelligencePanel();
+            } catch {
+              clearInterval(tick);
+              if (status) status.textContent = 'Something went wrong — try again.';
+              showToast('Analysis failed', 'error');
+            } finally {
+              if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+            }
+          });
+        }
+      } catch {
+        root.innerHTML = '<div style="font-size:0.8rem;color:#fca5a5;">Could not load Brand Intelligence.</div>';
+      }
+    }
+
     // ━━━ Brand Voice Page ━━━
     function renderBrandVoicePage(data) {
       const content = document.getElementById('dash-content');
@@ -6045,6 +6339,7 @@
           ${getUpgradeOverlay('Edit & Refine Your Brand Voice', 'Fine-tune your tone, phrases, do/don\'t rules, and emoji preferences. Your AI learns from every edit you make.', ['Edit tone adjectives & writing style', 'Set preferred and avoided phrases', 'Control emoji usage & slang', 'AI learns from your corrections'])}
         </div>`;
         if (typeof lucide !== 'undefined') lucide.createIcons();
+        setTimeout(() => { mountBrandIntelligencePanel(); }, 50);
         return;
       }
 
@@ -6079,6 +6374,8 @@
             ${bvIsActive ? 'Active' : 'Calibrating'}
           </div>
         </div>
+
+        <div id="bis-brand-root"></div>
 
         <!-- Archetype hero card — PREMIUM -->
         ${profile?.archetype ? `
@@ -6330,6 +6627,7 @@
       setTimeout(() => { 
         if (typeof lucide !== 'undefined') lucide.createIcons();
         initVoiceWorkshop();
+        mountBrandIntelligencePanel();
       }, 100);
     }
 
@@ -9318,10 +9616,16 @@
     // is additive so QA-gated paths opt-in by calling this function.
     async function submitVideoGenerationQA(opts) {
       const options = opts || {};
+      const basePrompt = options.prompt || options.creativeDir || '';
+      const enriched =
+        (options.template || 'stop_scroll_hook') === 'stop_scroll_hook' && typeof buildStopScrollHookPrompt === 'function'
+          ? buildStopScrollHookPrompt(basePrompt, getBrandDnaForClient())
+          : basePrompt;
       const body = {
         imageUrl: options.imageUrl || options.image_url || '',
         productTitle: options.productTitle || options.product_title || '',
         productPrice: options.productPrice || '',
+        prompt: enriched || undefined,
         template: options.template || 'stop_scroll_hook',
         model: options.model || 'higgsfield-kling-3-pro',
         max_attempts: options.max_attempts || 2,
