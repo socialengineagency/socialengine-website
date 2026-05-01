@@ -3146,6 +3146,68 @@
       }
     };
 
+    const _publishPollTimers = {};
+    function _publishPlatformLabel(platform) {
+      const p = String(platform || 'instagram').toLowerCase();
+      if (p === 'tiktok') return 'TikTok';
+      if (p === 'facebook') return 'Facebook';
+      return 'Instagram';
+    }
+    function clearPublishStatusPoll(contentRecordId) {
+      const key = String(contentRecordId || '');
+      if (_publishPollTimers[key]) {
+        clearInterval(_publishPollTimers[key]);
+        delete _publishPollTimers[key];
+      }
+    }
+    /** SOC-10: poll publish job after approve when server starts Upload-Post publish. */
+    function startPublishStatusPoll(contentRecordId, platform, options) {
+      const cid = String(contentRecordId || '').trim();
+      if (!cid) return;
+      clearPublishStatusPoll(cid);
+      const label = _publishPlatformLabel(platform);
+      if (options && options.toastPublishing) {
+        showToast(`Publishing to ${label}…`);
+      }
+      let ticks = 0;
+      const maxTicks = 200;
+      _publishPollTimers[cid] = setInterval(async () => {
+        ticks++;
+        if (ticks > maxTicks) {
+          clearPublishStatusPoll(cid);
+          return;
+        }
+        try {
+          const res = await apiFetch(`/api/publish/jobs/${encodeURIComponent(cid)}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const job = data.job;
+          if (!job || !job.status) return;
+          const st = String(job.status).toLowerCase();
+          if (st === 'queued' || st === 'publishing') return;
+          clearPublishStatusPoll(cid);
+          const postId = job.post_id ? String(job.post_id) : '';
+          if (st === 'published') {
+            const line = postId
+              ? `Posted to ${label} ✅ ${postId}`
+              : `Posted to ${label} ✅`;
+            showToast(line);
+            const logicalId = options && options.logicalPostId;
+            const local = logicalId
+              ? studioPostsList.find((p) => p.id === logicalId)
+              : studioPostsList.find((p) => p.id === cid || p.airtable_record_id === cid);
+            if (local) local.status = 'Published';
+            await refreshClientDataSnapshot();
+            renderStudioModalContent();
+            if (clientData) renderContentPage(clientData);
+            updateSidebarCredits();
+          } else if (st === 'failed') {
+            showToast('Publish failed — we\'ll retry automatically');
+          }
+        } catch { /* ignore transient errors */ }
+      }, 3000);
+    }
+
     window.studioApprove = async function(postId, btn) {
       const captionEl = document.querySelector(`.studio-modal__caption-area[data-post-id="${postId}"]`);
       const editedCaption = captionEl ? captionEl.value.trim() : '';
@@ -3157,23 +3219,37 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ postId, clientEmail, clientHash, editedCaption }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showToast(data.error || 'Failed to approve — try again');
+          btn.textContent = 'Approve';
+          btn.disabled = false;
+          return;
+        }
         const newStatus = data.status || 'Approved';
         // Update post in list
         const post = studioPostsList.find(p => p.id === postId);
         if (post) post.status = newStatus;
-        showToast(newStatus === 'Scheduled' ? '🗓️ Post scheduled!' : '✓ Post approved!');
+        const pubPlat = data.publish && data.publish.platform;
+        if (data.publishStarted && data.publish && data.publish.content_id) {
+          startPublishStatusPoll(data.publish.content_id, pubPlat, { logicalPostId: postId });
+        } else {
+          showToast(newStatus === 'Scheduled' ? '🗓️ Post scheduled!' : '✓ Post approved!');
+        }
         // Show success overlay before re-rendering
         const modalBody = document.getElementById('studio-modal-body');
         const overlay = document.createElement('div');
         overlay.className = 'approve-success-overlay';
+        const subLine = data.publishStarted
+          ? `Publishing to ${_publishPlatformLabel(pubPlat)}…`
+          : 'Queued for publishing';
         overlay.innerHTML = `
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round">
             <circle cx="12" cy="12" r="10" opacity="0.3"/>
             <polyline class="approve-success-overlay__check" points="20 6 9 17 4 12"/>
           </svg>
           <div style="font-size:1.1rem;font-weight:700;color:#7C3AED;">Post Approved!</div>
-          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);">Queued for publishing</div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);">${subLine}</div>
         `;
         if (modalBody) {
           modalBody.style.position = 'relative';
@@ -3186,7 +3262,7 @@
           updateSidebarCredits();
         }, 1500);
       } catch {
-        btn.textContent = '✓ Approve';
+        btn.textContent = 'Approve';
         btn.disabled = false;
       }
     };
@@ -3202,11 +3278,24 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ postId, clientEmail, clientHash }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showToast(data.error || 'Failed to approve — try again');
+          btn.innerHTML = origHTML;
+          btn.disabled = false;
+          return;
+        }
         const newStatus = data.status || 'Approved';
         const post = studioPostsList.find(p => p.id === postId);
         if (post) post.status = newStatus;
-        showToast(newStatus === 'Scheduled' ? '🗓️ Post scheduled!' : '✓ Post approved!');
+        if (data.publishStarted && data.publish && data.publish.content_id) {
+          startPublishStatusPoll(data.publish.content_id, data.publish.platform, {
+            toastPublishing: true,
+            logicalPostId: postId,
+          });
+        } else {
+          showToast(newStatus === 'Scheduled' ? '🗓️ Post scheduled!' : '✓ Post approved!');
+        }
         // Fix 4: Green checkmark flash after quick approve
         btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
         btn.style.background = 'rgba(124,58,237,0.15)';
