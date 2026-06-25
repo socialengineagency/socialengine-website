@@ -2426,13 +2426,13 @@
                   <a href="#" class="login-forgot" id="forgot-link" onclick="event.preventDefault(); document.getElementById('forgot-panel').style.display=document.getElementById('forgot-panel').style.display==='block'?'none':'block'; return false;">Forgot password?</a>
                   <div id="forgot-panel" style="display:none;margin-top:12px;">
                     <div id="forgot-success" style="display:none;padding:14px 16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;font-size:0.8125rem;color:#10B981;line-height:1.5;">Check your email — a reset link is on its way. It expires in 1 hour.</div>
-                    <form id="forgot-form" style="display:block;">
+                    <div id="forgot-form" style="display:block;">
                       <div style="display:flex;gap:8px;align-items:stretch;">
-                        <input type="email" id="forgot-email" placeholder="your@email.com" autocomplete="email" required style="flex:1;padding:0.625rem 0.875rem;font-size:0.8125rem;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:8px;color:var(--color-text);outline:none;font-family:var(--font-body);">
-                        <button type="submit" id="forgot-btn" style="padding:0.625rem 1rem;background:var(--color-primary);color:#fff;font-size:0.8125rem;font-weight:600;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;font-family:var(--font-body);">Send link</button>
+                        <input type="email" id="forgot-email" placeholder="your@email.com" autocomplete="email" style="flex:1;padding:0.625rem 0.875rem;font-size:0.8125rem;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:8px;color:var(--color-text);outline:none;font-family:var(--font-body);">
+                        <button type="button" id="forgot-btn" style="padding:0.625rem 1rem;background:var(--color-primary);color:#fff;font-size:0.8125rem;font-weight:600;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;font-family:var(--font-body);">Send link</button>
                       </div>
                       <div id="forgot-error" style="display:none;margin-top:8px;font-size:0.75rem;color:#f87171;"></div>
-                    </form>
+                    </div>
                   </div>
                 </div>
                 <button type="submit" class="login-btn" id="login-btn"><span class="login-btn__spinner"></span><span class="login-btn__text">Sign In</span></button>
@@ -3936,24 +3936,27 @@
       const forgotBtn   = document.getElementById('forgot-btn');
       const forgotErr   = document.getElementById('forgot-error');
       const forgotOk    = document.getElementById('forgot-success');
-      if (!forgotForm) return;
-      forgotForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        forgotErr.style.display = 'none';
+      if (!forgotBtn) return;
+      forgotBtn.addEventListener('click', async () => {
+        const emailVal = (forgotEmail?.value || '').trim();
+        if (!emailVal || !emailVal.includes('@')) {
+          if (forgotErr) { forgotErr.textContent = 'Enter a valid email address.'; forgotErr.style.display = 'block'; }
+          return;
+        }
+        if (forgotErr) forgotErr.style.display = 'none';
         forgotBtn.disabled = true;
         forgotBtn.textContent = 'Sending...';
         try {
-          const r = await fetch(`${API}/api/forgot-password`, {
+          await fetch(`${API}/api/forgot-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: forgotEmail.value.trim() }),
+            body: JSON.stringify({ email: emailVal }),
           });
           // Always show success — no enumeration
-          forgotForm.style.display = 'none';
-          forgotOk.style.display = 'block';
+          if (forgotForm) forgotForm.style.display = 'none';
+          if (forgotOk) forgotOk.style.display = 'block';
         } catch (err) {
-          forgotErr.textContent = 'Could not send reset email. Please try again.';
-          forgotErr.style.display = 'block';
+          if (forgotErr) { forgotErr.textContent = 'Could not send reset email. Please try again.'; forgotErr.style.display = 'block'; }
           forgotBtn.disabled = false;
           forgotBtn.textContent = 'Send link';
         }
