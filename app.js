@@ -596,14 +596,6 @@ function generateIdempotencyToken() {
           idempotency_token: idempotencyToken,
         };
 
-        // Fire /api/onboard in parallel (non-blocking) — backend alias merged in
-        // shopify-app PR #2 creates an idempotent Airtable record by email.
-        fetch(`${API_BASE}/api/onboard`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(sharedPayload),
-        }).catch(() => {});
-
         const data = await safeWrite(`${API_BASE}/api/audit`, sharedPayload);
 
         stopAnimation();
