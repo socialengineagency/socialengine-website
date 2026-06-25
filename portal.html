@@ -5889,6 +5889,38 @@
       if (el) { el.textContent = status; el.style.color = color; el.style.background = color + '15'; }
     }
 
+    function downloadProxiedVideo(videoUrl, label) {
+      // Fetch through proxy (no auth headers needed — URL is unguessable)
+      // then trigger a blob download so the file saves locally
+      const btn = event?.target?.closest('button');
+      if (btn) { btn.textContent = 'Downloading…'; btn.disabled = true; }
+      fetch(videoUrl)
+        .then(r => { if (!r.ok) throw new Error('fetch ' + r.status); return r.blob(); })
+        .then(blob => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = (label || 'video').replace(/[^a-z0-9_\-]/gi,'_') + '.mp4';
+          document.body.appendChild(a); a.click();
+          setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+          if (btn) { btn.textContent = 'Download'; btn.disabled = false; }
+        })
+        .catch(e => {
+          if (btn) { btn.textContent = 'Download'; btn.disabled = false; }
+          showToast('Download failed — try right-clicking and Save As');
+          // Fallback: open directly
+          window.open(videoUrl, '_blank');
+        });
+    }
+
+    function previewProxiedVideo(videoUrl) {
+      // Open in a simple overlay rather than a new tab (avoids auth/referer issues)
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+      overlay.innerHTML = '<video src="' + videoUrl + '" controls autoplay style="max-height:90vh;max-width:90vw;border-radius:12px;"></video>';
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+    }
+
     function updateGenComplete(requestId, videoUrl, label) {
       const item = document.getElementById('vs-gen-' + requestId);
       if (!item) return;
@@ -5901,11 +5933,11 @@
           <div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:2px;">Ready to download</div>
         </div>
         <div style="display:flex;gap:8px;">
-          <a href="${videoUrl}" download style="font-size:0.72rem;font-weight:600;color:#7C3AED;padding:6px 12px;background:rgba(124,58,237,0.08);border-radius:6px;text-decoration:none;display:flex;align-items:center;gap:4px;">
+          <button onclick="downloadProxiedVideo('${videoUrl}', '${label.replace(/'/g,'')}');" style="font-size:0.72rem;font-weight:600;color:#7C3AED;padding:6px 12px;background:rgba(124,58,237,0.08);border-radius:6px;text-decoration:none;display:flex;align-items:center;gap:4px;border:none;cursor:pointer;font-family:var(--font-body);">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download
-          </a>
-          <button onclick="window.open('${videoUrl}','_blank');" style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.5);padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;gap:4px;">
+          </button>
+          <button onclick="previewProxiedVideo('${videoUrl}');" style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.5);padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;gap:4px;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Preview
           </button>
