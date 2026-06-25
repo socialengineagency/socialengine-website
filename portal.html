@@ -2423,12 +2423,44 @@
                 </div>
                 <div class="login-extras">
                   <label class="login-remember"><input type="checkbox" checked><span>Remember me</span></label>
-                  <a href="#" class="login-forgot" onclick="event.preventDefault(); document.getElementById('forgot-msg').style.display='block'; return false;">Forgot password?</a>
-                  <div id="forgot-msg" style="display:none;margin-top:12px;padding:14px 16px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.12);border-radius:8px;font-size:0.8125rem;color:var(--color-text);line-height:1.5;">Email <a href="mailto:hello@socialengine.agency" style="color:var(--color-primary);font-weight:600;">hello@socialengine.agency</a> and we'll reset your password within 24 hours.</div>
+                  <a href="#" class="login-forgot" id="forgot-link" onclick="event.preventDefault(); document.getElementById('forgot-panel').style.display=document.getElementById('forgot-panel').style.display==='block'?'none':'block'; return false;">Forgot password?</a>
+                  <div id="forgot-panel" style="display:none;margin-top:12px;">
+                    <div id="forgot-success" style="display:none;padding:14px 16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;font-size:0.8125rem;color:#10B981;line-height:1.5;">Check your email — a reset link is on its way. It expires in 1 hour.</div>
+                    <form id="forgot-form" style="display:block;">
+                      <div style="display:flex;gap:8px;align-items:stretch;">
+                        <input type="email" id="forgot-email" placeholder="your@email.com" autocomplete="email" required style="flex:1;padding:0.625rem 0.875rem;font-size:0.8125rem;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:8px;color:var(--color-text);outline:none;font-family:var(--font-body);">
+                        <button type="submit" id="forgot-btn" style="padding:0.625rem 1rem;background:var(--color-primary);color:#fff;font-size:0.8125rem;font-weight:600;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;font-family:var(--font-body);">Send link</button>
+                      </div>
+                      <div id="forgot-error" style="display:none;margin-top:8px;font-size:0.75rem;color:#f87171;"></div>
+                    </form>
+                  </div>
                 </div>
                 <button type="submit" class="login-btn" id="login-btn"><span class="login-btn__spinner"></span><span class="login-btn__text">Sign In</span></button>
               </form>
               <p class="login-footer">New client? <a href="index.html#ai-audit">Try a free audit &rarr;</a></p>
+            </div>
+
+            <!-- Password reset view — shown when ?reset=TOKEN in URL -->
+            <div id="pw-reset-view" class="login-card" style="display:none;max-width:400px;margin:0 auto;">
+              <h2 class="login-card__title">Set new password</h2>
+              <p class="login-card__subtitle" style="margin-bottom:1.5rem;">Choose a strong password for your SocialEngine account.</p>
+              <div id="pw-reset-error" class="login-error" role="alert"></div>
+              <div id="pw-reset-success" style="display:none;padding:14px 16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;font-size:0.875rem;color:#10B981;line-height:1.5;margin-bottom:1.25rem;">Password updated! Redirecting you to sign in...</div>
+              <form id="pw-reset-form">
+                <div class="login-field">
+                  <label class="login-field__label" for="pw-reset-new">New password</label>
+                  <div class="login-field__input-wrap">
+                    <input type="password" id="pw-reset-new" class="login-field__input" placeholder="Min. 8 characters" autocomplete="new-password" required minlength="8">
+                  </div>
+                </div>
+                <div class="login-field">
+                  <label class="login-field__label" for="pw-reset-confirm">Confirm password</label>
+                  <div class="login-field__input-wrap">
+                    <input type="password" id="pw-reset-confirm" class="login-field__input" placeholder="Repeat your new password" autocomplete="new-password" required minlength="8">
+                  </div>
+                </div>
+                <button type="submit" class="login-btn" id="pw-reset-btn"><span class="login-btn__spinner"></span><span class="login-btn__text">Update Password</span></button>
+              </form>
             </div>
             <div class="features-showcase">
               <h2 class="features-showcase__title">Your Command Center</h2>
@@ -3896,6 +3928,116 @@
         form.addEventListener('submit', onSubmit);
       });
     }
+
+    // ━━━ Forgot password — inline request form ━━━
+    (function () {
+      const forgotForm  = document.getElementById('forgot-form');
+      const forgotEmail = document.getElementById('forgot-email');
+      const forgotBtn   = document.getElementById('forgot-btn');
+      const forgotErr   = document.getElementById('forgot-error');
+      const forgotOk    = document.getElementById('forgot-success');
+      if (!forgotForm) return;
+      forgotForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        forgotErr.style.display = 'none';
+        forgotBtn.disabled = true;
+        forgotBtn.textContent = 'Sending...';
+        try {
+          const r = await fetch(`${API}/api/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: forgotEmail.value.trim() }),
+          });
+          // Always show success — no enumeration
+          forgotForm.style.display = 'none';
+          forgotOk.style.display = 'block';
+        } catch (err) {
+          forgotErr.textContent = 'Could not send reset email. Please try again.';
+          forgotErr.style.display = 'block';
+          forgotBtn.disabled = false;
+          forgotBtn.textContent = 'Send link';
+        }
+      });
+    })();
+
+    // ━━━ Password reset confirmation — triggered when ?reset=TOKEN&email=EMAIL in URL ━━━
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const resetToken = params.get('reset');
+      const resetEmail = params.get('email');
+      if (!resetToken || !resetEmail) return;
+
+      // Hide login card, show reset card
+      const loginCard = document.querySelector('.login-card');
+      if (loginCard) loginCard.style.display = 'none';
+      const resetView = document.getElementById('pw-reset-view');
+      if (resetView) resetView.style.display = 'block';
+
+      const resetForm   = document.getElementById('pw-reset-form');
+      const resetBtn    = document.getElementById('pw-reset-btn');
+      const resetErr    = document.getElementById('pw-reset-error');
+      const resetOk     = document.getElementById('pw-reset-success');
+      const resetNew    = document.getElementById('pw-reset-new');
+      const resetConf   = document.getElementById('pw-reset-confirm');
+      if (!resetForm) return;
+
+      resetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        resetErr.classList.remove('visible');
+        resetErr.style.display = 'none';
+
+        const newPw   = resetNew.value;
+        const confPw  = resetConf.value;
+        if (newPw.length < 8) {
+          resetErr.textContent = 'Password must be at least 8 characters.';
+          resetErr.classList.add('visible');
+          resetErr.style.display = 'block';
+          return;
+        }
+        if (newPw !== confPw) {
+          resetErr.textContent = 'Passwords do not match.';
+          resetErr.classList.add('visible');
+          resetErr.style.display = 'block';
+          return;
+        }
+
+        resetBtn.classList.add('loading');
+        try {
+          const r = await fetch(`${API}/api/reset-password-confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: resetEmail, token: resetToken, new_password: newPw }),
+          });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok || !d.success) {
+            resetErr.textContent = d.error || 'Reset failed. Please request a new link.';
+            resetErr.classList.add('visible');
+            resetErr.style.display = 'block';
+            resetBtn.classList.remove('loading');
+            return;
+          }
+          // Success
+          resetForm.style.display = 'none';
+          resetOk.style.display = 'block';
+          // Pre-fill the login form and redirect after 2.5s
+          setTimeout(() => {
+            const loginCard2 = document.querySelector('.login-card');
+            if (loginCard2) loginCard2.style.display = '';
+            if (resetView) resetView.style.display = 'none';
+            const emailInput = document.getElementById('login-email');
+            if (emailInput) emailInput.value = resetEmail;
+            // Clean URL
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+          }, 2500);
+        } catch (err) {
+          resetErr.textContent = 'Network error. Please try again.';
+          resetErr.classList.add('visible');
+          resetErr.style.display = 'block';
+          resetBtn.classList.remove('loading');
+        }
+      });
+    })();
 
     // ━━━ Login ━━━
     const loginForm = document.getElementById('login-form');
