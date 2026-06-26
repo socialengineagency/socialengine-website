@@ -11627,7 +11627,7 @@
     const AD_FORMATS = [
       { id: 'feed-square', name: 'Feed Post', dims: '1080×1080', ratio: '1:1', icon: 'square', desc: 'Square feed ad for Instagram & Facebook', platforms: ['meta', 'instagram'] },
       { id: 'feed-portrait', name: 'Feed Portrait', dims: '1080×1350', ratio: '4:5', icon: 'smartphone', desc: 'Taller format, more screen real estate on mobile', platforms: ['meta', 'instagram'] },
-      { id: 'story', name: 'Story / Reel', dims: '1080×1920', ratio: '9:16', icon: 'rectangle-vertical', desc: 'Full-screen vertical for Stories, Reels, TikTok', platforms: ['meta', 'instagram', 'tiktok'] },
+      { id: 'story', name: 'Story / Reel', dims: '1080×1920', ratio: '9:16', icon: 'rectangle-vertical', desc: 'Full-screen vertical for Stories, Reels, TikTok', platforms: ['meta', 'instagram', 'tiktok'], isVideo: true },
       { id: 'landscape', name: 'Landscape', dims: '1200×628', ratio: '1.91:1', icon: 'monitor', desc: 'Standard landscape for Facebook feed + link ads', platforms: ['meta'] },
       { id: 'carousel', name: 'Carousel Set', dims: '1080×1080', ratio: '1:1', icon: 'layers', desc: 'Generate 3-5 carousel slides with cohesive story', platforms: ['meta', 'instagram'] },
       { id: 'pinterest', name: 'Pinterest Pin', dims: '1000×1500', ratio: '2:3', icon: 'image', desc: 'Optimized tall format for Pinterest ads', platforms: ['pinterest'] },
@@ -12042,6 +12042,70 @@
         }
       } catch(e) {}
 
+      // VIDEO BRANCH — Story/Reel format triggers real video generation
+      if (format.isVideo) {
+        try {
+          // Step 1: generate ad copy in parallel while video kicks off
+          let adCopy = null;
+          const copyPromise = fetch(API + '/api/ai/generate-ad-copy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+            body: JSON.stringify({ product: _adSelectedProduct, format, platform: platform.name, tone: tone.prompt, brand_voice: brandVoice, custom_prompt: customPrompt })
+          }).then(r => r.ok ? r.json() : null).catch(() => null);
+
+          // Step 2: build video prompt from ad intent
+          const toneDesc = tone.label || 'engaging';
+          const videoPrompt = [
+            customPrompt || '',
+            _adSelectedProduct.title + (toneDesc ? ' — ' + toneDesc + ' energy' : ''),
+            brandVoice ? brandVoice.slice(0, 120) : '',
+          ].filter(Boolean).join('. ');
+
+          // Step 3: kick off video generation
+          const vidRes = await fetch(API + '/api/studio/generate-video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-client-email': clientEmail, 'x-client-hash': clientHash },
+            body: JSON.stringify({
+              imageUrl: _adSelectedProduct.image,
+              prompt: videoPrompt,
+              mode: 'image-to-video',
+              aspectRatio: '9:16',
+              duration: 5,
+              productTitle: _adSelectedProduct.title,
+              productPrice: _adSelectedProduct.price || '',
+            })
+          });
+
+          const vidData = await vidRes.json().catch(() => ({}));
+          if (!vidRes.ok || !vidData.request_id) {
+            const errMsg = vidData.error || 'Video generation failed.';
+            showToast(errMsg);
+            _adGenerating = false;
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            return;
+          }
+
+          // Step 4: resolve ad copy (should be ready by now)
+          adCopy = await copyPromise;
+          if (!adCopy) adCopy = generateAdCopyLocal(_adSelectedProduct, format, tone, platform);
+
+          // Step 5: show polling UI
+          renderAdVideoOutput(adCopy, format, vidData.request_id, _adSelectedProduct.title);
+
+          // Step 6: poll for video completion
+          adPollForVideo(vidData.request_id);
+
+        } catch(err) {
+          console.error('Ad video generation failed:', err);
+          showToast('Video generation failed — please try again');
+        }
+        _adGenerating = false;
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        return;
+      }
+
       try {
         // Generate ad copy via backend AI
         const copyRes = await fetch(API + '/api/ai/generate-ad-copy', {
@@ -12114,6 +12178,105 @@
         description: title + (price ? ' | ' + price : '') + ' | Free shipping on orders over $75',
         hashtags: '#' + title.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) + ' #NewArrivals #ShopNow #Fashion'
       };
+    }
+
+    // Render the video ad output panel with a spinner while generation runs
+    function renderAdVideoOutput(copy, format, requestId, productTitle) {
+      const output = document.getElementById('ad-output-area');
+      const grid = document.getElementById('ad-output-grid');
+      if (!output || !grid) return;
+
+      grid.innerHTML = `
+        <!-- Video Preview (polling) -->
+        <div>
+          <div id="ad-video-preview" style="aspect-ratio:9/16;max-height:500px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.15);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+            <div style="width:40px;height:40px;border:3px solid rgba(124,58,237,0.2);border-top-color:#7C3AED;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+            <div style="font-size:0.82rem;color:rgba(255,255,255,0.5);font-weight:500;" id="ad-video-status-text">Generating your reel...</div>
+            <div style="font-size:0.7rem;color:rgba(255,255,255,0.25);">Usually takes 30–90 seconds. Uses 1 video credit.</div>
+          </div>
+          <div id="ad-video-download-row" style="display:none;margin-top:12px;gap:8px;display:none;">
+            <button id="ad-video-dl-btn" style="width:100%;padding:8px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:#7C3AED;font-size:0.72rem;font-weight:600;cursor:pointer;font-family:var(--font-body);">⬇️ Download Reel (1080×1920)</button>
+          </div>
+          <p style="font-size:0.65rem;color:rgba(255,255,255,0.2);margin:8px 0 0;text-align:center;font-family:var(--font-body);">Format: Story / Reel (1080×1920)</p>
+        </div>
+
+        <!-- Copy -->
+        <div>
+          <div class="ad-copy-output">
+            <div class="ad-copy-field">
+              <label>Headline</label>
+              <textarea id="ad-out-headline" rows="2">${copy.headline || ''}</textarea>
+              ${copy.headline_options ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">' + copy.headline_options.map(h => '<button onclick="document.getElementById(\'ad-out-headline\').value=this.textContent" style="padding:3px 8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:4px;color:rgba(255,255,255,0.4);font-size:0.62rem;cursor:pointer;font-family:var(--font-body);">' + h + '</button>').join('') + '</div>' : ''}
+            </div>
+            <div class="ad-copy-field">
+              <label>Primary Text</label>
+              <textarea id="ad-out-primary" rows="4">${copy.primary_text || ''}</textarea>
+            </div>
+            <div class="ad-copy-field">
+              <label>CTA Button</label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                ${(copy.cta_options || ['Shop Now']).map(ct => '<button onclick="this.parentElement.querySelectorAll(\'button\').forEach(b=>{b.style.background=\'rgba(255,255,255,0.03)\';b.style.borderColor=\'rgba(255,255,255,0.06)\';b.style.color=\'rgba(255,255,255,0.4)\'});this.style.background=\'rgba(139,92,246,0.12)\';this.style.borderColor=\'rgba(139,92,246,0.3)\';this.style.color=\'rgba(139,92,246,0.9)\'" style="padding:5px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:6px;color:rgba(255,255,255,0.4);font-size:0.72rem;font-weight:600;cursor:pointer;font-family:var(--font-body);">' + ct + '</button>').join('')}
+              </div>
+            </div>
+            <div class="ad-copy-field">
+              <label>Description / Link Description</label>
+              <textarea id="ad-out-desc" rows="2">${copy.description || ''}</textarea>
+            </div>
+            <div class="ad-copy-field">
+              <label>Hashtags</label>
+              <textarea id="ad-out-hashtags" rows="1">${copy.hashtags || ''}</textarea>
+            </div>
+          </div>
+        </div>
+      `;
+
+      output.style.display = 'block';
+      output.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Poll video status and swap spinner → video player when done
+    async function adPollForVideo(requestId) {
+      const maxPolls = 60; // 3 min max
+      let polls = 0;
+      while (polls < maxPolls) {
+        await new Promise(r => setTimeout(r, 3000));
+        polls++;
+        try {
+          const r = await fetch(`${API}/api/studio/video-status/${requestId}`, {
+            headers: { 'x-client-email': clientEmail, 'x-client-hash': clientHash }
+          });
+          const d = await r.json().catch(() => ({}));
+          const statusEl = document.getElementById('ad-video-status-text');
+
+          if (d.status === 'completed' && d.video_url) {
+            // Swap spinner for video player
+            const preview = document.getElementById('ad-video-preview');
+            if (preview) {
+              preview.innerHTML = `<video src="${d.video_url}" controls autoplay muted loop playsinline style="width:100%;height:100%;border-radius:12px;object-fit:cover;"></video>`;
+              preview.style.background = 'none';
+              preview.style.border = 'none';
+            }
+            // Show download button
+            const dlRow = document.getElementById('ad-video-download-row');
+            const dlBtn = document.getElementById('ad-video-dl-btn');
+            if (dlRow) dlRow.style.display = 'flex';
+            if (dlBtn) dlBtn.onclick = () => downloadProxiedVideo(d.video_url, 'ad-reel');
+            showToast('Your reel is ready!');
+            return;
+          } else if (d.status === 'failed') {
+            if (statusEl) statusEl.textContent = 'Generation failed — please try again.';
+            showToast('Video generation failed');
+            return;
+          } else {
+            // Still processing — update status text
+            const elapsed = polls * 3;
+            if (statusEl) statusEl.textContent = `Generating your reel... (${elapsed}s)`;
+          }
+        } catch(e) { /* network blip — keep polling */ }
+      }
+      // Timeout
+      const statusEl = document.getElementById('ad-video-status-text');
+      if (statusEl) statusEl.textContent = 'Timed out — please try again.';
     }
 
     function renderAdOutput(copy, format) {
